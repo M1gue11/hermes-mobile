@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-19T12:08:36-03:00",
+  "title": "Design System: Hermes Mobile",
+  "extensions": {
+    "colorMeta": {
+      "paper-deep": {"role": "neutral", "displayName": "Papel Profundo", "canonical": "#15120E", "tonalRamp": ["#15120E", "#241F19", "#393127", "#554A3D", "#786B5A", "#A99B86", "#D5C8B2", "#F4EBDD"]},
+      "paper-raised": {"role": "neutral", "displayName": "Papel Elevado", "canonical": "#1E1913", "tonalRamp": ["#17120E", "#29221A", "#40362B", "#5D5041", "#82715E", "#B09E87", "#D8CBB6", "#F6EDDF"]},
+      "amber-action": {"role": "primary", "displayName": "Âmbar de Ação", "canonical": "#D8A24A", "tonalRamp": ["#2A1D08", "#4B330D", "#704D15", "#97691F", "#BD862F", "#D8A24A", "#E8C47F", "#F7E8C1"]},
+      "terracotta-alert": {"role": "secondary", "displayName": "Terracota de Alerta", "canonical": "#C36A44", "tonalRamp": ["#2B1108", "#4C2113", "#71331F", "#96482D", "#B85C3B", "#D17A57", "#E6AB91", "#F6DDD0"]},
+      "green-success": {"role": "secondary", "displayName": "Verde de Conclusão", "canonical": "#5FBF7F", "tonalRamp": ["#092615", "#123E23", "#1E5934", "#2D7748", "#43995F", "#5FBF7F", "#98D9AE", "#D5F1DE"]}
+    },
+    "typographyMeta": {
+      "display": {"displayName": "Newsreader Display", "purpose": "Títulos de tela e vazios."},
+      "body": {"displayName": "Newsreader Body", "purpose": "Mensagens, explicações e leitura prolongada."},
+      "label": {"displayName": "JetBrains Mono Label", "purpose": "Estado, medida, horário e código."}
+    },
+    "shadows": [],
+    "motion": [
+      {"name": "toque", "value": "130ms cubic-bezier(0.2, 0.8, 0.2, 1)", "purpose": "Resposta imediata ao dedo."},
+      {"name": "estado", "value": "200ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Troca de símbolo, cor ou borda no lugar."},
+      {"name": "revelar", "value": "340ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Abrir e fechar conteúdo que ocupa espaço."},
+      {"name": "entrada", "value": "500ms cubic-bezier(0.2, 0.85, 0.25, 1)", "purpose": "Entrada de conteúdo novo."}
+    ],
+    "breakpoints": [
+      {"name": "android-compact", "value": "390px"}
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação dominante em âmbar com resposta tátil curta.",
+      "html": "<button class=\"ds-primary\">NOVA CONVERSA</button>",
+      "css": ".ds-primary{background:#D8A24A;color:#15120E;min-height:48px;padding:0 18px;border:0;border-radius:20px;font:500 11px 'JetBrains Mono',monospace;letter-spacing:.06em;transition:transform 130ms cubic-bezier(.2,.8,.2,1)}.ds-primary:hover,.ds-primary:focus-visible{outline:1px solid #ECE3D2;outline-offset:2px}.ds-primary:active{transform:scale(.966)}"
+    },
+    {
+      "name": "Hermes Chip",
+      "kind": "chip",
+      "refersTo": "chip-default",
+      "description": "Filtro compacto de papel elevado.",
+      "html": "<button class=\"ds-chip\">TODAS</button>",
+      "css": ".ds-chip{background:#1E1913;color:#A99F8C;padding:6px 11px;border:1px solid rgba(233,224,205,.11);border-radius:20px;font:400 11px 'JetBrains Mono',monospace}.ds-chip:hover,.ds-chip:focus-visible{border-color:rgba(216,162,74,.55);color:#ECE3D2;outline:none}"
+    },
+    {
+      "name": "Editorial Field",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Campo tátil de papel elevado com voz serifada.",
+      "html": "<input class=\"ds-field\" placeholder=\"Escrever mensagem\">",
+      "css": ".ds-field{box-sizing:border-box;width:100%;min-height:48px;background:#1E1913;color:#ECE3D2;border:1px solid rgba(233,224,205,.11);border-radius:22px;padding:10px 14px;font:400 16px Newsreader,Georgia,serif}.ds-field:focus-visible{border-color:#D8A24A;outline:none}.ds-field::placeholder{color:#6E655A}"
+    },
+    {
+      "name": "Operational Timeline Row",
+      "kind": "custom",
+      "description": "Trecho do diário operacional: eventos sem card, ligados por um trilho exato e legíveis por forma, texto e cor.",
+      "html": "<div class=\"ds-timeline\"><div class=\"ds-event ds-event-note\"><span class=\"ds-rail\"><i class=\"ds-marker\"></i></span><button class=\"ds-line\"><strong>Atividade</strong><small>histórico</small></button></div><div class=\"ds-event ds-event-live\"><span class=\"ds-rail\"><i class=\"ds-marker\"><b></b><b></b><b></b></i></span><button class=\"ds-line\"><code>read_file</code><em>lib/features/chat</em><small>EXEC</small></button></div><div class=\"ds-event ds-event-done\"><span class=\"ds-rail\"><i class=\"ds-marker\">✓</i></span><button class=\"ds-line\"><code>read_file</code><em>message_bubbles.dart</em><small>OK · 0.2s</small></button></div></div>",
+      "css": ".ds-timeline{width:min(100%,520px);color:#ECE3D2}.ds-event{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:8px;min-height:48px}.ds-rail{position:relative}.ds-rail::before{content:'';position:absolute;left:11.5px;top:0;bottom:0;width:1px;background:rgba(233,224,205,.11)}.ds-event:first-child .ds-rail::before{top:24px}.ds-event:last-child .ds-rail::before{bottom:24px}.ds-marker{position:absolute;left:2px;top:14px;display:flex;width:18px;height:18px;align-items:center;justify-content:center;background:#1E1913;font-style:normal}.ds-event-note .ds-marker{left:7px;top:19px;width:10px;height:10px;border:2px solid #1E1913;border-radius:50%;background:#A99F8C}.ds-event-live .ds-marker{gap:1.5px;border:1.4px solid #D8A24A;border-radius:50%}.ds-event-live .ds-marker b{width:2.5px;height:2.5px;border-radius:50%;background:#D8A24A}.ds-event-live .ds-marker b:not(:first-child){opacity:.28}.ds-event-done .ds-marker{border:1.4px solid #5FBF7F;border-radius:50%;color:#5FBF7F;font:700 13px sans-serif}.ds-line{display:flex;min-width:0;min-height:48px;align-items:center;gap:8px;padding:5px 0;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left}.ds-line strong{flex:1;color:#A99F8C;font:600 13.5px Newsreader,Georgia,serif}.ds-line code{flex:0 1 auto;overflow:hidden;color:#ECE3D2;font:400 11.5px 'JetBrains Mono',monospace;text-overflow:ellipsis;white-space:nowrap}.ds-line em{flex:1;min-width:0;overflow:hidden;color:#A99F8C;font:400 11.5px 'JetBrains Mono',monospace;font-style:normal;text-overflow:ellipsis;white-space:nowrap}.ds-line small{margin-left:auto;color:#6E655A;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.055em;white-space:nowrap}.ds-event-live .ds-line small{color:#D8A24A}.ds-event-done .ds-line small{color:#5FBF7F}.ds-line:hover{background:rgba(216,162,74,.06)}.ds-line:focus-visible{outline:1px solid #D8A24A;outline-offset:2px}"
+    },
+    {
+      "name": "Hermes Sheet Header",
+      "kind": "nav",
+      "description": "Cabeçalho editorial de bottom sheet com tag técnica.",
+      "html": "<header class=\"ds-sheet\"><h2>Ajustes</h2><span>CONVERSA</span></header>",
+      "css": ".ds-sheet{display:flex;align-items:center;gap:12px;background:#241E17;color:#ECE3D2;padding:8px 22px}.ds-sheet h2{flex:1;margin:0;font:500 23px Newsreader,Georgia,serif}.ds-sheet span{color:#6E655A;font:400 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em}.ds-sheet:focus-within{outline:1px solid #D8A24A;outline-offset:-1px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Caderno de Operações",
+    "overview": "O Hermes Mobile trata trabalho técnico como anotações vivas sobre papel escuro. A interface é editorial e tátil, mas operacional primeiro; âmbar marca ação, seleção e trabalho em curso.",
+    "keyCharacteristics": ["Papel quente escuro e tinta marfim", "Newsreader para conteúdo e JetBrains Mono para instrumentação", "Superfícies tonais e pouca elevação", "Movimento contido e acessível"],
+    "rules": [
+      {"name": "Amber Means Action", "body": "Âmbar aparece apenas onde há ação, seleção ou atividade viva.", "section": "colors"},
+      {"name": "Two Voices", "body": "Newsreader explica; JetBrains Mono identifica, mede ou mostra código.", "section": "typography"},
+      {"name": "Tonal Depth", "body": "Uma superfície só muda de camada quando isso explica hierarquia, foco ou sobreposição.", "section": "elevation"}
+    ],
+    "dos": ["Use o âmbar para orientar ação e atividade real.", "Revele complexidade progressivamente.", "Preserve conteúdo com redução de movimento."],
+    "donts": ["Não copie densidade de desktop sem adaptação ao toque.", "Não dependa só de cor para estado.", "Não empilhe cartões quando um trilho explica a relação."]
+  }
+}

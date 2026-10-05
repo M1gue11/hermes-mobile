@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#0a0a0b;min-height:100vh;font-family:'JetBrains Mono',monospace;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  a{color:var(--accent,#D8A24A);text-decoration:none}
+  a:hover{opacity:.8}
+  ::selection{background:color-mix(in oklab, var(--accent,#D8A24A) 32%, transparent)}
+  .tap{transition:background .2s ease, transform .13s cubic-bezier(.2,.8,.2,1), opacity .2s ease; -webkit-tap-highlight-color:transparent; cursor:pointer}
+  .tap:active{transform:scale(.966)}
+  .conv-item:hover{background:var(--bg2)}
+  .row-tap:hover{background:var(--bg2)}
+  .chip:hover{border-color:color-mix(in oklab, var(--accent) 55%, var(--line))}
+  .stak > *{opacity:0;animation:riseIn .5s cubic-bezier(.2,.85,.25,1) forwards}
+  @keyframes riseIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes blink{0%,45%{opacity:1}55%,100%{opacity:0}}
+  @keyframes shimmer{0%{background-position:-160% 0}100%{background-position:260% 0}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes islandGlow{0%,100%{opacity:.5}50%{opacity:1}}
+  @keyframes inkIn{from{opacity:0;filter:blur(5px);transform:translateY(6px)}to{opacity:1;filter:blur(0);transform:translateY(0)}}
+  @keyframes barSlide{0%{background-position:-60% 0}100%{background-position:160% 0}}
+  .thinking{background:linear-gradient(90deg, var(--faint) 0%, var(--ink) 42%, var(--faint) 84%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 2.1s linear infinite}
+  .cursor{display:inline-block;width:.5em;height:1.02em;background:var(--accent);vertical-align:-2px;margin-left:1px;border-radius:1px;animation:blink 1.1s steps(1) infinite}
+  /* scrollbars */
+  .scroll::-webkit-scrollbar{width:0}
+  /* markdown */
+  .hmd{color:var(--ink);font-family:var(--serif);font-size:16px;line-height:1.7;letter-spacing:.002em}
+  .hmd > *:first-child{margin-top:0}
+  .hmd > *:last-child{margin-bottom:0}
+  .hmd p{margin:0 0 .82em;text-align:justify;hyphens:auto;-webkit-hyphens:auto;text-wrap:pretty}
+  .hmd h1,.hmd h2,.hmd h3,.hmd h4{font-family:var(--serif);font-weight:600;line-height:1.28;color:var(--ink);letter-spacing:-.012em}
+  .hmd h1{font-size:1.5em;margin:.9em 0 .45em}
+  .hmd h2{font-size:1.28em;margin:1.15em 0 .55em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+  .hmd h3{font-size:1.1em;margin:1em 0 .38em;color:var(--ink);font-style:italic;font-weight:500}
+  .hmd strong{font-weight:600;color:var(--ink)}
+  .hmd em{font-style:italic}
+  .hmd a{color:var(--accent);border-bottom:1px dotted color-mix(in oklab, var(--accent) 60%, transparent);padding-bottom:.5px}
+  .hmd code{font-family:var(--mono);font-size:.84em;background:none;padding:0 .1em;color:var(--ink)}
+  .hmd pre{background:var(--codeBg);border:none;border-radius:11px;padding:15px 16px 13px;overflow-x:auto;margin:0 0 1.1em;font-size:12.5px;line-height:1.62;box-shadow:inset 0 1px 5px rgba(0,0,0,.42);scrollbar-width:thin;scrollbar-color:color-mix(in oklab, var(--faint) 55%, transparent) transparent;overscroll-behavior-x:contain}
+  .hmd pre::-webkit-scrollbar{height:9px}
+  .hmd pre::-webkit-scrollbar-track{background:transparent;margin:0 15px}
+  .hmd pre::-webkit-scrollbar-thumb{background:color-mix(in oklab, var(--faint) 55%, transparent);border-radius:10px;border:2px solid var(--codeBg)}
+  .hmd pre::-webkit-scrollbar-thumb:hover{background:var(--faint)}
+  .hmd pre code{background:none;padding:0;font-size:1em;color:var(--ink)}
+  .hmd blockquote{margin:0 0 1em;padding:.08em 0 .08em 1.15em;border-left:1px solid color-mix(in oklab, var(--accent) 65%, transparent);color:var(--dim);font-style:italic}
+  .hmd blockquote p{margin:.2em 0}
+  .hmd ul,.hmd ol{margin:0 0 1em;padding-left:1.35em}
+  .hmd li{margin:.28em 0}
+  .hmd ul li::marker{color:var(--faint)}
+  .hmd ol li::marker{color:var(--faint);font-family:var(--mono);font-size:.85em}
+  .hmd table{border-collapse:collapse;width:100%;margin:0 0 1.15em;font-size:.9em;display:block;overflow-x:auto;border-top:1.5px solid color-mix(in oklab, var(--ink) 55%, transparent);border-bottom:1.5px solid color-mix(in oklab, var(--ink) 55%, transparent)}
+  .hmd th,.hmd td{padding:.6em 1em .6em 0;text-align:left;vertical-align:top}
+  .hmd td{border-bottom:1px solid color-mix(in oklab, var(--line) 60%, transparent)}
+  .hmd tr:last-child td{border-bottom:none}
+  .hmd th{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);font-weight:500;border-bottom:1px solid var(--line)}
+  .hmd hr{border:none;margin:1.35em 0;text-align:center}
+  .hmd hr::after{content:'❦';color:var(--faint);font-size:14px;font-family:var(--serif)}
+  .hmd img{max-width:100%;border-radius:11px;border:1px solid var(--line)}
+  .hmd input[type=checkbox]{appearance:none;-webkit-appearance:none;width:1.02em;height:1.02em;border:1.5px solid var(--faint);border-radius:5px;vertical-align:-3px;margin:0 .55em 0 0;position:relative;transition:all .2s ease}
+  .hmd input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+  .hmd input[type=checkbox]:checked::after{content:'';position:absolute;left:5px;top:1px;width:4px;height:8px;border:solid var(--bg);border-width:0 1.7px 1.7px 0;transform:rotate(43deg)}
+  .hmd li.task-list-item{list-style:none;margin-left:-1.15em}
+  .hmd .katex{font-size:1.02em}
+  .hmd .katex-display{margin:.7em 0;overflow-x:auto;overflow-y:hidden;padding:2px 0}
+  /* hljs */
+  .hljs{color:var(--ink);background:none}
+  .hljs-comment,.hljs-quote{color:var(--faint);font-style:italic}
+  .hljs-keyword,.hljs-literal,.hljs-selector-tag,.hljs-section,.hljs-doctag{color:var(--cKey)}
+  .hljs-string,.hljs-attr,.hljs-regexp,.hljs-addition,.hljs-meta-string{color:var(--cStr)}
+  .hljs-number,.hljs-meta,.hljs-symbol,.hljs-bullet{color:var(--cNum)}
+  .hljs-title,.hljs-title.function_,.hljs-name{color:var(--cFn)}
+  .hljs-built_in,.hljs-type,.hljs-title.class_,.hljs-class .hljs-title{color:var(--cType)}
+  .hljs-property,.hljs-variable,.hljs-template-variable{color:var(--ink)}
+  .hljs-deletion{color:var(--accentInk)}
+  /* range */
+  .hrange{-webkit-appearance:none;appearance:none;width:100%;height:3px;background:var(--line);border-radius:3px;outline:none}
+  .hrange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--ink);border:4px solid var(--surface);box-shadow:0 0 0 1px var(--line);cursor:pointer;transition:transform .12s ease}
+  .hrange::-webkit-slider-thumb:active{transform:scale(1.18)}
+  .hta{width:100%;background:var(--codeBg);border:1px solid var(--line);border-radius:12px;color:var(--ink);font-family:var(--serif);font-size:14.5px;line-height:1.55;padding:12px 13px;resize:none;outline:none;transition:border-color .2s}
+  .hta:focus{border-color:color-mix(in oklab, var(--accent) 50%, var(--line))}
+  .hinput{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--ink);font-family:var(--serif);font-size:16px;line-height:1.4;padding:0}
+  .hinput::placeholder{color:var(--faint)}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;background:radial-gradient(120% 90% at 50% -10%, #17171a 0%, #0a0a0b 60%)">
+  <div style="{{ rootStyle }}">
+    <!-- phone frame -->
+    <div style="position:relative;width:390px;height:844px;border-radius:54px;padding:11px;background:linear-gradient(150deg,#3a3a3e,#141416 42%,#1c1c1f);box-shadow:0 50px 90px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.05), inset 0 0 3px rgba(255,255,255,.14)">
+      <div style="position:absolute;inset:11px;border-radius:44px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.6);pointer-events:none;z-index:60"></div>
+      <!-- screen -->
+      <div style="position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;background:var(--bg);color:var(--ink)">
+        <!-- paper texture: fine grain + fiber mottle + vignette -->
+        <div style="{{ grainStyle }}"></div>
+        <div style="{{ mottleStyle }}"></div>
+        <div style="{{ vignetteStyle }}"></div>
+        <!-- status bar -->
+        <div style="position:absolute;top:0;left:0;right:0;height:52px;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:16px 30px 0;font-family:var(--mono);pointer-events:none">
+          <div style="font-size:14px;font-weight:500;letter-spacing:.02em;color:var(--ink)">{{ statusTime }}</div>
+          <div style="display:flex;gap:6px;align-items:center;color:var(--ink)">
+            <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+            <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 2.2c2 0 3.8.76 5.16 2.02l1.2-1.24C12.7 1.4 10.45.5 8 .5S3.3 1.4 1.64 2.98l1.2 1.24A7.44 7.44 0 0 1 8 2.2Zm0 3.1c1.02 0 1.96.4 2.66 1.05l1.2-1.24A5.54 5.54 0 0 0 8 4.4c-1.5 0-2.87.6-3.86 1.56l1.2 1.24A3.75 3.75 0 0 1 8 5.3Zm0 3.02c.5 0 .95.2 1.28.53L8 10.5 6.72 8.88c.33-.33.78-.53 1.28-.53Z"/></svg>
+            <div style="width:25px;height:12px;border:1.4px solid color-mix(in oklab, var(--ink) 55%, transparent);border-radius:3.5px;position:relative;padding:1.5px"><div style="width:72%;height:100%;background:var(--ink);border-radius:1.5px"></div><div style="position:absolute;right:-3px;top:3.5px;width:2px;height:5px;background:color-mix(in oklab, var(--ink) 55%, transparent);border-radius:0 1px 1px 0"></div></div>
+          </div>
+        </div>
+        <!-- dynamic island -->
+        <div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:118px;height:33px;background:#000;border-radius:20px;z-index:50;display:flex;align-items:center;justify-content:flex-end;padding-right:13px"><div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:islandGlow 3s ease-in-out infinite"></div></div>
+
+        <!-- panels slider -->
+        <div style="position:absolute;inset:0;z-index:10">
+          <!-- LIST panel -->
+          <div style="{{ listPanelStyle }}">
+            <div style="flex:none;padding:60px 22px 12px">
+              <div style="display:flex;align-items:flex-end;justify-content:space-between">
+                <div>
+                  <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;color:var(--faint);text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#5fbf7f;box-shadow:0 0 8px #5fbf7f"></span>Gateway · online</div>
+                  <div style="font-family:var(--serif);font-size:33px;line-height:1;font-weight:500;letter-spacing:-.02em;color:var(--ink)">Conversas</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:9px">
+                  <div class="tap" onClick="{{ onOpenSettings }}" style="width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg2);color:var(--dim);display:flex;align-items:center;justify-content:center;flex:none">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01A1.7 1.7 0 0 0 10.05 3V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01c.26.63.87 1.04 1.56 1.04H21a2 2 0 1 1 0 4h-.09c-.69 0-1.3.41-1.51 1.04Z"/></svg>
+                  </div>
+                  <div class="tap" onClick="{{ onNewChat }}" style="width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 6px 18px -6px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.28)">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:18px;display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:10px 13px">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--faint)" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="m14 14-3.2-3.2" stroke-linecap="round"/></svg>
+                <span style="font-family:var(--mono);font-size:13px;color:var(--faint)">Buscar conversas</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:16px;opacity:.8">
+                <div style="flex:1;height:1px;background:var(--line)"></div>
+                <div style="font-family:var(--serif);font-size:11px;color:var(--faint)">✦</div>
+                <div style="flex:1;height:1px;background:var(--line)"></div>
+              </div>
+            </div>
+            <div class="scroll" style="flex:1;overflow-y:auto;padding:6px 10px 30px">{{ convListEl }}</div>
+          </div>
+
+          <!-- CHAT panel -->
+          <div style="{{ chatPanelStyle }}">
+            <!-- top bar -->
+            <div style="flex:none;padding:56px 12px 12px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line);background:color-mix(in oklab, var(--bg) 78%, transparent);backdrop-filter:blur(14px);position:relative;z-index:5">
+              <div class="tap" onClick="{{ onBack }}" style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:var(--ink)">
+                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+              </div>
+              <div style="flex:1;min-width:0;text-align:center">
+                <div style="font-family:var(--serif);font-size:16.5px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ chatTitle }}</div>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.04em;margin-top:1px">{{ chatSubtitle }}</div>
+              </div>
+              <div class="tap" onClick="{{ onOpenContext }}" style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:var(--ink)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v3M12 18v3M4.2 7l2.6 1.5M17.2 15.5 19.8 17M4.2 17l2.6-1.5M17.2 8.5 19.8 7"/><circle cx="12" cy="12" r="3.4"/></svg>
+              </div>
+              <div style="{{ streamBarStyle }}"></div>
+            </div>
+            <!-- thread -->
+            <div class="scroll" ref="{{ setThreadRef }}" style="position:relative;z-index:1;flex:1;overflow-y:auto;padding:22px 20px 18px">{{ threadEl }}</div>
+            <!-- composer -->
+            <div style="position:relative;z-index:2;flex:none;padding:8px 14px 14px;background:color-mix(in oklab, var(--bg) 82%, transparent);backdrop-filter:blur(14px);border-top:1px solid var(--line)">
+              <div style="display:flex;gap:7px;margin-bottom:9px">
+                <div class="tap chip" onClick="{{ onOpenModel }}" style="display:flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line);border-radius:20px;background:var(--bg2);font-family:var(--mono);font-size:11px;color:var(--dim)">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.5"><rect x="2.5" y="2.5" width="11" height="11" rx="3"/><path d="M6 6h4M6 8.5h4M6 11h2.5" stroke-linecap="round"/></svg>
+                  <span style="color:var(--ink)">{{ modelChipLabel }}</span>
+                </div>
+                <div class="tap chip" onClick="{{ onOpenReasoning }}" style="display:flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line);border-radius:20px;background:var(--bg2);font-family:var(--mono);font-size:11px;color:var(--dim)">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="1.5"><path d="M8 1.6a4.4 4.4 0 0 0-2.6 7.95c.3.22.5.55.5.92V11h4.2v-.53c0-.37.2-.7.5-.92A4.4 4.4 0 0 0 8 1.6Z"/><path d="M6.4 13.2h3.2M6.9 14.6h2.2" stroke-linecap="round"/></svg>
+                  <span style="color:var(--ink)">{{ effortChipLabel }}</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:9px;background:var(--bg2);border:1px solid var(--line);border-radius:22px;padding:8px 8px 8px 15px">
+                <div class="tap" onClick="{{ onOpenContext }}" style="flex:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--dim);margin-bottom:1px">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>
+                </div>
+                <input class="hinput" placeholder="Mensagem para o Hermes…" value="{{ inputValue }}" onChange="{{ onInputChange }}" onKeyDown="{{ onInputKeydown }}" style="padding:5px 0 6px"/>
+                <div class="tap" onClick="{{ onSend }}" style="{{ sendBtnStyle }}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- sheet backdrop -->
+        <div onClick="{{ onCloseSheet }}" style="{{ backdropStyle }}"></div>
+        <!-- MODEL sheet -->
+        <div style="{{ modelSheetStyle }}">
+          <div style="width:38px;height:4px;border-radius:3px;background:var(--faint);margin:9px auto 4px;opacity:.6"></div>
+          <div style="padding:8px 22px 4px;display:flex;align-items:baseline;justify-content:space-between">
+            <div style="font-family:var(--serif);font-size:23px;font-weight:500;color:var(--ink)">Modelo</div>
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase">/v1/models</div>
+          </div>
+          <div class="scroll" style="overflow-y:auto;padding:10px 14px 34px">{{ modelSheetEl }}</div>
+        </div>
+        <!-- REASONING sheet -->
+        <div style="{{ reasoningSheetStyle }}">
+          <div style="width:38px;height:4px;border-radius:3px;background:var(--faint);margin:9px auto 4px;opacity:.6"></div>
+          <div style="padding:8px 22px 4px;display:flex;align-items:baseline;justify-content:space-between">
+            <div style="font-family:var(--serif);font-size:23px;font-weight:500;color:var(--ink)">Raciocínio</div>
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase">reasoning</div>
+          </div>
+          <div class="scroll" style="overflow-y:auto;padding:12px 22px 34px">{{ reasoningSheetEl }}</div>
+        </div>
+        <!-- CONTEXT sheet -->
+        <div style="{{ contextSheetStyle }}">
+          <div style="width:38px;height:4px;border-radius:3px;background:var(--faint);margin:9px auto 4px;opacity:.6"></div>
+          <div style="padding:8px 22px 4px;display:flex;align-items:baseline;justify-content:space-between">
+            <div style="font-family:var(--serif);font-size:23px;font-weight:500;color:var(--ink)">Contexto</div>
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase">instructions</div>
+          </div>
+          <div class="scroll" style="overflow-y:auto;padding:12px 22px 34px">{{ contextSheetEl }}</div>
+        </div>
+        <!-- SETTINGS sheet -->
+        <div style="{{ settingsSheetStyle }}">
+          <div style="width:38px;height:4px;border-radius:3px;background:var(--faint);margin:9px auto 4px;opacity:.6"></div>
+          <div style="padding:8px 22px 4px;display:flex;align-items:baseline;justify-content:space-between">
+            <div style="font-family:var(--serif);font-size:23px;font-weight:500;color:var(--ink)">Aparência</div>
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase">settings</div>
+          </div>
+          <div class="scroll" style="overflow-y:auto;padding:12px 22px 34px">{{ settingsSheetEl }}</div>
+        </div>
+
+        <!-- home indicator -->
+        <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink);opacity:.4;z-index:55;pointer-events:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:740,&quot;height&quot;:940},&quot;atmosphere&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Manuscrito&quot;,&quot;Jornal&quot;,&quot;Técnico&quot;],&quot;default&quot;:&quot;Manuscrito&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Atmosfera&quot;},&quot;grain&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.55,&quot;min&quot;:0,&quot;max&quot;:1,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Atmosfera&quot;},&quot;serifBody&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Atmosfera&quot;},&quot;spinnerStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;braille&quot;,&quot;braillewave&quot;,&quot;dna&quot;,&quot;scan&quot;,&quot;rain&quot;,&quot;scanline&quot;,&quot;pulse&quot;,&quot;snake&quot;,&quot;sparkle&quot;,&quot;cascade&quot;,&quot;columns&quot;,&quot;orbit&quot;,&quot;breathe&quot;,&quot;waverows&quot;,&quot;checkerboard&quot;,&quot;helix&quot;,&quot;fillsweep&quot;,&quot;diagswipe&quot;],&quot;default&quot;:&quot;helix&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Marca&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const R = React;
+    this.state = {
+      screen: 'list',
+      sheet: null,            // 'model' | 'reasoning' | 'context'
+      now: new Date(),
+      libsReady: false,
+      input: '',
+      messages: [],
+      chatTitle: '',
+      model: 'hermes-4-70b',
+      effort: 'Médio',
+      showReasoning: true,
+      budget: 4000,
+      systemPrompt: 'Você é o Hermes. Responda em português, de forma objetiva e técnica. Prefira exemplos em TypeScript. Cite o endpoint da API quando for relevante.',
+      files: [ {name:'06-frontend-guide.md', size:'5.6 KB'}, {name:'schema.prisma', size:'12 KB'} ],
+      memory: [ {t:'Responde em português, objetivo', on:true}, {t:'Stack: Next.js + tRPC + Postgres', on:true}, {t:'Prefere exemplos em TypeScript', on:false} ],
+      expanded: {},
+      atmo: null,      // override do app; null = segue o tweak "atmosphere"
+      spinner: null,   // override do app; null = segue o tweak "spinnerStyle"
+    };
+    this._timers = [];
+    this._streaming = false;
+
+    this.MODELS = [
+      {id:'hermes-4-405b', name:'Hermes 4 405B', prov:'Nous · local', ctx:'128K', note:'Raciocínio profundo, mais lento'},
+      {id:'hermes-4-70b',  name:'Hermes 4 70B',  prov:'Nous · local', ctx:'128K', note:'Equilíbrio entre custo e qualidade'},
+      {id:'hermes-3-8b',   name:'Hermes 3 8B',   prov:'Nous · local', ctx:'32K',  note:'Rápido, ideal para rascunhos'},
+      {id:'hermes-agent',  name:'hermes-agent',  prov:'profile default', ctx:'—', note:'Nome anunciado pelo perfil atual'},
+    ];
+
+    this.CONV = [
+      {label:'Hoje', items:[
+        {id:'c1', title:'Streaming com a Runs API', snippet:'A regra de ouro: nunca misture tool.progress com o texto final…', time:'09:38', model:'H4 70B'},
+        {id:'c2', title:'Migração Postgres sem downtime', snippet:'Podemos usar expand/contract em três deploys. Primeiro adiciona…', time:'08:12', model:'H4 405B'},
+      ]},
+      {label:'Ontem', items:[
+        {id:'c3', title:'Revisar diff do PR #482', snippet:'Encontrei um race condition no cache. O lock não cobre o read…', time:'21:04', model:'H4 70B'},
+        {id:'c4', title:'Prompt de classificação de tickets', snippet:'Sugiro few-shot com 4 exemplos e saída em JSON estrito…', time:'16:47', model:'H3 8B'},
+      ]},
+      {label:'Semana passada', items:[
+        {id:'c5', title:'Arquitetura do gateway SSE', snippet:'O proxy injeta Authorization e repassa o stream. EventSource não…', time:'2ª, 11:20', model:'H4 405B'},
+        {id:'c6', title:'Explicar transformers p/ o time', snippet:'Attention é uma média ponderada aprendida sobre todos os tokens…', time:'2ª, 09:03', model:'H4 70B'},
+      ]},
+    ];
+
+    // ---- canned markdown ----
+    this.MD_INTRO = [
+      '## Streaming no seu front-end',
+      '',
+      'Para uma UX rica com **progresso de ferramentas**, reconexão e cancelamento, use a *Runs API* em vez de `chat/completions` puro.',
+      '',
+      '> A regra de ouro: nunca misture `hermes.tool.progress` com o texto final do assistant.',
+      '',
+      '### Fluxo recomendado',
+      '',
+      '1. `POST /v1/runs` e guarde o `run_id`',
+      '2. Abra o SSE em `/v1/runs/{id}/events`',
+      '3. Em reconnect, reconcilie via `GET /v1/runs/{id}`',
+      '',
+      '```ts',
+      'const { run_id } = await hermes.post("/v1/runs", {',
+      '  input, session_id,',
+      '});',
+      '',
+      'const es = openSSE(`/v1/runs/${run_id}/events`);',
+      'es.on("delta", (t) => append(t));',
+      'es.on("tool.progress", (p) => timeline.push(p));',
+      '```',
+      '',
+      '| API | Estado | Melhor para |',
+      '| --- | --- | --- |',
+      '| Chat Completions | cliente | chat simples |',
+      '| Responses | servidor | tool UI estruturada |',
+      '| Runs | servidor | dashboards ricos |',
+      '',
+      'O overhead de reconciliação cresce como $O(\\log n)$ no número de eventos.',
+      '',
+      '- [x] Detach / reconnect',
+      '- [x] Cancelamento via `run_stop`',
+      '- [ ] Aprovação humana',
+      '',
+      'Detalhes em [04-runs-streaming](#).',
+    ].join('\n');
+
+    this.MD_REPLY = [
+      'Boa. Vamos aterrissar isso em código real.',
+      '',
+      '### Proxy de SSE no seu backend',
+      '',
+      'Como o `EventSource` não envia `Authorization`, exponha uma rota que injeta o header e repassa o stream:',
+      '',
+      '```ts',
+      'app.get("/api/hermes/:id/events", async (req, res) => {',
+      '  const up = await fetch(',
+      '    `${HERMES}/v1/runs/${req.params.id}/events`,',
+      '    { headers: { Authorization: `Bearer ${KEY}` } }',
+      '  );',
+      '  res.setHeader("Content-Type", "text/event-stream");',
+      '  await up.body.pipeTo(toSSE(res));',
+      '});',
+      '```',
+      '',
+      '**Checklist de robustez**',
+      '',
+      '- [x] Reconexão com backoff exponencial',
+      '- [x] Fallback para polling de `GET /v1/runs/{id}`',
+      '- [ ] Métrica de _time-to-first-token_',
+      '',
+      '> Trate `stopping` como estado visível — o cancelamento não é instantâneo.',
+      '',
+      'A chance de perder um evento cai como $P = 1 - e^{-\\lambda t}$ conforme você aumenta o buffer.',
+    ].join('\n');
+
+    this.REASON_INTRO = 'O usuário quer a melhor forma de fazer streaming. Chat Completions é mais simples mas o cliente segura o histórico; a Runs API dá detach, reconnect e cancelamento. Como o produto é um dashboard, recomendo Runs e mostro a tabela comparativa para justificar. Incluo o fluxo em 3 passos e um trecho de código enxuto.';
+    this.REASON_REPLY = 'Já cobri a escolha da API antes, então não repito a tabela. O ponto que mais gera bug em produção é o header Authorization no SSE — o EventSource nativo não deixa setar. Foco nisso com o proxy e adiciono um checklist de robustez. Mantenho curto.';
+
+    // markdown renderer component (hooks)
+    this.Md = function Md(p){
+      const ref = R.useRef(null);
+      R.useLayoutEffect(function(){
+        const el = ref.current; if(!el) return;
+        if(window.marked && window.marked.parse){
+          try{ el.innerHTML = window.marked.parse(p.source||'', {gfm:true, breaks:true}); }
+          catch(e){ el.textContent = p.source||''; }
+        } else { el.textContent = p.source||''; }
+        if(window.hljs){ el.querySelectorAll('pre code').forEach(function(b){ try{ window.hljs.highlightElement(b); }catch(e){} }); }
+        if(window.renderMathInElement){ try{ window.renderMathInElement(el, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError:false}); }catch(e){} }
+      }, [p.source, p.ready]);
+      return R.createElement('div', {className:'hmd', lang:'pt-BR', ref: ref});
+    };
+  }
+
+  componentDidMount(){
+    this._clock = setInterval(()=> this.setState({now:new Date()}), 20000);
+    this._poll = setInterval(()=>{
+      if(window.marked && window.hljs && window.katex && window.renderMathInElement){
+        this.setState({libsReady:true});
+        clearInterval(this._poll);
+      }
+    }, 120);
+  }
+  componentWillUnmount(){ clearInterval(this._clock); clearInterval(this._poll); this.clearTimers(); }
+  componentDidUpdate(){ if(this._streaming) this.scrollBottom(); }
+  clearTimers(){ this._timers.forEach(t=>clearTimeout(t)); this._timers=[]; }
+  after(ms, fn){ this._timers.push(setTimeout(fn, ms)); }
+  scrollBottom(){ const el=this._thread; if(el) el.scrollTop = el.scrollHeight; }
+
+  // ---------- theme ----------
+  theme(){
+    const a = this.state.atmo || this.props.atmosphere || 'Manuscrito';
+    const serifOn = this.props.serifBody !== false;
+    const serif = serifOn ? "'Newsreader', Georgia, 'Times New Roman', serif" : "'JetBrains Mono', ui-monospace, monospace";
+    const mono = "'JetBrains Mono', ui-monospace, monospace";
+    const T = {
+      'Manuscrito': {bg:'#15120E',bg2:'#1E1913',surface:'#241E17',line:'rgba(233,224,205,.11)',ink:'#ECE3D2',dim:'#A99F8C',faint:'#6E655A',accent:'#D8A24A',accentInk:'#C36A44',codeBg:'#100D09',codeInline:'rgba(216,162,74,.11)',cKey:'#D98E5E',cStr:'#A8B37A',cNum:'#D8A24A',cFn:'#E6CC86',cType:'#9BB6A0'},
+      'Jornal':     {bg:'#141414',bg2:'#1C1C1C',surface:'#222222',line:'rgba(255,255,255,.10)',ink:'#EAE8E2',dim:'#9C9A92',faint:'#69675F',accent:'#D45A41',accentInk:'#D45A41',codeBg:'#0D0D0D',codeInline:'rgba(255,255,255,.06)',cKey:'#D45A41',cStr:'#A6ACA2',cNum:'#C8B45E',cFn:'#EAE8E2',cType:'#B7B2A6'},
+      'Técnico':    {bg:'#0E1113',bg2:'#151A1D',surface:'#1A2024',line:'rgba(180,215,230,.12)',ink:'#DDE6EB',dim:'#8D9CA6',faint:'#586870',accent:'#63B7C9',accentInk:'#E0866A',codeBg:'#0A0D0F',codeInline:'rgba(99,183,201,.11)',cKey:'#63B7C9',cStr:'#9BC49A',cNum:'#D3B36B',cFn:'#BFD6DE',cType:'#8FB7C4'},
+    };
+    const c = T[a] || T['Manuscrito'];
+    return Object.assign({}, c, {serif, mono});
+  }
+  rootStyle(){
+    const t = this.theme();
+    const v = {
+      '--bg':t.bg,'--bg2':t.bg2,'--surface':t.surface,'--line':t.line,'--ink':t.ink,'--dim':t.dim,'--faint':t.faint,
+      '--accent':t.accent,'--accentInk':t.accentInk,'--codeBg':t.codeBg,'--codeInline':t.codeInline,
+      '--cKey':t.cKey,'--cStr':t.cStr,'--cNum':t.cNum,'--cFn':t.cFn,'--cType':t.cType,
+      '--serif':t.serif,'--mono':t.mono,
+    };
+    return Object.assign({position:'relative'}, v);
+  }
+  texK(){ const g = this.props.grain != null ? this.props.grain : 0.55; return 0.45 + 0.55*g; }
+  grainStyle(){
+    const k = this.texK();
+    const svg = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.86' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+    return {position:'absolute',inset:0,zIndex:58,pointerEvents:'none',backgroundImage:svg,mixBlendMode:'soft-light',opacity:(0.16*k).toFixed(3)};
+  }
+  mottleStyle(){
+    const k = this.texK();
+    const svg = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='700' height='700'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.011' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E\")";
+    return {position:'absolute',inset:0,zIndex:58,pointerEvents:'none',backgroundImage:svg,backgroundSize:'700px 700px',mixBlendMode:'soft-light',opacity:(0.14*k).toFixed(3)};
+  }
+  vignetteStyle(){
+    return {position:'absolute',inset:0,zIndex:58,pointerEvents:'none',background:'radial-gradient(130% 100% at 50% 0%, rgba(0,0,0,0) 55%, rgba(0,0,0,.30) 100%)'};
+  }
+
+  // ---------- navigation ----------
+  fmtTime(){ const d=this.state.now; let h=d.getHours(), m=d.getMinutes(); return h+':' + (m<10?'0'+m:m); }
+  seedMessages(){
+    return [
+      {id:'m1', role:'user', text:'Qual a melhor forma de fazer streaming no meu front-end com o Hermes?', time:'09:37'},
+      {id:'m2', role:'assistant', phase:'done', reasoning:this.REASON_INTRO, reasonTime:'3.2s', tools:[{name:'read_file', arg:'04-runs-streaming.md', status:'done'}], text:this.MD_INTRO, time:'09:38'},
+    ];
+  }
+  openChat(item){
+    this.clearTimers(); this._streaming=false;
+    this.setState({screen:'chat', chatTitle:item.title, messages:this.seedMessages(), sheet:null, expanded:{}}, ()=>{ this.after(60,()=>this.scrollBottom()); });
+  }
+  newChat(){
+    this.clearTimers(); this._streaming=false;
+    this.setState({screen:'chat', chatTitle:'Nova conversa', messages:[], sheet:null, input:'', expanded:{}});
+  }
+  back(){ this.clearTimers(); this._streaming=false; this.setState({screen:'list', sheet:null}); }
+
+  // ---------- send + streaming sim ----------
+  send(){
+    const text = (this.state.input||'').trim();
+    if(!text || this._streaming) return;
+    this.clearTimers();
+    const uid = 'u'+Date.now();
+    const aid = 'a'+Date.now();
+    const showR = this.state.showReasoning;
+    const um = {id:uid, role:'user', text, time:this.fmtTime()};
+    const am = {id:aid, role:'assistant', phase: showR?'reasoning':'writing', reasoning:'', reasonFull:this.REASON_REPLY, tools:[], text:'', textFull:this.MD_REPLY, time:this.fmtTime()};
+    const title = this.state.messages.length===0 ? (text.length>34?text.slice(0,34)+'…':text) : this.state.chatTitle;
+    this._streaming = true;
+    this.setState({messages:[...this.state.messages, um, am], input:'', chatTitle:title}, ()=>{ this.scrollBottom(); this.runReasoning(aid, showR); });
+  }
+  patch(id, fn){
+    this.setState(s=>({messages: s.messages.map(m=> m.id===id ? Object.assign({}, m, fn(m)) : m)}));
+  }
+  runReasoning(id, showR){
+    if(!showR){ this.runTool(id); return; }
+    const full = this.REASON_REPLY; let i=0;
+    const step = ()=>{
+      i += 4; this.patch(id, ()=>({reasoning: full.slice(0,i)}));
+      if(i < full.length){ this.after(24, step); }
+      else { this.after(360, ()=> this.runTool(id)); }
+    };
+    step();
+  }
+  runTool(id){
+    this.patch(id, ()=>({phase:'writing', reasonTime:'2.1s', tools:[{name:'read_file', arg:'06-frontend-guide.md', status:'running'}]}));
+    this.setState(s=>({expanded: Object.assign({}, s.expanded, {[id]:false})}));
+    this.after(900, ()=>{
+      this.patch(id, ()=>({tools:[{name:'read_file', arg:'06-frontend-guide.md', status:'done'}]}));
+      this.after(300, ()=> this.runWriting(id));
+    });
+  }
+  runWriting(id){
+    const full = this.MD_REPLY; let i=0;
+    const step = ()=>{
+      i += 5; this.patch(id, ()=>({text: full.slice(0,i)}));
+      if(i < full.length){ this.after(14, step); }
+      else { this.patch(id, ()=>({phase:'done', text:full})); this._streaming=false; }
+    };
+    step();
+  }
+  toggleReason(id){ this.setState(s=>({expanded: Object.assign({}, s.expanded, {[id]: !s.expanded[id]})})); }
+
+  // ---------- thread render ----------
+  buildThread(){
+    const R = React, t = this.theme();
+    const msgs = this.state.messages;
+    if(msgs.length===0) return this.emptyState();
+    const nodes = [];
+    msgs.forEach((m, idx)=>{
+      if(m.role==='user' && idx>0) nodes.push(this.fleuron(m.id));
+      nodes.push(m.role==='user' ? this.userMsg(m) : this.asstMsg(m, idx));
+    });
+    return R.createElement('div', {className:'stak', style:{display:'flex', flexDirection:'column', gap:'26px'}}, nodes);
+  }
+  mark(size, active){
+    const t = this.theme();
+    return React.createElement(UnicodeSpinner, {size:size, active:!!active,
+      name:this.state.spinner || this.props.spinnerStyle || 'helix', color:t.accentInk, glow:t.accent});
+  }
+  fleuron(k){
+    const R = React;
+    return R.createElement('div', {key:'f'+k, style:{display:'flex', alignItems:'center', justifyContent:'center', gap:'12px', padding:'0'}},
+      R.createElement('div', {style:{width:'32px', height:'1px', background:'var(--line)'}}),
+      R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'14px', color:'var(--faint)', lineHeight:1}}, '❦'),
+      R.createElement('div', {style:{width:'32px', height:'1px', background:'var(--line)'}}));
+  }
+  emptyState(){
+    const R = React;
+    const sugg = ['Explique a Sessions API do Hermes','Escreva um proxy de SSE em Node','Compare Runs vs Responses'];
+    const mk = (s,i)=> R.createElement('div', {key:i, className:'tap row-tap', onClick:()=>this.setState({input:s}),
+      style:{padding:'13px 15px', border:'1px solid var(--line)', borderRadius:'14px', background:'var(--bg2)', fontFamily:'var(--serif)', fontSize:'14.5px', color:'var(--dim)', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'10px'}},
+      R.createElement('span', null, s),
+      R.createElement('span', {style:{color:'var(--accent)', fontFamily:'var(--mono)', fontSize:'14px'}}, '↑'));
+    return R.createElement('div', {style:{height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'0 14px', textAlign:'center'}},
+      R.createElement('div', {className:'stak', style:{maxWidth:'300px'}},
+        R.createElement('div', {style:{display:'flex', justifyContent:'center', marginBottom:'12px'}}, this.mark(30, true)),
+        R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'10.5px', letterSpacing:'.24em', color:'var(--faint)', textTransform:'uppercase', marginBottom:'12px', animationDelay:'.04s'}}, 'Hermes Agent'),
+        R.createElement('div', {style:{fontFamily:'var(--serif)', fontStyle:'italic', fontSize:'27px', lineHeight:1.25, fontWeight:500, color:'var(--ink)', marginBottom:'8px', animationDelay:'.08s'}}, 'No que estamos trabalhando?'),
+        R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'14px', color:'var(--dim)', marginBottom:'26px', animationDelay:'.1s'}}, 'Roda contra o AIAgent no host do gateway — terminal, arquivos e skills incluídos.'),
+        R.createElement('div', {style:{display:'flex', flexDirection:'column', gap:'9px', animationDelay:'.16s'}}, sugg.map(mk))
+      )
+    );
+  }
+  metaLine(label, right){
+    const R = React;
+    return R.createElement('div', {style:{display:'flex', alignItems:'center', gap:'8px', fontFamily:'var(--mono)', fontSize:'10px', letterSpacing:'.08em', color:'var(--faint)', textTransform:'uppercase', marginBottom:'8px'}},
+      R.createElement('span', {style:{color:'var(--dim)'}}, label),
+      right ? R.createElement('span', {style:{width:'3px', height:'3px', borderRadius:'50%', background:'var(--faint)'}}) : null,
+      right ? R.createElement('span', null, right) : null);
+  }
+  userMsg(m){
+    const R = React;
+    return R.createElement('div', {key:m.id, style:{display:'flex', flexDirection:'column', alignItems:'flex-end'}},
+      R.createElement('div', {style:{maxWidth:'85%', textAlign:'right', paddingRight:'14px', borderRight:'2px solid color-mix(in oklab, var(--accent) 55%, transparent)'}},
+        R.createElement('div', {style:{display:'flex', justifyContent:'flex-end'}}, this.metaLine('Você', m.time)),
+        R.createElement('div', {style:{fontFamily:'var(--serif)', fontStyle:'italic', fontSize:'16px', lineHeight:1.6, color:'var(--ink)'}}, m.text)
+      ));
+  }
+  asstMsg(m, idx){
+    const R = React;
+    const kids = [];
+    // meta
+    const active = !!m.phase && m.phase!=='done';
+    kids.push(R.createElement('div', {key:'meta', style:{display:'flex', alignItems:'center', gap:'8px'}},
+      this.metaLine('Hermes', this.modelShort()+' · '+ (m.time||''))));
+    // reasoning block
+    if(m.reasoning || (m.phase==='done' && m.reasonFull) || m.reasonTime){
+      kids.push(this.reasonBlock(m));
+    }
+    // tools
+    if(m.tools && m.tools.length){ kids.push(this.toolBlock(m)); }
+    // body
+    if(m.phase==='done'){
+      kids.push(R.createElement('div', {key:'body', style:{animation:'inkIn .65s cubic-bezier(.2,.7,.2,1) both'}},
+        R.createElement(this.Md, {source:m.text, ready:this.state.libsReady})));
+    } else if(m.phase==='writing'){
+      kids.push(R.createElement('div', {key:'body', style:{fontFamily:'var(--serif)', fontSize:'16px', lineHeight:1.7, color:'var(--ink)', whiteSpace:'pre-wrap'}},
+        m.text, R.createElement('span', {className:'cursor'})));
+    }
+    // marca ao final da resposta, como no chat do Claude (sempre animada para avaliação)
+    kids.push(R.createElement('div', {key:'mark', style:{display:'flex', marginTop:'14px'}}, this.mark(20, true)));
+    return R.createElement('div', {key:m.id, style:{maxWidth:'100%'}}, kids);
+  }
+  reasonBlock(m){
+    const R = React;
+    const streaming = m.phase==='reasoning';
+    const open = streaming || !!this.state.expanded[m.id];
+    const header = R.createElement('div', {key:'h', className: streaming? '' : 'tap', onClick: streaming? null : ()=>this.toggleReason(m.id),
+      style:{display:'flex', alignItems:'center', gap:'7px', fontFamily:'var(--mono)', fontSize:'10.5px', letterSpacing:'.06em', textTransform:'uppercase', color:'var(--dim)', userSelect:'none'}},
+      R.createElement('svg', {width:12, height:12, viewBox:'0 0 16 16', fill:'none', stroke:'var(--accent)', strokeWidth:1.4, style:{flex:'none'}},
+        R.createElement('path', {d:'M8 1.6a4.4 4.4 0 0 0-2.6 7.95c.3.22.5.55.5.92V11h4.2v-.53c0-.37.2-.7.5-.92A4.4 4.4 0 0 0 8 1.6Z'}),
+        R.createElement('path', {d:'M6.4 13.2h3.2', strokeLinecap:'round'})),
+      streaming
+        ? R.createElement('span', {className:'thinking'}, 'Pensando…')
+        : R.createElement('span', null, 'Raciocínio' + (m.reasonTime? ' · '+m.reasonTime : '')),
+      !streaming ? R.createElement('svg', {width:11, height:11, viewBox:'0 0 16 16', fill:'none', stroke:'var(--faint)', strokeWidth:1.6, style:{marginLeft:'-1px', transform: open?'rotate(180deg)':'none', transition:'transform .28s ease'}}, R.createElement('path', {d:'M4 6l4 4 4-4', strokeLinecap:'round', strokeLinejoin:'round'})) : null
+    );
+    const body = R.createElement('div', {key:'b', style:{display:'grid', gridTemplateRows: open?'1fr':'0fr', transition:'grid-template-rows .34s cubic-bezier(.4,0,.2,1)'}},
+      R.createElement('div', {style:{overflow:'hidden'}},
+        R.createElement('div', {style:{marginTop:'8px', paddingLeft:'12px', borderLeft:'2px solid var(--line)', fontFamily:'var(--serif)', fontStyle:'italic', fontSize:'13.5px', lineHeight:1.62, color:'var(--dim)'}},
+          (streaming? m.reasoning : m.reasonFull) || '', streaming? R.createElement('span', {className:'cursor', style:{height:'0.9em'}}) : null)));
+    return R.createElement('div', {key:'reason', style:{marginBottom:'13px'}}, header, body);
+  }
+  toolBlock(m){
+    const R = React;
+    const rows = m.tools.map((tl,i)=>{
+      const running = tl.status==='running';
+      const dot = running
+        ? R.createElement('svg', {width:12, height:12, viewBox:'0 0 16 16', style:{animation:'spin .8s linear infinite', flex:'none'}}, R.createElement('circle', {cx:8, cy:8, r:6, fill:'none', stroke:'var(--line)', strokeWidth:2}), R.createElement('path', {d:'M8 2a6 6 0 0 1 6 6', fill:'none', stroke:'var(--accent)', strokeWidth:2, strokeLinecap:'round'}))
+        : R.createElement('svg', {width:12, height:12, viewBox:'0 0 16 16', fill:'none', stroke:'#5fbf7f', strokeWidth:2, style:{flex:'none'}}, R.createElement('path', {d:'M3.5 8.5l3 3 6-7', strokeLinecap:'round', strokeLinejoin:'round'}));
+      return R.createElement('div', {key:i, style:{display:'flex', alignItems:'center', gap:'9px', fontFamily:'var(--mono)', fontSize:'11.5px', color:'var(--dim)'}},
+        dot,
+        R.createElement('span', {style:{color:'var(--ink)'}}, tl.name),
+        R.createElement('span', {style:{color:'var(--faint)'}}, tl.arg),
+        R.createElement('span', {style:{marginLeft:'auto', color: running?'var(--accent)':'var(--faint)', fontSize:'10px', letterSpacing:'.08em', textTransform:'uppercase'}}, running?'exec':'ok'));
+    });
+    return R.createElement('div', {key:'tools', style:{margin:'0 0 14px', padding:'11px 13px', background:'var(--bg2)', border:'1px solid var(--line)', borderRadius:'12px', display:'flex', flexDirection:'column', gap:'8px'}},
+      R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'9.5px', letterSpacing:'.16em', textTransform:'uppercase', color:'var(--faint)', marginBottom:'1px'}}, 'Ferramentas'),
+      rows);
+  }
+
+  // ---------- conversation list ----------
+  buildConvList(){
+    const R = React;
+    const groups = this.CONV.map((g, gi)=>{
+      const items = g.items.map((it, ii)=>{
+        return R.createElement('div', {key:it.id, className:'tap conv-item', onClick:()=>this.openChat(it),
+          style:{padding:'13px 12px', borderRadius:'14px', display:'flex', gap:'12px', alignItems:'flex-start'}},
+          R.createElement('div', {style:{flex:1, minWidth:0}},
+            R.createElement('div', {style:{display:'flex', alignItems:'baseline', minWidth:0}},
+              R.createElement('span', {style:{fontFamily:'var(--serif)', fontSize:'16.5px', fontWeight:500, color:'var(--ink)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', flexShrink:1}}, it.title),
+              R.createElement('span', {style:{flex:1, minWidth:'18px', borderBottom:'2px dotted color-mix(in oklab, var(--faint) 42%, transparent)', margin:'0 7px', transform:'translateY(-3px)'}}),
+              R.createElement('span', {style:{fontFamily:'var(--mono)', fontSize:'10px', color:'var(--faint)', flex:'none'}}, it.time)),
+            R.createElement('div', {style:{display:'flex', alignItems:'center', gap:'8px', marginTop:'4px'}},
+              R.createElement('span', {style:{fontFamily:'var(--serif)', fontSize:'13.5px', color:'var(--dim)', lineHeight:1.4, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', flex:1, minWidth:0}}, it.snippet),
+              R.createElement('span', {style:{fontFamily:'var(--mono)', fontSize:'9.5px', color:'var(--accent)', flex:'none'}}, it.model))));
+      });
+      return R.createElement('div', {key:gi, style:{marginBottom:'12px'}},
+        R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'10px', letterSpacing:'.16em', textTransform:'uppercase', color:'var(--faint)', padding:'12px 12px 6px'}}, g.label),
+        items);
+    });
+    return R.createElement('div', {className:'stak'}, groups);
+  }
+
+  // ---------- sheets ----------
+  modelShort(){ const m=this.MODELS.find(x=>x.id===this.state.model); if(!m) return 'modelo'; return m.name.replace('Hermes ','H').replace(' ',' '); }
+  buildModelSheet(){
+    const R = React;
+    return R.createElement('div', {style:{display:'flex', flexDirection:'column', gap:'8px'}},
+      this.MODELS.map((m,i)=>{
+        const sel = m.id===this.state.model;
+        return R.createElement('div', {key:m.id, className:'tap row-tap', onClick:()=>this.setState({model:m.id, sheet:null}),
+          style:{display:'flex', alignItems:'center', gap:'12px', padding:'13px 12px', borderRadius:'14px', border:'1px solid '+(sel?'color-mix(in oklab, var(--accent) 45%, var(--line))':'var(--line)'), background: sel?'var(--bg2)':'transparent'}},
+          R.createElement('div', {style:{flex:1, minWidth:0}},
+            R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'16px', color:'var(--ink)', marginBottom:'2px'}}, m.name),
+            R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'11px', color:'var(--faint)'}}, m.prov + ' · ctx ' + m.ctx),
+            R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'13px', color:'var(--dim)', marginTop:'3px'}}, m.note)),
+          R.createElement('div', {style:{flex:'none', width:'22px', height:'22px', borderRadius:'50%', border:'1.5px solid '+(sel?'var(--accent)':'var(--faint)'), display:'flex', alignItems:'center', justifyContent:'center'}},
+            sel? R.createElement('div', {style:{width:'11px', height:'11px', borderRadius:'50%', background:'var(--accent)'}}) : null));
+      }));
+  }
+  buildReasoningSheet(){
+    const R = React;
+    const efforts = ['Nenhum','Baixo','Médio','Alto'];
+    const seg = R.createElement('div', {style:{display:'flex', gap:'4px', background:'var(--bg2)', border:'1px solid var(--line)', borderRadius:'13px', padding:'4px'}},
+      efforts.map(e=>{
+        const on = this.state.effort===e;
+        return R.createElement('div', {key:e, className:'tap', onClick:()=>this.setState({effort:e}),
+          style:{flex:1, textAlign:'center', padding:'8px 0', borderRadius:'9px', fontFamily:'var(--mono)', fontSize:'11.5px', color: on?'var(--bg)':'var(--dim)', background: on?'var(--ink)':'transparent', transition:'all .2s ease'}}, e);
+      }));
+    const swRow = R.createElement('div', {style:{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'4px 0'}},
+      R.createElement('div', null,
+        R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'15.5px', color:'var(--ink)'}}, 'Mostrar raciocínio'),
+        R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'13px', color:'var(--dim)', marginTop:'1px'}}, 'Exibe o bloco “pensando” no chat')),
+      this.switchEl(this.state.showReasoning, ()=>this.setState({showReasoning:!this.state.showReasoning})));
+    const budget = R.createElement('div', {style:{padding:'4px 0'}},
+      R.createElement('div', {style:{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:'12px'}},
+        R.createElement('span', {style:{fontFamily:'var(--serif)', fontSize:'15.5px', color:'var(--ink)'}}, 'Orçamento de tokens'),
+        R.createElement('span', {style:{fontFamily:'var(--mono)', fontSize:'13px', color:'var(--accent)'}}, this.state.budget.toLocaleString('pt-BR'))),
+      R.createElement('input', {type:'range', className:'hrange', min:512, max:8192, step:256, value:this.state.budget, onChange:(e)=>this.setState({budget: parseInt(e.target.value,10)})}),
+      R.createElement('div', {style:{display:'flex', justifyContent:'space-between', fontFamily:'var(--mono)', fontSize:'10px', color:'var(--faint)', marginTop:'8px'}},
+        R.createElement('span', null, '512'), R.createElement('span', null, '8.192')));
+    return R.createElement('div', {style:{display:'flex', flexDirection:'column', gap:'22px'}},
+      R.createElement('div', null,
+        R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'10px', letterSpacing:'.16em', textTransform:'uppercase', color:'var(--faint)', marginBottom:'12px'}}, 'Esforço'),
+        seg,
+        R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'13px', color:'var(--dim)', marginTop:'11px', lineHeight:1.5}}, 'Mais esforço = melhor raciocínio, porém mais lento e mais tokens.')),
+      this.divider(), swRow, this.divider(), budget);
+  }
+  buildContextSheet(){
+    const R = React;
+    const section = (label, node)=> R.createElement('div', {style:{marginBottom:'22px'}},
+      R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'10px', letterSpacing:'.16em', textTransform:'uppercase', color:'var(--faint)', marginBottom:'11px'}}, label), node);
+    const sys = R.createElement('textarea', {className:'hta', rows:4, value:this.state.systemPrompt, onChange:(e)=>this.setState({systemPrompt:e.target.value})});
+    const files = R.createElement('div', {style:{display:'flex', flexDirection:'column', gap:'8px'}},
+      this.state.files.map((f,i)=> R.createElement('div', {key:i, style:{display:'flex', alignItems:'center', gap:'11px', padding:'11px 13px', background:'var(--bg2)', border:'1px solid var(--line)', borderRadius:'12px'}},
+        R.createElement('svg', {width:16, height:16, viewBox:'0 0 24 24', fill:'none', stroke:'var(--accent)', strokeWidth:1.6, style:{flex:'none'}}, R.createElement('path', {d:'M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z', strokeLinejoin:'round'}), R.createElement('path', {d:'M13 3v6h6', strokeLinejoin:'round'})),
+        R.createElement('div', {style:{flex:1, minWidth:0}},
+          R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'12.5px', color:'var(--ink)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}, f.name),
+          R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'10px', color:'var(--faint)'}}, f.size)),
+        R.createElement('div', {className:'tap', onClick:()=>this.setState({files:this.state.files.filter((_,j)=>j!==i)}), style:{flex:'none', color:'var(--faint)', padding:'4px'}},
+          R.createElement('svg', {width:15, height:15, viewBox:'0 0 16 16', fill:'none', stroke:'currentColor', strokeWidth:1.6}, R.createElement('path', {d:'M4 4l8 8M12 4l-8 8', strokeLinecap:'round'}))))),
+      R.createElement('div', {className:'tap', style:{display:'flex', alignItems:'center', justifyContent:'center', gap:'7px', padding:'11px', border:'1px dashed var(--line)', borderRadius:'12px', color:'var(--dim)', fontFamily:'var(--mono)', fontSize:'12px', marginTop:'8px'}},
+        R.createElement('svg', {width:14, height:14, viewBox:'0 0 16 16', fill:'none', stroke:'currentColor', strokeWidth:1.6}, R.createElement('path', {d:'M8 3v10M3 8h10', strokeLinecap:'round'})), 'Anexar imagem ou texto'));
+    const mem = R.createElement('div', {style:{display:'flex', flexDirection:'column', gap:'8px'}},
+      this.state.memory.map((mm,i)=> R.createElement('div', {key:i, style:{display:'flex', alignItems:'center', gap:'12px', padding:'11px 13px', background:'var(--bg2)', border:'1px solid var(--line)', borderRadius:'12px'}},
+        R.createElement('div', {style:{flex:1, fontFamily:'var(--serif)', fontSize:'14px', color: mm.on?'var(--ink)':'var(--faint)', lineHeight:1.4, textDecoration: mm.on?'none':'line-through'}}, mm.t),
+        this.switchEl(mm.on, ()=>this.setState({memory:this.state.memory.map((x,j)=> j===i? Object.assign({},x,{on:!x.on}):x)}), true))));
+    return R.createElement('div', null,
+      section('Instruções do sistema', sys),
+      section('Arquivos de contexto', files),
+      section('Memória do agente', mem));
+  }
+  buildSettingsSheet(){
+    const R = React, t = this.theme();
+    const section = (label, node, hint)=> R.createElement('div', {style:{marginBottom:'24px'}},
+      R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'10px', letterSpacing:'.16em', textTransform:'uppercase', color:'var(--faint)', marginBottom:'11px'}}, label),
+      node,
+      hint? R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'13px', color:'var(--dim)', marginTop:'10px', lineHeight:1.5}}, hint) : null);
+    // atmosfera
+    const ATMOS = [
+      {id:'Manuscrito', note:'Papel âmbar, tinta quente'},
+      {id:'Jornal', note:'Neutro, vermelho editorial'},
+      {id:'Técnico', note:'Azul frio, precisão'},
+    ];
+    const cur = this.state.atmo || this.props.atmosphere || 'Manuscrito';
+    const atmoRows = R.createElement('div', {style:{display:'flex', flexDirection:'column', gap:'8px'}},
+      ATMOS.map(a=>{
+        const sel = a.id===cur;
+        return R.createElement('div', {key:a.id, className:'tap row-tap', onClick:()=>this.setState({atmo:a.id}),
+          style:{display:'flex', alignItems:'center', gap:'12px', padding:'12px 12px', borderRadius:'14px', border:'1px solid '+(sel?'color-mix(in oklab, var(--accent) 45%, var(--line))':'var(--line)'), background: sel?'var(--bg2)':'transparent'}},
+          R.createElement('div', {style:{flex:1, minWidth:0}},
+            R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'16px', color:'var(--ink)', marginBottom:'2px'}}, a.id),
+            R.createElement('div', {style:{fontFamily:'var(--serif)', fontSize:'13px', color:'var(--dim)'}}, a.note)),
+          R.createElement('div', {style:{flex:'none', width:'22px', height:'22px', borderRadius:'50%', border:'1.5px solid '+(sel?'var(--accent)':'var(--faint)'), display:'flex', alignItems:'center', justifyContent:'center'}},
+            sel? R.createElement('div', {style:{width:'11px', height:'11px', borderRadius:'50%', background:'var(--accent)'}}) : null));
+      }));
+    // animação da marca
+    const curSp = this.state.spinner || this.props.spinnerStyle || 'helix';
+    const names = Object.keys(UA);
+    const spGrid = R.createElement('div', {style:{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'8px'}},
+      names.map(n=>{
+        const sel = n===curSp;
+        return R.createElement('div', {key:n, className:'tap', onClick:()=>this.setState({spinner:n}),
+          style:{display:'flex', flexDirection:'column', alignItems:'center', gap:'8px', padding:'13px 4px 10px', borderRadius:'14px',
+            border:'1px solid '+(sel?'color-mix(in oklab, var(--accent) 50%, var(--line))':'var(--line)'),
+            background: sel?'var(--bg2)':'transparent'}},
+          R.createElement(UnicodeSpinner, {size:22, active:true, name:n, color: sel?'var(--accentInk)':'var(--dim)', glow: sel?t.accent:null}),
+          R.createElement('div', {style:{fontFamily:'var(--mono)', fontSize:'9px', letterSpacing:'.05em', color: sel?'var(--ink)':'var(--faint)', textTransform:'uppercase', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'100%'}}, n));
+      }));
+    return R.createElement('div', null,
+      section('Atmosfera', atmoRows, 'Muda papel, tinta e cor de destaque do app inteiro.'),
+      section('Animação da marca', spGrid, 'A marca aparece ao final de cada resposta do Hermes.'));
+  }
+  switchEl(on, onClick, small){
+    const R = React; const w = small?38:46, h = small?22:26, k = h-6;
+    return R.createElement('div', {className:'tap', onClick, style:{flex:'none', width:w+'px', height:h+'px', borderRadius:h+'px', background: on?'var(--accent)':'var(--surface)', border:'1px solid '+(on?'var(--accent)':'var(--line)'), position:'relative', transition:'background .25s ease'}},
+      R.createElement('div', {style:{position:'absolute', top:'2px', left: on?(w-k-3)+'px':'2px', width:k+'px', height:k+'px', borderRadius:'50%', background: on?'var(--bg)':'var(--dim)', transition:'left .26s cubic-bezier(.4,0,.2,1)'}}));
+  }
+  divider(){ return React.createElement('div', {style:{height:'1px', background:'var(--line)'}}); }
+
+  // ---------- sheet framing ----------
+  sheetStyle(name){
+    const open = this.state.sheet===name;
+    return {position:'absolute', left:0, right:0, bottom:0, zIndex:45, maxHeight:'82%', display:'flex', flexDirection:'column',
+      background:'var(--surface)', borderTopLeftRadius:'26px', borderTopRightRadius:'26px', borderTop:'1px solid var(--line)',
+      boxShadow:'0 -20px 50px -12px rgba(0,0,0,.6)', transform: open?'translateY(0)':'translateY(110%)',
+      transition:'transform .42s cubic-bezier(.22,1,.3,1)', willChange:'transform'};
+  }
+  backdropStyle(){
+    const open = !!this.state.sheet;
+    return {position:'absolute', inset:0, zIndex:44, background:'rgba(0,0,0,.5)', backdropFilter: open?'blur(2px)':'blur(0)',
+      opacity: open?1:0, pointerEvents: open?'auto':'none', transition:'opacity .35s ease'};
+  }
+  sendBtnStyle(){
+    const on = (this.state.input||'').trim().length>0 && !this._streaming;
+    return {flex:'none', width:'36px', height:'36px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
+      background: on?'var(--accent)':'var(--surface)', color: on?'var(--bg)':'var(--faint)',
+      boxShadow: on?'0 4px 16px -4px color-mix(in oklab, var(--accent) 55%, transparent), inset 0 1px 0 rgba(255,255,255,.3)':'none',
+      transition:'background .25s ease, color .25s ease, transform .13s ease, box-shadow .25s ease', border:'1px solid '+(on?'var(--accent)':'var(--line)')};
+  }
+
+  renderVals(){
+    const t = this.theme();
+    const listOn = this.state.screen==='list';
+    const base = {position:'absolute', inset:0, display:'flex', flexDirection:'column', background:'var(--bg)', transition:'transform .5s cubic-bezier(.22,1,.3,1), opacity .5s ease'};
+    return {
+      rootStyle: this.rootStyle(),
+      grainStyle: this.grainStyle(),
+      mottleStyle: this.mottleStyle(),
+      vignetteStyle: this.vignetteStyle(),
+      streamBarStyle: {position:'absolute', left:0, right:0, bottom:'-1px', height:'2px', background:'linear-gradient(90deg, transparent, var(--accent), transparent)', backgroundSize:'45% 100%', backgroundRepeat:'no-repeat', animation:'barSlide 1.15s linear infinite', opacity: this._streaming?1:0, transition:'opacity .4s ease', pointerEvents:'none'},
+      statusTime: this.fmtTime(),
+      listPanelStyle: Object.assign({}, base, {transform: listOn?'translateX(0)':'translateX(-22%)', opacity: listOn?1:0, pointerEvents: listOn?'auto':'none'}),
+      chatPanelStyle: Object.assign({}, base, {transform: listOn?'translateX(100%)':'translateX(0)', boxShadow:'-40px 0 80px -24px rgba(0,0,0,.55)'}),
+      convListEl: this.buildConvList(),
+      threadEl: this.buildThread(),
+      setThreadRef: (el)=>{ this._thread = el; },
+      chatTitle: this.state.chatTitle || 'Conversa',
+      chatSubtitle: this.modelShort() + ' · online',
+      modelChipLabel: this.modelShort(),
+      effortChipLabel: 'Raciocínio · ' + this.state.effort,
+      inputValue: this.state.input,
+      onInputChange: (e)=> this.setState({input: e.target.value}),
+      onInputKeydown: (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.send(); } },
+      onSend: ()=> this.send(),
+      sendBtnStyle: this.sendBtnStyle(),
+      onNewChat: ()=> this.newChat(),
+      onBack: ()=> this.back(),
+      onOpenModel: ()=> this.setState({sheet:'model'}),
+      onOpenReasoning: ()=> this.setState({sheet:'reasoning'}),
+      onOpenContext: ()=> this.setState({sheet:'context'}),
+      onOpenSettings: ()=> this.setState({sheet:'settings'}),
+      onCloseSheet: ()=> this.setState({sheet:null}),
+      backdropStyle: this.backdropStyle(),
+      modelSheetStyle: this.sheetStyle('model'),
+      reasoningSheetStyle: this.sheetStyle('reasoning'),
+      contextSheetStyle: this.sheetStyle('context'),
+      modelSheetEl: this.buildModelSheet(),
+      reasoningSheetEl: this.buildReasoningSheet(),
+      contextSheetEl: this.buildContextSheet(),
+      settingsSheetStyle: this.sheetStyle('settings'),
+      settingsSheetEl: this.buildSettingsSheet(),
+    };
+  }
+}
+
+
+// Spinners Unicode em braille — nomes e intervalos do pacote unicode-animations;
+// frames dos spinners de grade gerados proceduralmente numa grade 4×4 (2 caracteres braille).
+const UA = (function(){
+  const BITS = [[0,0,1],[1,0,2],[2,0,4],[0,1,8],[1,1,16],[2,1,32],[3,0,64],[3,1,128]];
+  const toB = function(g){
+    let out = '';
+    for(let c=0;c<4;c+=2){
+      let code = 0;
+      for(let i=0;i<8;i++){ const b = BITS[i]; if(g[b[0]][c+b[1]]) code |= b[2]; }
+      out += String.fromCharCode(0x2800+code);
+    }
+    return out;
+  };
+  const F = function(n, fn){
+    const fr = [];
+    for(let f=0;f<n;f++){
+      const g = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+      fn(g,f);
+      fr.push(toB(g));
+    }
+    return fr;
+  };
+  const rnd = function(i){ const x = Math.sin(i*12.9898)*43758.5453; return x - Math.floor(x); };
+  const win = function(seq, n){ const fr = []; for(let i=0;i<seq.length;i++) fr.push((seq+seq).substr(i,n)); return fr; };
+  const clamp = function(v){ return Math.max(0, Math.min(3, v)); };
+  const S = {};
+  S.braille = {interval:80, frames:'⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'.split('')};
+  S.braillewave = {interval:100, frames:win('⠁⠂⠄⡀⢀⠠⠐⠈',4)};
+  S.dna = {interval:80, frames:win('⠋⠉⠙⠚⠒⠂⠒⠲⠴⠦⠖⠒',4)};
+  S.scan = {interval:70, frames:F(8,function(g,f){ const p = f<4?f:7-f; for(let r=0;r<4;r++) g[r][p]=1; })};
+  S.rain = {interval:100, frames:F(12,function(g,f){ for(let c=0;c<4;c++){ const o = Math.floor(rnd(c+1)*12); let r = (f+o)%6; if(r<4) g[r][c]=1; r = (f+o+3)%7; if(r<4) g[r][c]=1; } })};
+  S.scanline = {interval:120, frames:F(6,function(g,f){ const p = f<4?f:7-f; for(let c=0;c<4;c++) g[p][c]=1; })};
+  S.pulse = {interval:180, frames:F(5,function(g,f){ const s = [0,1,2,1,0][f]; for(let r=0;r<4;r++) for(let c=0;c<4;c++){ const d = Math.max(Math.abs(r-1.5),Math.abs(c-1.5)); if((s===0&&d<1)||(s===1&&d>1)||s===2) g[r][c]=1; } })};
+  S.snake = {interval:80, frames:F(16,function(g,f){ const ord = []; for(let r=0;r<4;r++) for(let c=0;c<4;c++) ord.push([r, r%2? 3-c : c]); for(let k=0;k<4;k++){ const p = ord[(f-k+16)%16]; g[p[0]][p[1]]=1; } })};
+  S.sparkle = {interval:150, frames:F(6,function(g,f){ for(let i=0;i<16;i++){ if(rnd(f*16+i+31)<0.28) g[Math.floor(i/4)][i%4]=1; } })};
+  S.cascade = {interval:60, frames:F(12,function(g,f){ for(let r=0;r<4;r++) for(let c=0;c<4;c++){ if(((f-r-c)%12+12)%12 < 5) g[r][c]=1; } })};
+  S.columns = {interval:60, frames:F(26,function(g,f){ for(let c=0;c<4;c++){ const h = Math.round(2 + 1.9*Math.sin(6.283*f/13 + c*1.7)); for(let r=0;r<4;r++) if(r >= 4-h) g[r][c]=1; } })};
+  S.orbit = {interval:100, frames:F(8,function(g,f){ const ring = [[0,1],[0,2],[1,3],[2,3],[3,2],[3,1],[2,0],[1,0]]; for(let k=0;k<3;k++){ const p = ring[(f-k+8)%8]; g[p[0]][p[1]]=1; } })};
+  S.breathe = {interval:100, frames:F(17,function(g,f){ const s = [0,0,1,1,1,2,2,2,2,2,2,1,1,1,0,0,0][f]; for(let r=0;r<4;r++) for(let c=0;c<4;c++){ const d = Math.max(Math.abs(r-1.5),Math.abs(c-1.5)); if((s===1&&d<1)||s===2) g[r][c]=1; } })};
+  S.waverows = {interval:90, frames:F(16,function(g,f){ for(let c=0;c<4;c++){ const r = clamp(Math.round(1.5 + 1.4*Math.sin(6.283*f/16 + c*0.8))); g[r][c]=1; } })};
+  S.checkerboard = {interval:250, frames:F(4,function(g,f){ for(let r=0;r<4;r++) for(let c=0;c<4;c++) if((r+c+f)%2===0) g[r][c]=1; })};
+  S.helix = {interval:80, frames:F(16,function(g,f){ for(let c=0;c<4;c++){ const a = 6.283*f/16 + c*0.9; g[clamp(Math.round(1.5+1.4*Math.sin(a)))][c]=1; g[clamp(Math.round(1.5+1.4*Math.sin(a+3.1416)))][c]=1; } })};
+  S.fillsweep = {interval:100, frames:F(11,function(g,f){ for(let r=0;r<4;r++) for(let c=0;c<4;c++){ const lit = f<=4 ? c<f : (f<=9 ? c>=f-5 : false); if(lit) g[r][c]=1; } })};
+  S.diagswipe = {interval:60, frames:F(16,function(g,f){ const k = f<8 ? f : 15-f; for(let r=0;r<4;r++) for(let c=0;c<4;c++){ const d = r+c; if(d===k || d===k-1) g[r][c]=1; } })};
+  return S;
+})();
+
+// Renderiza um spinner UA. active=false congela no primeiro frame (sem timer).
+class UnicodeSpinner extends React.Component{
+  constructor(p){ super(p); this.state = {f:0}; this.timer = 0; }
+  componentDidMount(){ this.arm(); }
+  componentDidUpdate(pp){
+    if(pp.name!==this.props.name || pp.active!==this.props.active){ clearInterval(this.timer); this.arm(); }
+  }
+  componentWillUnmount(){ clearInterval(this.timer); }
+  arm(){
+    const s = UA[this.props.name] || UA.helix;
+    if(this.props.active) this.timer = setInterval(()=>{ this.setState(function(st){ return {f:st.f+1}; }); }, s.interval);
+  }
+  render(){
+    const s = UA[this.props.name] || UA.helix;
+    const S = this.props.size||24;
+    const txt = this.props.active ? s.frames[this.state.f % s.frames.length] : s.frames[0];
+    const wide = txt.length>1;
+    return React.createElement('span', {style:{
+      display:'inline-flex', alignItems:'center', justifyContent:'center',
+      width:S+'px', height:S+'px', flex:'none',
+      fontFamily:"'JetBrains Mono',monospace", fontWeight:700,
+      fontSize:(wide? S*0.72 : S*1.02)+'px', lineHeight:1,
+      letterSpacing: wide? '-0.06em':'0',
+      color:this.props.color||'currentColor',
+      textShadow:this.props.active&&this.props.glow ? '0 0 '+Math.round(S*0.45)+'px '+this.props.glow : 'none',
+      userSelect:'none'
+    }}, txt);
+  }
+}</script>
+</body>
+</html>

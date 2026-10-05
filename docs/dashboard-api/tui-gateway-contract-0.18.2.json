@@ -1,0 +1,378 @@
+{
+  "hermes_version": "0.18.2",
+  "source_commit": "df5700ebe317ff9f2d9ea4677513e012eb68b6f4",
+  "transport": {
+    "endpoint": "/api/ws",
+    "framing": "one JSON-RPC object per WebSocket text message",
+    "first_server_frame": "gateway.ready",
+    "ws_auth": "single-use ?ticket= minted by POST /api/auth/ws-ticket after cookie session"
+  },
+  "methods": [
+    "agents.list",
+    "approval.respond",
+    "billing.auto_reload",
+    "billing.charge",
+    "billing.charge_status",
+    "billing.state",
+    "billing.step_up",
+    "browser.manage",
+    "clarify.respond",
+    "cli.exec",
+    "clipboard.paste",
+    "command.dispatch",
+    "command.resolve",
+    "commands.catalog",
+    "complete.path",
+    "complete.slash",
+    "config.get",
+    "config.set",
+    "config.show",
+    "credits.view",
+    "cron.manage",
+    "delegation.pause",
+    "delegation.status",
+    "file.attach",
+    "handoff.fail",
+    "handoff.request",
+    "handoff.state",
+    "image.attach",
+    "image.attach_bytes",
+    "image.detach",
+    "input.detect_drop",
+    "insights.get",
+    "learning.delete",
+    "learning.detail",
+    "learning.edit",
+    "learning.frames",
+    "llm.oneshot",
+    "model.disconnect",
+    "model.options",
+    "model.save_key",
+    "paste.collapse",
+    "pdf.attach",
+    "pet.cancel",
+    "pet.cells",
+    "pet.disable",
+    "pet.export",
+    "pet.gallery",
+    "pet.generate",
+    "pet.generate.status",
+    "pet.hatch",
+    "pet.info",
+    "pet.info.meta",
+    "pet.remove",
+    "pet.rename",
+    "pet.scale",
+    "pet.select",
+    "pet.thumb",
+    "plugins.list",
+    "plugins.manage",
+    "preview.restart",
+    "process.kill",
+    "process.list",
+    "process.stop",
+    "project.facts",
+    "projects.discover_repos",
+    "projects.project_sessions",
+    "projects.record_repos",
+    "projects.tree",
+    "prompt.background",
+    "prompt.submit",
+    "reload.env",
+    "reload.mcp",
+    "rollback.diff",
+    "rollback.list",
+    "rollback.restore",
+    "secret.respond",
+    "session.activate",
+    "session.active_list",
+    "session.branch",
+    "session.close",
+    "session.compress",
+    "session.context_breakdown",
+    "session.create",
+    "session.cwd.set",
+    "session.delete",
+    "session.history",
+    "session.interrupt",
+    "session.list",
+    "session.most_recent",
+    "session.resume",
+    "session.save",
+    "session.status",
+    "session.steer",
+    "session.title",
+    "session.undo",
+    "session.usage",
+    "setup.runtime_check",
+    "setup.status",
+    "shell.exec",
+    "skills.manage",
+    "skills.reload",
+    "slash.exec",
+    "spawn_tree.list",
+    "spawn_tree.load",
+    "spawn_tree.save",
+    "subagent.interrupt",
+    "sudo.respond",
+    "terminal.read.respond",
+    "terminal.resize",
+    "tools.configure",
+    "tools.list",
+    "tools.show",
+    "toolsets.list",
+    "verification.status",
+    "voice.record",
+    "voice.toggle",
+    "voice.tts"
+  ],
+  "events_from_tui_readme": [
+    {
+      "type": "gateway.ready",
+      "payload": "`{ skin? }`"
+    },
+    {
+      "type": "skin.changed",
+      "payload": "`{ skin }`"
+    },
+    {
+      "type": "session.info",
+      "payload": "session metadata for banner + tool/skill panels"
+    },
+    {
+      "type": "message.start",
+      "payload": "start assistant streaming"
+    },
+    {
+      "type": "message.delta",
+      "payload": "`{ text, rendered? }`"
+    },
+    {
+      "type": "message.complete",
+      "payload": "`{ text, rendered?, usage, status }`"
+    },
+    {
+      "type": "thinking.delta",
+      "payload": "`{ text }`"
+    },
+    {
+      "type": "reasoning.delta",
+      "payload": "`{ text, verbose? }`"
+    },
+    {
+      "type": "reasoning.available",
+      "payload": "`{ text, verbose? }`"
+    },
+    {
+      "type": "status.update",
+      "payload": "`{ kind, text }`"
+    },
+    {
+      "type": "notification.show",
+      "payload": "`{ id, key, kind, level, text, ttl_ms? }`"
+    },
+    {
+      "type": "notification.clear",
+      "payload": "`{ key }`"
+    },
+    {
+      "type": "tool.start",
+      "payload": "`{ tool_id, name, context?, args_text? }`"
+    },
+    {
+      "type": "tool.generating",
+      "payload": "`{ name }`"
+    },
+    {
+      "type": "tool.progress",
+      "payload": "`{ name, preview }`"
+    },
+    {
+      "type": "tool.complete",
+      "payload": "`{ tool_id, name, error?, summary?, duration_s?, inline_diff?, todos? }`"
+    },
+    {
+      "type": "clarify.request",
+      "payload": "`{ question, choices?, request_id }`"
+    },
+    {
+      "type": "approval.request",
+      "payload": "`{ command, description, allow_permanent? }`"
+    },
+    {
+      "type": "sudo.request",
+      "payload": "`{ request_id }`"
+    },
+    {
+      "type": "sudo.expire",
+      "payload": "`{ request_id }` clears a timed-out sudo prompt"
+    },
+    {
+      "type": "secret.request",
+      "payload": "`{ prompt, env_var, request_id }`"
+    },
+    {
+      "type": "secret.expire",
+      "payload": "`{ request_id }` clears a timed-out secret prompt"
+    },
+    {
+      "type": "background.complete",
+      "payload": "`{ task_id, text }`"
+    },
+    {
+      "type": "billing.step_up.verification",
+      "payload": "`{ verification_url, user_code }`"
+    },
+    {
+      "type": "review.summary",
+      "payload": "`{ text }`"
+    },
+    {
+      "type": "browser.progress",
+      "payload": "`{ message }`"
+    },
+    {
+      "type": "voice.status",
+      "payload": "`{ state }`"
+    },
+    {
+      "type": "voice.transcript",
+      "payload": "`{ text, no_speech_limit? }`"
+    },
+    {
+      "type": "subagent.spawn_requested",
+      "payload": "`{ subagent_id?, task_index, goal?, depth?, parent_id? }`"
+    },
+    {
+      "type": "subagent.start",
+      "payload": "`{ subagent_id?, task_index, goal?, depth?, parent_id? }`"
+    },
+    {
+      "type": "subagent.thinking",
+      "payload": "`{ text }`"
+    },
+    {
+      "type": "subagent.tool",
+      "payload": "`{ tool_name?, tool_preview?, text? }`"
+    },
+    {
+      "type": "subagent.progress",
+      "payload": "`{ text }`"
+    },
+    {
+      "type": "subagent.complete",
+      "payload": "`{ status, summary?, text?, duration_seconds? }`"
+    },
+    {
+      "type": "gateway.stderr",
+      "payload": "synthesized from child stderr"
+    },
+    {
+      "type": "gateway.protocol_error",
+      "payload": "synthesized from malformed stdout"
+    },
+    {
+      "type": "gateway.start_timeout",
+      "payload": "`{ cwd?, python?, stderr_tail? }`"
+    }
+  ],
+  "streaming_event_types": [
+    "message.delta",
+    "reasoning.delta",
+    "thinking.delta"
+  ],
+  "desktop_event_union": [
+    "gateway.ready",
+    "session.info",
+    "message.start",
+    "message.delta",
+    "message.complete",
+    "thinking.delta",
+    "reasoning.delta",
+    "reasoning.available",
+    "status.update",
+    "tool.start",
+    "tool.progress",
+    "tool.complete",
+    "tool.generating",
+    "clarify.request",
+    "approval.request",
+    "sudo.request",
+    "secret.request",
+    "background.complete",
+    "error",
+    "skin.changed"
+  ],
+  "mvp_observed_contract": {
+    "source": "Observed in Hermes 0.18.2 source at source_commit; not OpenAPI.",
+    "identifier_semantics": {
+      "durable": [
+        "stored_session_id",
+        "session_key"
+      ],
+      "live": "session_id returned by session.create or session.resume; use it for prompt.submit, session.history, session.steer, session.interrupt, and approval.respond."
+    },
+    "methods": [
+      {
+        "method": "session.create",
+        "required_params": [],
+        "optional_params": ["cols (default 80)", "messages", "title", "parent_session_id", "cwd", "source", "profile", "model", "provider", "reasoning_effort", "fast", "close_on_disconnect"],
+        "result": ["session_id", "stored_session_id", "message_count", "messages", "info"]
+      },
+      {
+        "method": "session.list",
+        "required_params": [],
+        "optional_params": ["limit (default 200)"],
+        "result": ["sessions[]: id, title, preview, started_at, message_count, source"]
+      },
+      {
+        "method": "session.most_recent",
+        "required_params": [],
+        "optional_params": [],
+        "result": ["session_id (may be null)", "when present: title, started_at, source"]
+      },
+      {
+        "method": "session.resume",
+        "required_params": ["session_id"],
+        "optional_params": ["cols (default 80)", "profile", "lazy", "source", "close_on_disconnect", "eager_build"],
+        "result": ["session_id (live)", "resumed", "message_count", "messages", "info", "inflight", "running", "session_key", "started_at", "status"]
+      },
+      {
+        "method": "session.history",
+        "required_params": ["session_id (live id returned by create/resume)"],
+        "optional_params": [],
+        "result": ["count", "messages"]
+      },
+      {
+        "method": "prompt.submit",
+        "required_params": ["session_id", "text"],
+        "optional_params": ["truncate_before_user_ordinal"],
+        "result": ["status: streaming", "or error envelope"]
+      },
+      {
+        "method": "session.steer",
+        "required_params": ["session_id", "text (non-empty)"],
+        "optional_params": [],
+        "result": ["status: queued|rejected", "text"]
+      },
+      {
+        "method": "session.interrupt",
+        "required_params": ["session_id"],
+        "optional_params": [],
+        "result": ["status: interrupted"]
+      },
+      {
+        "method": "clarify.respond",
+        "required_params": ["request_id", "answer"],
+        "optional_params": [],
+        "result": ["status: ok", "or error when there is no pending prompt"]
+      },
+      {
+        "method": "approval.respond",
+        "required_params": ["session_id"],
+        "optional_params": ["choice (default deny)", "all (default false)"],
+        "result": ["resolved"]
+      }
+    ]
+  }
+}
