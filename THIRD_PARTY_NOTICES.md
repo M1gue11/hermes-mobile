@@ -36,4 +36,5 @@ SOFTWARE.
 
 As licenças de dependências obtidas pelo gerenciador de pacotes e de fontes
 carregadas por `google_fonts` continuam regidas pelas respectivas fontes e
-pacotes. Este arquivo não atesta a proveniência dos ícones e imagens do app.
+pacotes. Segundo o mantenedor, os ícones e imagens/splash do app foram criados
+por ele com Claude Design e estão sob a licença do projeto.

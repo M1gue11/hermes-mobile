@@ -60,9 +60,9 @@ e o Hermes.
 
 ## Licença
 
-O código do Hermes Mobile é disponibilizado sob a [licença MIT](LICENSE).
-Dependências, fontes, ícones e outros materiais de terceiros mantêm suas
-respectivas licenças; consulte também os
+O código e os ícones/splash criados pelo mantenedor com Claude Design são
+disponibilizados sob a [licença MIT](LICENSE). Dependências, fontes e demais
+materiais de terceiros mantêm suas respectivas licenças; consulte os
 [avisos de terceiros](THIRD_PARTY_NOTICES.md). A licença deste repositório não
 substitui os direitos desses materiais.
 
