@@ -62,8 +62,9 @@ e o Hermes.
 
 O código do Hermes Mobile é disponibilizado sob a [licença MIT](LICENSE).
 Dependências, fontes, ícones e outros materiais de terceiros mantêm suas
-respectivas licenças; a licença deste repositório não substitui os direitos
-desses materiais.
+respectivas licenças; consulte também os
+[avisos de terceiros](THIRD_PARTY_NOTICES.md). A licença deste repositório não
+substitui os direitos desses materiais.
 
 ## Contribuir
 
