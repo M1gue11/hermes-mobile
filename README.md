@@ -58,6 +58,13 @@ Mobile não declara auditoria independente, compatibilidade estável ou aptidão
 para uso crítico. Integrações e contratos podem mudar conforme evoluem o cliente
 e o Hermes.
 
+## Licença
+
+O código do Hermes Mobile é disponibilizado sob a [licença MIT](LICENSE).
+Dependências, fontes, ícones e outros materiais de terceiros mantêm suas
+respectivas licenças; a licença deste repositório não substitui os direitos
+desses materiais.
+
 ## Contribuir
 
 Consulte [`CONTRIBUTING.md`](CONTRIBUTING.md) para orientações de desenvolvimento

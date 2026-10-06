@@ -30,6 +30,48 @@ O plano de ataque de produto e interface está em
   conversa reatam o acompanhamento. Falta validar no aparelho o streaming real,
   a leitura pausada e a retomada explícita.
 
+## Melhorias após abertura do código-fonte
+
+Itens identificados na segunda revisão estática da `main` em `00d7823` (ver
+relatório de 2026-10-05 no vault). Por decisão do mantenedor, **não são
+pré-requisitos para tornar público o código-fonte**; avaliar separadamente a
+segurança e os requisitos antes de distribuir APKs a terceiros. Adicionar
+regressões automatizadas e aceite no aparelho conforme cada correção.
+
+- [ ] **A81 Vincular credenciais à origem da conexão.** Ao editar URL da API ou
+  Dashboard, não reaproveitar chave/senha da origem anterior quando o campo
+  estiver vazio; exigir credencial nova e testar mudança de host.
+- [ ] **A82 Reconciliar `prompt.submit` após queda do WebSocket.** Concluir RPCs
+  pendentes ao fechar, mas não declarar um prompt não enviado sem consultar o
+  estado remoto; cobrir aceite no servidor seguido de perda de resposta.
+- [ ] **A83 Reconstruir approval/clarify na retomada.** Reconciliar cards locais
+  com `open_requests` e remover pedidos já resolvidos enquanto o app estava em
+  background, sem perder respostas ainda válidas.
+- [ ] **A84 Evitar reupload de anexos confirmados no retry.** Preservar `refText`
+  para a mesma sessão e reenviar somente anexos que ainda não subiram.
+- [ ] **A85 Não mandar `@file:` como texto no fallback Runs.** Quando o anexo
+  foi preparado no TUI mas o turno não abre, bloquear fallback e preservar o
+  rascunho até existir contrato Runs explícito para anexos.
+- [ ] **A86 Omitir caminho absoluto do telefone no `file.attach` remoto.** Com
+  `data_url`, não preencher o campo opcional `path`; testar que o payload não
+  revela caminho local nem colide com arquivos do host.
+- [ ] **A87 Limitar quantidade/tamanho total dos anexos.** Além do limite por
+  arquivo, impedir acúmulo excessivo de bytes e Base64 em memória; medir uso.
+- [ ] **A88 Decodificar SSE UTF-8 incrementalmente.** Testar caractere
+  multibyte partido entre chunks, sem substituição por caractere inválido.
+- [ ] **A89 Encerrar gravação de áudio no lifecycle.** Cancelar recorder e
+  descartar temporários ao sair da tela ou colocar o app em background.
+- [ ] **A90 Evitar carregamento automático de imagens remotas em Markdown.**
+  Rever privacidade e consentimento antes de buscar URLs de terceiros.
+- [ ] **A91 Confirmar a primeira host key SSH.** Exibir fingerprint e exigir
+  confirmação consciente antes de confiar e persistir a chave.
+- [ ] **A92 Revisar transporte HTTP/WS em `*.ts.net`.** Documentar ameaça e
+  controles para a exceção cleartext; preferir proteção autenticada do serviço
+  quando aplicável, sem confundir criptografia Tailscale com TLS do servidor.
+- [ ] **A93 Preparar distribuição Android release.** Definir application ID,
+  assinatura release sob custódia apropriada e canal de distribuição; não
+  publicar APK release assinado com chave debug. O CI atual só constrói debug.
+
 ## Produto e interface
 
 - [ ] **A78 Permitir arquivo e áudio no mesmo envio.** Hoje o compositor força

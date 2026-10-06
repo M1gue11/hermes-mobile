@@ -1,5 +1,9 @@
 # Auditoria de preparação para abertura pública
 
+> [!note]
+> Registro histórico desta etapa. Posteriormente, o mantenedor escolheu MIT;
+> consulte `LICENSE` e a seção Licença do `README.md` para o estado atual.
+
 **Escopo:** documentação e exemplos rastreados na árvore de trabalho. Esta
 revisão não altera código do app ou do Gateway, não escolhe licença e não audita
 o histórico Git.
