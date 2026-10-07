@@ -157,7 +157,11 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   retomada idle com histórico vazio vira falha terminal sem fonte autoritativa.
   Duas rodadas corretivas esgotadas; P2 e aceite em aparelho mantêm A60 `[~]`.
   Detalhes em [HANDOFF.md](HANDOFF.md) e roteiro exclusivo em
-  [USER_TESTING.md](USER_TESTING.md). Entregar em duas fases:
+  [USER_TESTING.md](USER_TESTING.md). Protótipo durável offline stdlib/SQLite em
+  [prototypes/notifications](../../prototypes/notifications/README.md), sem
+  transporte: 15 testes exit 0, mas P2 de inicialização interrompida reproduzido
+  (probe exit 1); também WIP, sem produção ou migração de Telegram/agendadores.
+  Entregar em duas fases:
 
   1. apresentação local segura de eventos úteis, como erro, conclusão de
      trabalho e skill criada;

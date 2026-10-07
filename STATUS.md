@@ -22,6 +22,15 @@ Branch exclusiva `feat/notifications-night-20261007`, baseline confirmado `08833
 5. Revisão independente read-only, validar achados, no máximo duas rodadas corretivas, checks de diff/links/segredos, commits locais focados e RESULT.md com evidências reais.
 6. Só após fatia principal coerente, protótipo offline Python stdlib/SQLite durável e comparação de opções, sem transporte/serviço ativado.
 
+## Marco 7 — protótipo offline exercitado e revisado; segundo WIP
+
+- Codex complementar terminou exit 0, editando apenas `prototypes/notifications/` (4 arquivos). Claudia leu os quatro e executou unittest: 15 testes em 1.242s, OK/exit 0; py_compile exit 0, caches Python em scratch.
+- Smoke independente CLI exit 0: ingest/dedupe, processo novo por comando, leitura e ACK separados, auditoria ingested/read/ack, outbox pending=1, arquivo 0600. DB novo em scratch; transporte REAL AUSENTE.
+- Review independente read-only exit 0: P2 de inicialização antes de schema/application_id. Claudia comprovou via fault injection neutra antes de Store: arquivo próprio criado ficou vazio e reabrir rejeitou como DB alheio (probe exit 1). Protótipo também WIP, não aceito para deploy; nenhum terceiro ciclo corretivo.
+- README e docs portáteis usam variáveis; dois paths de infraestrutura autorizados continuam exatamente na CLI/fixture para restringir execução a este host. Não são dados privados de fixture/segredos; audit registra exceções exatas, sem dispensar scan de segredo. Portabilidade fica pendente, não disfarçada como pacote reutilizável.
+- Primeiro commit local: `35eacef66e32614a2fa6748c5d11f02a42b35dd7`, WIP cliente com P2 explícito. Primeiro commit tentou identidade ausente (exit 128); identidade Claudia-ha já existente no histórico foi usada via flags `git -c`, sem editar configuração global/repo compartilhada.
+- A81–A93 e roteiros A75/A73/A74 preservados; docs A60 com dois bloqueios e comparação futura FCM/APNs/UnifiedPush sem ativação. Produção, Gateway, main e outras branches/profile intactos.
+
 ## Marco 6 — checkpoint principal WIP, validação e blocker comprovados
 
 - Suíte Flutter completa final pós-rodada #2: `05:40 +717: All tests passed!`, exit 0. Analyze final: No issues found em 2.3s, exit 0. Foco 135 passes; pub get/codegen reais exit 0; constraints/lock/Android/CI intactos.

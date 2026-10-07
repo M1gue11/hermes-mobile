@@ -111,6 +111,22 @@ conexão no background/terminated/offline não há entrega ou recuperação gara
 Ao voltar, snapshots podem projetar terminal conhecido, mas não recuperam um
 histórico de notifications.show/clear perdido. Nenhuma permissão OS é solicitada.
 
+## Fundamento durável offline separado
+
+O [protótipo SQLite](../../prototypes/notifications/README.md) não se conecta ao
+Flutter/Gateway nem substitui esta inbox em memória. Envelope v1 e outbox-before-
+send, leases/fencing, retry/expiry, read/ACK e auditoria imutável foram testados:
+15 unittest exit 0, py_compile exit 0, smoke independente CLI/restart exit 0.
+Transporte real ausente; nenhum agendador ou regra ativa. Adapter aceito não é
+entrega/leitura. Comparação de FCM/APNs/UnifiedPush e lacunas pré-ativação está no
+README do protótipo, com referências oficiais.
+
+**WIP:** review identificou inicialização CLI não recuperável após interrupção
+antes de gravar identidade do DB; fault injection de Claudia confirmou rejeição
+posterior do arquivo criado (exit 1). Raiz scratch CLI/testes fixa neste host,
+clock regressivo, publicação segura do arquivo e auth/enrollment/revogação/TLS
+precisam decisão/correção antes de produção. Não há promessa de exactly-once.
+
 ## Fronteira confirmada
 
 ```text

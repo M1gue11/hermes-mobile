@@ -68,6 +68,22 @@ método TUI ou desvio relevante de design sem decisão do usuário.
 Contratos e evidências técnicas ficam em `docs/dashboard-api/`; roteiros
 pendentes de aparelho ficam em [USER_TESTING.md](USER_TESTING.md).
 
+## Protótipo durável complementar — offline, WIP
+
+[`prototypes/notifications`](../../prototypes/notifications/README.md) contém
+Python stdlib/SQLite, envelope v1, evento+inbox+outbox transacionais, dedupe,
+retry/expiry/leases/fencing e read/ACK/auditoria separados. Não cria HTTP/serviço,
+scheduler, regra ativa nem transporte real; adapters fake são só testes.
+Claudia executou 15 testes unittest e py_compile (exit 0) e smoke de CLI com
+restart por comando, dedupe, read/ACK separado e arquivo 0600 (exit 0).
+
+Review independente encontrou P2 de inicialização interrompida: arquivo é criado
+antes de schema/identidade; falha deixa arquivo próprio com identidade zero que a
+CLI passa a rejeitar como alheio. Claudia reproduziu com injeção neutra (probe
+exit 1). **Protótipo WIP, não aceito para deploy**. Guard/fixture têm raiz scratch
+fixada ao host autorizado, limitação de portabilidade documentada. Nenhum DB
+preexistente foi tocado; FCM/APNs/UnifiedPush continuam opções, não integrações.
+
 ## A60 — resultado final WIP e bloqueio de aceite
 
 Claudia executou `flutter pub get`, `dart run build_runner build`, `flutter analyze`
