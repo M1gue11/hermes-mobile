@@ -22,6 +22,14 @@ Branch exclusiva `feat/notifications-night-20261007`, baseline confirmado `08833
 5. Revisão independente read-only, validar achados, no máximo duas rodadas corretivas, checks de diff/links/segredos, commits locais focados e RESULT.md com evidências reais.
 6. Só após fatia principal coerente, protótipo offline Python stdlib/SQLite durável e comparação de opções, sem transporte/serviço ativado.
 
+## Marco 8 — encerramento documentado, somente commits locais WIP
+
+- Implementação cliente: `35eacef66e32614a2fa6748c5d11f02a42b35dd7`; complemento offline: `05362f09c0e0a7d86049076811302768d234d1b2`. RESULT.md criado com resultados/paths/linhas/testes/decisões e os dois P2; commit de documentação posterior identificado por `git log -1`.
+- Testes finais reais: Flutter 717 passes/exit 0, foco 135/exit 0, analyze sem issues/exit 0; Python 15/exit 0 e py_compile/smoke exit 0. Probes adicionais de P2 Flutter e SQLite exit 1, ambos reproduzidos em scratch. Nenhuma suite verde vendida como aceite pleno.
+- SDK oficial source SHA/tag/remoto e ELF ARM reconferidos; Flutter3.44.6/Dart3.12.2, SDK 1.1G/PUB_CACHE242M. Python3.13.5. Sem downgrade/dependência nova/privilégio/global install.
+- Audit final exit 0: links locais, padrões de segredo e identificadores privados não autorizados sem matches; 2 paths de infraestrutura autorizados explicitamente relatados. A81–A93 e roteiros antigos preservados. Android/iOS/CI/pubspec/lock sem diff contra baseline; main no baseline, status limpo.
+- Nenhum processo de implementação/revisão/teste ficou pendente. Entrega A60 e protótipo CLI **WIP**, sem aceite/merge/deploy; aparelho e transporte OS/push continuam pendentes. Nenhuma terceira rodada corretiva, push, PR, release, serviço externo, cron, alteração de memória/Gateway/outra branch/profile ou mensagem externa.
+
 ## Marco 7 — protótipo offline exercitado e revisado; segundo WIP
 
 - Codex complementar terminou exit 0, editando apenas `prototypes/notifications/` (4 arquivos). Claudia leu os quatro e executou unittest: 15 testes em 1.242s, OK/exit 0; py_compile exit 0, caches Python em scratch.
@@ -34,7 +42,7 @@ Branch exclusiva `feat/notifications-night-20261007`, baseline confirmado `08833
 ## Marco 6 — checkpoint principal WIP, validação e blocker comprovados
 
 - Suíte Flutter completa final pós-rodada #2: `05:40 +717: All tests passed!`, exit 0. Analyze final: No issues found em 2.3s, exit 0. Foco 135 passes; pub get/codegen reais exit 0; constraints/lock/Android/CI intactos.
-- Review final read-only exit 0, nenhum P0/P1, mas 1 P2 bloqueante: `_resumeActiveGatewayTurn/_recoverGatewayTurn` tratam `ChatPhase.failed` local provisória como falha terminal ao retomar idle com históricos vazios. As seis correções anteriores foram confirmadas; não houveram novos achados nos demais fluxos.
+- Review final read-only exit 0, nenhum P0/P1, mas 1 P2 bloqueante: `_resumeActiveGatewayTurn/_reconcileGatewayAfterDisconnect` tratam `ChatPhase.failed` local provisória como falha terminal ao retomar idle com históricos vazios. As seis correções anteriores foram confirmadas; não houveram novos achados nos demais fluxos.
 - Claudia criou e executou probe neutro somente em scratch para comprovar P2: erro de interrupt/stop -> aviso provisório -> ocultar/retomar running:false+history vazio -> aviso “A execução falhou.”. Probe retornou exit 1 com 0 passes/1 falha; nenhum prompt reenviado. Não integra os 717 testes da branch.
 - Fatia principal permanece **WIP, sem aceite de código/merge**, por P2 e aparelho. Limite de duas rodadas corretivas respeitado; não iniciou terceira correção. Documentação A60 e roteiro de aparelho atualizados com aviso explícito e resultado real.
 - Frente SQLite continua em execução isolada; não muda bloqueio do Flutter e não substitui suas evidências.

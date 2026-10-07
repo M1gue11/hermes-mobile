@@ -92,7 +92,7 @@ Claudia executou `flutter pub get`, `dart run build_runner build`, `flutter anal
 SDK oficial ARM Flutter 3.44.6 / Dart 3.12.2 em scratch, sem relaxar pubspec/lock.
 
 **P2 remanescente, reproduzido e não corrigido:** `_resumeActiveGatewayTurn`
-(linha 885) e `_recoverGatewayTurn` (linha 1265) chamam `_noticePhase` sobre fase
+(linha 885) e `_reconcileGatewayAfterDisconnect` (linha 1265) chamam `_noticePhase` sobre fase
 local após retorno `running:false`. Se `_fail` de observação/stop deixou a fase
 local `failed` e os históricos estão vazios, `_noticePhase` (linha 1754) a trata
 como falha autoritativa, finaliza o slot na inbox e impede correção posterior.
