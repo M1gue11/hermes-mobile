@@ -15,6 +15,7 @@ import '../../../domain/models/hermes_provider.dart';
 import '../../../domain/models/model_lock.dart';
 import '../../../domain/models/model_selection.dart';
 import '../../settings/settings_provider.dart';
+import '../../notifications/notification_sheet.dart';
 import '../../settings/agent_persona.dart';
 import '../boot_provider.dart';
 import '../chat_controller.dart';
@@ -64,6 +65,12 @@ Future<void> showSettingsSheet(
           onTap: () {
             showGatewaySheet(context, ref);
           },
+        ),
+        _SettingsAction(
+          icon: Icons.notifications_none,
+          title: 'Notificações',
+          subtitle: 'Inbox local e preferências nesta abertura do app',
+          onTap: () => showNotificationSheet(context),
         ),
         _SettingsAction(
           icon: Icons.palette_outlined,

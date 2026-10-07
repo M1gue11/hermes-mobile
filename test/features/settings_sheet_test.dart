@@ -57,6 +57,7 @@ void main() {
     expect(find.text('Conexões'), findsOneWidget);
     expect(find.text('Agente'), findsOneWidget);
     expect(find.text('Conversa'), findsOneWidget);
+    expect(find.text('Notificações'), findsOneWidget);
     expect(find.text('Reconfigurar conexão'), findsNothing);
   });
 

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_mobile/core/diagnostics/turn_capture.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
+import 'package:hermes_mobile/domain/models/operational_notice.dart';
 import 'package:hermes_mobile/domain/models/tool_call.dart';
 import 'package:hermes_mobile/domain/models/turn_activity.dart';
 
@@ -18,6 +19,45 @@ void main() {
   });
 
   group('redação', () {
+    test('A60 metadata somente mesmo com sampleText ligado', () {
+      capture.setSampleText(true);
+      for (final type in [
+        'notification.show',
+        'notification.clear',
+        'notification.future',
+        'background.complete',
+        'subagent.progress',
+        'subagent.complete',
+      ]) {
+        capture.rawFrame(type, {
+          'text': 'privado neutro',
+          'goal': 'privado neutro',
+          'key': 'privado neutro',
+          'kind': 'privado neutro',
+          'id': 'privado neutro',
+          'summary': 'privado neutro',
+          'tool_preview': 'privado neutro',
+        });
+      }
+      capture.adapterEvent(
+        const RunEvent.operational(
+          NoticeShow(
+            id: 'privado neutro',
+            key: 'privado neutro',
+            kind: 'privado neutro',
+            level: NoticeLevel.info,
+            text: 'privado neutro',
+          ),
+        ),
+      );
+      capture.adapterEvent(
+        const RunEvent.unknown('notification.future', {
+          'text': 'privado neutro',
+        }),
+      );
+      expect(capture.report(), isNot(contains('privado neutro')));
+      expect(capture.report(), contains('omitido'));
+    });
     test('campo de texto sai como tamanho, nunca como conteúdo', () {
       capture.rawFrame('tool.complete', {
         'name': 'read_file',

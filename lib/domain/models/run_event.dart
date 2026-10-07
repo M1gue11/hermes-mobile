@@ -4,6 +4,7 @@ import 'approval_request.dart';
 import 'clarify_request.dart';
 import 'run.dart';
 import 'tool_call.dart';
+import 'operational_notice.dart';
 
 part 'run_event.freezed.dart';
 
@@ -16,6 +17,9 @@ part 'run_event.freezed.dart';
 /// UI nunca quebra com um evento novo do servidor.
 @freezed
 sealed class RunEvent with _$RunEvent {
+  /// Sinais operacionais separados do conteúdo da conversa.
+  const factory RunEvent.operational(OperationalNotice notice) = RunOperational;
+
   /// Prévia sintética de atividade do servidor; não é chain-of-thought.
   const factory RunEvent.activityPreview(String text) = RunActivityPreview;
 

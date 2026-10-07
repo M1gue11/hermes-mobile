@@ -55,10 +55,11 @@ extension RunEventPatterns on RunEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RunActivityPreview value)?  activityPreview,TResult Function( RunReasoningDelta value)?  reasoningDelta,TResult Function( RunThinkingState value)?  thinkingState,TResult Function( RunTextDelta value)?  delta,TResult Function( RunToolProgress value)?  toolProgress,TResult Function( RunApprovalRequest value)?  approvalRequest,TResult Function( RunApprovalResolved value)?  approvalResolved,TResult Function( RunClarifyRequest value)?  clarifyRequest,TResult Function( RunClarifyResolved value)?  clarifyResolved,TResult Function( RunStatusEvent value)?  status,TResult Function( RunCompleted value)?  completed,TResult Function( RunFailed value)?  failed,TResult Function( RunUnknown value)?  unknown,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RunOperational value)?  operational,TResult Function( RunActivityPreview value)?  activityPreview,TResult Function( RunReasoningDelta value)?  reasoningDelta,TResult Function( RunThinkingState value)?  thinkingState,TResult Function( RunTextDelta value)?  delta,TResult Function( RunToolProgress value)?  toolProgress,TResult Function( RunApprovalRequest value)?  approvalRequest,TResult Function( RunApprovalResolved value)?  approvalResolved,TResult Function( RunClarifyRequest value)?  clarifyRequest,TResult Function( RunClarifyResolved value)?  clarifyResolved,TResult Function( RunStatusEvent value)?  status,TResult Function( RunCompleted value)?  completed,TResult Function( RunFailed value)?  failed,TResult Function( RunUnknown value)?  unknown,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case RunActivityPreview() when activityPreview != null:
+case RunOperational() when operational != null:
+return operational(_that);case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that);case RunReasoningDelta() when reasoningDelta != null:
 return reasoningDelta(_that);case RunThinkingState() when thinkingState != null:
 return thinkingState(_that);case RunTextDelta() when delta != null:
@@ -89,10 +90,11 @@ return unknown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RunActivityPreview value)  activityPreview,required TResult Function( RunReasoningDelta value)  reasoningDelta,required TResult Function( RunThinkingState value)  thinkingState,required TResult Function( RunTextDelta value)  delta,required TResult Function( RunToolProgress value)  toolProgress,required TResult Function( RunApprovalRequest value)  approvalRequest,required TResult Function( RunApprovalResolved value)  approvalResolved,required TResult Function( RunClarifyRequest value)  clarifyRequest,required TResult Function( RunClarifyResolved value)  clarifyResolved,required TResult Function( RunStatusEvent value)  status,required TResult Function( RunCompleted value)  completed,required TResult Function( RunFailed value)  failed,required TResult Function( RunUnknown value)  unknown,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RunOperational value)  operational,required TResult Function( RunActivityPreview value)  activityPreview,required TResult Function( RunReasoningDelta value)  reasoningDelta,required TResult Function( RunThinkingState value)  thinkingState,required TResult Function( RunTextDelta value)  delta,required TResult Function( RunToolProgress value)  toolProgress,required TResult Function( RunApprovalRequest value)  approvalRequest,required TResult Function( RunApprovalResolved value)  approvalResolved,required TResult Function( RunClarifyRequest value)  clarifyRequest,required TResult Function( RunClarifyResolved value)  clarifyResolved,required TResult Function( RunStatusEvent value)  status,required TResult Function( RunCompleted value)  completed,required TResult Function( RunFailed value)  failed,required TResult Function( RunUnknown value)  unknown,}){
 final _that = this;
 switch (_that) {
-case RunActivityPreview():
+case RunOperational():
+return operational(_that);case RunActivityPreview():
 return activityPreview(_that);case RunReasoningDelta():
 return reasoningDelta(_that);case RunThinkingState():
 return thinkingState(_that);case RunTextDelta():
@@ -119,10 +121,11 @@ return unknown(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RunActivityPreview value)?  activityPreview,TResult? Function( RunReasoningDelta value)?  reasoningDelta,TResult? Function( RunThinkingState value)?  thinkingState,TResult? Function( RunTextDelta value)?  delta,TResult? Function( RunToolProgress value)?  toolProgress,TResult? Function( RunApprovalRequest value)?  approvalRequest,TResult? Function( RunApprovalResolved value)?  approvalResolved,TResult? Function( RunClarifyRequest value)?  clarifyRequest,TResult? Function( RunClarifyResolved value)?  clarifyResolved,TResult? Function( RunStatusEvent value)?  status,TResult? Function( RunCompleted value)?  completed,TResult? Function( RunFailed value)?  failed,TResult? Function( RunUnknown value)?  unknown,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RunOperational value)?  operational,TResult? Function( RunActivityPreview value)?  activityPreview,TResult? Function( RunReasoningDelta value)?  reasoningDelta,TResult? Function( RunThinkingState value)?  thinkingState,TResult? Function( RunTextDelta value)?  delta,TResult? Function( RunToolProgress value)?  toolProgress,TResult? Function( RunApprovalRequest value)?  approvalRequest,TResult? Function( RunApprovalResolved value)?  approvalResolved,TResult? Function( RunClarifyRequest value)?  clarifyRequest,TResult? Function( RunClarifyResolved value)?  clarifyResolved,TResult? Function( RunStatusEvent value)?  status,TResult? Function( RunCompleted value)?  completed,TResult? Function( RunFailed value)?  failed,TResult? Function( RunUnknown value)?  unknown,}){
 final _that = this;
 switch (_that) {
-case RunActivityPreview() when activityPreview != null:
+case RunOperational() when operational != null:
+return operational(_that);case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that);case RunReasoningDelta() when reasoningDelta != null:
 return reasoningDelta(_that);case RunThinkingState() when thinkingState != null:
 return thinkingState(_that);case RunTextDelta() when delta != null:
@@ -152,9 +155,10 @@ return unknown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String text)?  activityPreview,TResult Function( String text)?  reasoningDelta,TResult Function( String text)?  thinkingState,TResult Function( String text)?  delta,TResult Function( ToolCall tool)?  toolProgress,TResult Function( ApprovalRequest request)?  approvalRequest,TResult Function( ApprovalChoice choice)?  approvalResolved,TResult Function( ClarifyRequest request)?  clarifyRequest,TResult Function()?  clarifyResolved,TResult Function( RunStatus status)?  status,TResult Function( String? output)?  completed,TResult Function( String? error)?  failed,TResult Function( String type,  Map<String, dynamic> data)?  unknown,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( OperationalNotice notice)?  operational,TResult Function( String text)?  activityPreview,TResult Function( String text)?  reasoningDelta,TResult Function( String text)?  thinkingState,TResult Function( String text)?  delta,TResult Function( ToolCall tool)?  toolProgress,TResult Function( ApprovalRequest request)?  approvalRequest,TResult Function( ApprovalChoice choice)?  approvalResolved,TResult Function( ClarifyRequest request)?  clarifyRequest,TResult Function()?  clarifyResolved,TResult Function( RunStatus status)?  status,TResult Function( String? output)?  completed,TResult Function( String? error)?  failed,TResult Function( String type,  Map<String, dynamic> data)?  unknown,required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case RunActivityPreview() when activityPreview != null:
+case RunOperational() when operational != null:
+return operational(_that.notice);case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that.text);case RunReasoningDelta() when reasoningDelta != null:
 return reasoningDelta(_that.text);case RunThinkingState() when thinkingState != null:
 return thinkingState(_that.text);case RunTextDelta() when delta != null:
@@ -185,9 +189,10 @@ return unknown(_that.type,_that.data);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String text)  activityPreview,required TResult Function( String text)  reasoningDelta,required TResult Function( String text)  thinkingState,required TResult Function( String text)  delta,required TResult Function( ToolCall tool)  toolProgress,required TResult Function( ApprovalRequest request)  approvalRequest,required TResult Function( ApprovalChoice choice)  approvalResolved,required TResult Function( ClarifyRequest request)  clarifyRequest,required TResult Function()  clarifyResolved,required TResult Function( RunStatus status)  status,required TResult Function( String? output)  completed,required TResult Function( String? error)  failed,required TResult Function( String type,  Map<String, dynamic> data)  unknown,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( OperationalNotice notice)  operational,required TResult Function( String text)  activityPreview,required TResult Function( String text)  reasoningDelta,required TResult Function( String text)  thinkingState,required TResult Function( String text)  delta,required TResult Function( ToolCall tool)  toolProgress,required TResult Function( ApprovalRequest request)  approvalRequest,required TResult Function( ApprovalChoice choice)  approvalResolved,required TResult Function( ClarifyRequest request)  clarifyRequest,required TResult Function()  clarifyResolved,required TResult Function( RunStatus status)  status,required TResult Function( String? output)  completed,required TResult Function( String? error)  failed,required TResult Function( String type,  Map<String, dynamic> data)  unknown,}) {final _that = this;
 switch (_that) {
-case RunActivityPreview():
+case RunOperational():
+return operational(_that.notice);case RunActivityPreview():
 return activityPreview(_that.text);case RunReasoningDelta():
 return reasoningDelta(_that.text);case RunThinkingState():
 return thinkingState(_that.text);case RunTextDelta():
@@ -214,9 +219,10 @@ return unknown(_that.type,_that.data);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String text)?  activityPreview,TResult? Function( String text)?  reasoningDelta,TResult? Function( String text)?  thinkingState,TResult? Function( String text)?  delta,TResult? Function( ToolCall tool)?  toolProgress,TResult? Function( ApprovalRequest request)?  approvalRequest,TResult? Function( ApprovalChoice choice)?  approvalResolved,TResult? Function( ClarifyRequest request)?  clarifyRequest,TResult? Function()?  clarifyResolved,TResult? Function( RunStatus status)?  status,TResult? Function( String? output)?  completed,TResult? Function( String? error)?  failed,TResult? Function( String type,  Map<String, dynamic> data)?  unknown,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( OperationalNotice notice)?  operational,TResult? Function( String text)?  activityPreview,TResult? Function( String text)?  reasoningDelta,TResult? Function( String text)?  thinkingState,TResult? Function( String text)?  delta,TResult? Function( ToolCall tool)?  toolProgress,TResult? Function( ApprovalRequest request)?  approvalRequest,TResult? Function( ApprovalChoice choice)?  approvalResolved,TResult? Function( ClarifyRequest request)?  clarifyRequest,TResult? Function()?  clarifyResolved,TResult? Function( RunStatus status)?  status,TResult? Function( String? output)?  completed,TResult? Function( String? error)?  failed,TResult? Function( String type,  Map<String, dynamic> data)?  unknown,}) {final _that = this;
 switch (_that) {
-case RunActivityPreview() when activityPreview != null:
+case RunOperational() when operational != null:
+return operational(_that.notice);case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that.text);case RunReasoningDelta() when reasoningDelta != null:
 return reasoningDelta(_that.text);case RunThinkingState() when thinkingState != null:
 return thinkingState(_that.text);case RunTextDelta() when delta != null:
@@ -234,6 +240,72 @@ return unknown(_that.type,_that.data);case _:
 
 }
 }
+
+}
+
+/// @nodoc
+
+
+class RunOperational implements RunEvent {
+  const RunOperational(this.notice);
+
+
+ final  OperationalNotice notice;
+
+/// Create a copy of RunEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$RunOperationalCopyWith<RunOperational> get copyWith => _$RunOperationalCopyWithImpl<RunOperational>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RunOperational&&(identical(other.notice, notice) || other.notice == notice));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,notice);
+
+@override
+String toString() {
+  return 'RunEvent.operational(notice: $notice)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $RunOperationalCopyWith<$Res> implements $RunEventCopyWith<$Res> {
+  factory $RunOperationalCopyWith(RunOperational value, $Res Function(RunOperational) _then) = _$RunOperationalCopyWithImpl;
+@useResult
+$Res call({
+ OperationalNotice notice
+});
+
+
+
+
+}
+/// @nodoc
+class _$RunOperationalCopyWithImpl<$Res>
+    implements $RunOperationalCopyWith<$Res> {
+  _$RunOperationalCopyWithImpl(this._self, this._then);
+
+  final RunOperational _self;
+  final $Res Function(RunOperational) _then;
+
+/// Create a copy of RunEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? notice = null,}) {
+  return _then(RunOperational(
+null == notice ? _self.notice : notice // ignore: cast_nullable_to_non_nullable
+as OperationalNotice,
+  ));
+}
+
 
 }
 

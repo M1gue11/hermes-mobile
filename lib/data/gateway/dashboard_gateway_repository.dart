@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 
 import '../../core/diagnostics/turn_capture.dart';
+import '../../domain/models/operational_notice.dart';
 import '../../domain/models/approval_request.dart';
 import '../../domain/models/clarify_request.dart';
 import '../../domain/models/composer_attachment.dart';
@@ -1018,6 +1019,20 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
     if (frame is! GatewayEventFrame) return;
     final type = frame.type;
     final payload = frame.payload;
+    if (OperationalNotice.handles(type)) {
+      final notice = OperationalNotice.parse(
+        type,
+        payload,
+        seq: frame.seq,
+        seqScope: (
+          sessionId: frame.sessionId,
+          replayEpoch: frame.replayEpoch,
+          localConnection: frame.localConnection,
+        ),
+      );
+      if (notice != null) yield RunEvent.operational(notice);
+      return;
+    }
     if (!knownGatewayEvents.contains(type)) {
       yield RunEvent.unknown(type, payload);
       return;
@@ -1066,10 +1081,7 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
         break;
       case 'status.update':
       case 'tool.generating':
-      case 'background.complete':
       case 'review.summary':
-      case 'subagent.thinking':
-      case 'subagent.progress':
         final text = _eventText(payload);
         if (text.isNotEmpty) yield RunEvent.activityPreview(text);
       case 'tool.start':
@@ -1204,6 +1216,8 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
 }
 
 final class _GatewaySocketClient {
+  final Object _noticeConnection = Object();
+  Object? _noticeReplayEpoch;
   _GatewaySocketClient(
     this._socket, {
     required this.heartbeatInterval,
@@ -1364,6 +1378,8 @@ final class _GatewaySocketClient {
       case GatewayEventFrame(:final type, :final payload):
         turnCapture.rawFrame(type, payload);
         if (type == 'gateway.ready') {
+          final epoch = payload['replay_epoch'];
+          _noticeReplayEpoch = epoch is String || epoch is int ? epoch : null;
           if (!_ready.isCompleted) _ready.complete();
           if (payload['heartbeat'] == true) _startHeartbeat();
           if (!_capabilitiesAdvertised) {
@@ -1380,7 +1396,21 @@ final class _GatewaySocketClient {
         }
         // `gateway.ready` is transport lifecycle, not a run event. Replay only
         // the frames that belong to the live turn.
-        if (type != 'gateway.ready') _publishEvent(frame);
+        if (type != 'gateway.ready') {
+          _publishEvent(
+            GatewayEventFrame(
+              type: frame.type,
+              payload: frame.payload,
+              seq: frame.seq,
+              sessionId: frame.sessionId,
+              replayEpoch: _noticeReplayEpoch,
+              localConnection:
+                  frame.sessionId != null && _noticeReplayEpoch != null
+                  ? null
+                  : _noticeConnection,
+            ),
+          );
+        }
       case GatewayServerRequestFrame(:final id, :final method, :final params):
         _handleServerRequest(
           GatewayServerRequestFrame(id: id, method: method, params: params),

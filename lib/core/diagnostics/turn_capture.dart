@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../../domain/models/run_event.dart';
+import '../../domain/models/operational_notice.dart';
 import '../../domain/models/turn_activity.dart';
 
 /// Captura redigida de um turno, para fechar o diagnóstico de A58/A59.
@@ -241,6 +242,13 @@ class TurnCapture extends ChangeNotifier {
     if (!_recording) return;
     _tuiFrames++;
     _rawTypes[type] = (_rawTypes[type] ?? 0) + 1;
+    if (_operationalType(type)) {
+      _add(CaptureLayer.transporte, type, {
+        'campos': '${payload.length}',
+        'conteúdo': 'omitido',
+      });
+      return;
+    }
     _noteToolShape(type, payload);
     _add(CaptureLayer.transporte, type, {
       for (final key in payload.keys) key: _render(key, payload[key]),
@@ -261,6 +269,10 @@ class TurnCapture extends ChangeNotifier {
         .toString();
     _runsFrames++;
     _rawTypes[type] = (_rawTypes[type] ?? 0) + 1;
+    if (_operationalType(type)) {
+      _add(CaptureLayer.transporte, type, {'conteúdo': 'omitido'});
+      return;
+    }
     if (json != null) _noteToolShape(type, json);
     _add(CaptureLayer.transporte, type, {
       if (json == null)
@@ -273,7 +285,14 @@ class TurnCapture extends ChangeNotifier {
   /// [RunEvent] que o adapter entregou ao reducer.
   void adapterEvent(RunEvent event) {
     if (!_recording) return;
+    if (event is RunOperational ||
+        (event is RunUnknown && _operationalType(event.type))) {
+      _adapterKinds['operational'] = (_adapterKinds['operational'] ?? 0) + 1;
+      _add(CaptureLayer.adapter, 'operational', {'conteúdo': 'omitido'});
+      return;
+    }
     final (label, fields) = switch (event) {
+      RunOperational() => ('operational', <String, Object?>{}),
       RunActivityPreview(:final text) => ('activityPreview', {'text': text}),
       RunReasoningDelta(:final text) => ('reasoningDelta', {'text': text}),
       RunThinkingState(:final text) => ('thinkingState', {'text': text}),
@@ -330,6 +349,11 @@ class TurnCapture extends ChangeNotifier {
       for (final key in fields.keys) key: _render(key, fields[key]),
     });
   }
+
+  bool _operationalType(String type) =>
+      OperationalNotice.handles(type) ||
+      type.startsWith('notification.') ||
+      type.startsWith('subagent.');
 
   /// Projeção montada pelo stream, lida do estado no fim do turno.
   void liveProjection(List<TurnActivity> items) {
@@ -416,7 +440,9 @@ class TurnCapture extends ChangeNotifier {
         _openByName[name] = open;
         if (open > (_peakByName[name] ?? 0)) _peakByName[name] = open;
         final args = payload['args_text']?.toString();
-        if (args != null) _startDetailLength[idOf(payload) ?? name] = args.length;
+        if (args != null) {
+          _startDetailLength[idOf(payload) ?? name] = args.length;
+        }
       case 'tool.complete' || 'tool.completed':
         final name = nameOf(payload);
         final open = (_openByName[name] ?? 0) - 1;
@@ -492,7 +518,9 @@ class TurnCapture extends ChangeNotifier {
     if (_literal.contains(normalized)) {
       return text.length <= 48 ? text : '${text.substring(0, 48)}…';
     }
-    return _sampleText ? '${text.length}ch «${_oneLine(text, 80)}»' : '${text.length}ch';
+    return _sampleText
+        ? '${text.length}ch «${_oneLine(text, 80)}»'
+        : '${text.length}ch';
   }
 
   static String _shortId(String value) =>
@@ -558,7 +586,8 @@ class TurnCapture extends ChangeNotifier {
       out.writeln('  $step');
     }
     final leitura = _probe.where(
-      (step) => step.contains('session.list') || step.contains('session.history'),
+      (step) =>
+          step.contains('session.list') || step.contains('session.history'),
     );
     final resume = _probe.where((step) => step.contains('session.resume'));
     if (leitura.isNotEmpty && resume.isNotEmpty) {
@@ -567,12 +596,10 @@ class TurnCapture extends ChangeNotifier {
       out.writeln(
         '  -> ${switch ((leituraOk, resumeOk)) {
           (true, true) => 'gateway íntegro; o fallback tem outra causa',
-          (true, false) =>
-            'o SessionDB responde e só session.resume recusa: '
-                'a falha é do resume, não do banco',
-          (false, false) =>
-            'leitura e resume recusam igual: a conexão do banco morreu '
-                'no processo do gateway',
+          (true, false) => 'o SessionDB responde e só session.resume recusa: '
+              'a falha é do resume, não do banco',
+          (false, false) => 'leitura e resume recusam igual: a conexão do banco morreu '
+              'no processo do gateway',
           (false, true) => 'resultado incoerente; repetir a sonda',
         }}',
       );
@@ -599,9 +626,7 @@ class TurnCapture extends ChangeNotifier {
       ..sort((a, b) => b.value.compareTo(a.value));
     out
       ..writeln('$title  (${ordered.length} tipos)')
-      ..writeln(
-        '  ${ordered.map((e) => "${e.key}=${e.value}").join("  ")}',
-      )
+      ..writeln('  ${ordered.map((e) => "${e.key}=${e.value}").join("  ")}')
       ..writeln();
   }
 
@@ -623,8 +648,10 @@ class TurnCapture extends ChangeNotifier {
       }
       final repeats = last - index + 1;
       if (repeats == 1) {
-        out.writeln('  ${_ms(first.at).padLeft(8)}  ${first.label}  '
-            '${_fieldsOf(first)}');
+        out.writeln(
+          '  ${_ms(first.at).padLeft(8)}  ${first.label}  '
+          '${_fieldsOf(first)}',
+        );
       } else {
         out
           ..writeln(
@@ -658,8 +685,7 @@ class TurnCapture extends ChangeNotifier {
   }
 
   String _activityLine(TurnActivity item) => switch (item) {
-    TurnActivityPreview(:final text) =>
-      'atividade  ${_render("text", text)}',
+    TurnActivityPreview(:final text) => 'atividade  ${_render("text", text)}',
     TurnReasoning(:final text) => 'raciocínio  ${_render("text", text)}',
     TurnToolActivity(:final tool) => [
       'tool  ${tool.name}',
@@ -725,7 +751,7 @@ class TurnCapture extends ChangeNotifier {
           '${_startsWithoutId == 0 ? "SIM" : (_startsWithId == 0 ? "NÃO" : "PARCIAL")} '
           '($_startsWithId/$inicios com id)'
           '${arriscado ? " | sem id o FIFO por nome não resolve paralelismo: "
-              "${paralelos.map((e) => "${e.key} x${e.value}").join(", ")}" : ""}',
+                    "${paralelos.map((e) => "${e.key} x${e.value}").join(", ")}" : ""}',
         );
       }
       if (progressos > 0) {
@@ -763,7 +789,9 @@ class TurnCapture extends ChangeNotifier {
     // truncado. Comparar o começo é o que reconhece a duplicação real.
     final duplicadas = _previewTexts.where(_repeatsOutput).length;
     if (_completedOutput == null) {
-      lines.add('Q6 prévia repete a resposta final? INDETERMINADO (sem output)');
+      lines.add(
+        'Q6 prévia repete a resposta final? INDETERMINADO (sem output)',
+      );
     } else {
       lines.add(
         duplicadas == 0

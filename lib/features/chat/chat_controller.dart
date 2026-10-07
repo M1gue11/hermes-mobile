@@ -18,6 +18,7 @@ import '../../domain/models/model_selection.dart';
 import '../../domain/models/reasoning_config.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
+import '../../domain/models/tool_call.dart';
 import '../../domain/models/session_message.dart';
 import '../../domain/models/tool_timeline.dart';
 import '../../domain/models/turn_activity.dart';
@@ -31,6 +32,8 @@ import 'conversations_provider.dart';
 import 'launch_provider.dart';
 import 'inventory_provider.dart';
 import '../settings/settings_provider.dart';
+import '../notifications/notification_inbox.dart';
+import '../../domain/models/operational_notice.dart';
 
 export 'active_conversations_provider.dart'
     show activeConversationIdsProvider, activeRunStoreProvider;
@@ -56,10 +59,17 @@ class ChatController extends _$ChatController {
   int _turnEventSerial = 0;
   int _listenerGeneration = 0;
   bool _liveUpdatesVisible = true;
+  bool _disposed = false;
 
   @override
   ChatState build() {
+    _disposed = false;
+    final inbox = ref.read(notificationInboxProvider);
     ref.onDispose(() {
+      _disposed = true;
+      ++_epoch;
+      ++_listenerGeneration;
+      inbox.cancelPending();
       unawaited(_sub?.cancel());
       unawaited(_gatewayTurn?.close());
     });
@@ -84,6 +94,7 @@ class ChatController extends _$ChatController {
     final generation = ++_listenerGeneration;
 
     if (!visible) {
+      ref.read(notificationInboxProvider).cancelPending();
       final subscription = _sub;
       final turn = _gatewayTurn;
       _sub = null;
@@ -128,6 +139,7 @@ class ChatController extends _$ChatController {
   }
 
   bool _canListen(int epoch, [int? generation]) =>
+      !_disposed &&
       _liveUpdatesVisible &&
       epoch == _epoch &&
       (generation == null || generation == _listenerGeneration);
@@ -187,6 +199,7 @@ class ChatController extends _$ChatController {
 
   /// Cria uma sessão real no Hermes antes de abrir uma conversa nova.
   Future<void> newChat() async {
+    ref.read(notificationInboxProvider).cancelPending();
     final epoch = ++_epoch;
     await _sub?.cancel();
     await _closeGatewayTurn();
@@ -243,6 +256,7 @@ class ChatController extends _$ChatController {
 
   /// Prepara a rota imediatamente e hidrata o histórico já dentro do chat.
   Future<void> openConversation(Conversation conversation) {
+    ref.read(notificationInboxProvider).cancelPending();
     final epoch = ++_epoch;
     _finishFlagsOnly();
     final persistedLock = ModelLock(
@@ -274,6 +288,7 @@ class ChatController extends _$ChatController {
   Future<void> retryOpenConversation() async {
     final sessionId = state.sessionId;
     if (sessionId == null || state.openingConversation) return;
+    ref.read(notificationInboxProvider).cancelPending();
     final epoch = ++_epoch;
     state = state.copyWith(
       messages: const <ChatMessage>[],
@@ -395,6 +410,7 @@ class ChatController extends _$ChatController {
       ],
     );
     ref.read(activeConversationIdsProvider.notifier).markActive(sessionId);
+    _noticeRun(asstId, NoticeCategory.progress);
 
     _reasonWatch
       ..reset()
@@ -454,7 +470,13 @@ class ChatController extends _$ChatController {
       return true;
     } catch (error) {
       if (epoch == _epoch) {
-        _fail(asstId, _legivel(error), epoch: epoch, clearActiveRun: true);
+        _fail(
+          asstId,
+          _legivel(error),
+          epoch: epoch,
+          clearActiveRun: true,
+          authoritativeFailure: false,
+        );
       } else {
         ref
             .read(activeConversationIdsProvider.notifier)
@@ -468,6 +490,8 @@ class ChatController extends _$ChatController {
   Future<void> stop() async {
     final id = state.runId;
     if (id == null || !state.streaming) return;
+    final epoch = _epoch;
+    final messageId = _lastAssistant()?.id;
     try {
       final turn = _gatewayTurn;
       if (turn != null) {
@@ -475,8 +499,13 @@ class ChatController extends _$ChatController {
       } else {
         await _repo.stopRun(id);
       }
+      if (epoch == _epoch && state.runId == id && messageId != null) {
+        _noticeRun(messageId, NoticeCategory.completion, cancelRequested: true);
+      }
     } catch (error) {
-      _failCurrentAssistant(_legivel(error));
+      if (epoch == _epoch && state.runId == id) {
+        _failCurrentAssistant(_legivel(error));
+      }
     }
   }
 
@@ -804,6 +833,7 @@ class ChatController extends _$ChatController {
           _gatewayError(error),
           epoch: epoch,
           clearActiveRun: true,
+          authoritativeFailure: false,
         );
       } else {
         await _clearActiveRunFor(sessionId);
@@ -852,6 +882,10 @@ class ChatController extends _$ChatController {
 
     _applyGatewayHistory(turn.initialHistory, record);
     if (!turn.running) {
+      _noticePhase(
+        record.assistantMessageId,
+        _assistantById(record.assistantMessageId)?.phase,
+      );
       await turn.close();
       await _clearActiveRunFor(record.sessionId);
       state = state.copyWith(streaming: false, runId: null);
@@ -1067,6 +1101,17 @@ class ChatController extends _$ChatController {
   }
 
   void _applyRecoveredTerminalRun(ActiveRunRecord record, Run run) {
+    if (run.status == RunStatus.completed ||
+        run.status == RunStatus.failed ||
+        run.status == RunStatus.cancelled) {
+      _noticeRun(
+        record.assistantMessageId,
+        run.status == RunStatus.failed
+            ? NoticeCategory.error
+            : NoticeCategory.completion,
+        cancelled: run.status == RunStatus.cancelled,
+      );
+    }
     final output = run.output?.trim() ?? '';
     final last = _lastAssistant();
     final alreadyVisible =
@@ -1171,6 +1216,9 @@ class ChatController extends _$ChatController {
     int generation,
   ) async {
     if (identical(_gatewayTurn, disconnected)) _gatewayTurn = null;
+    if (_canListen(epoch, generation)) {
+      ref.read(notificationInboxProvider).cancelPending();
+    }
     await disconnected.close();
 
     Object? lastError;
@@ -1214,6 +1262,7 @@ class ChatController extends _$ChatController {
         );
         _applyGatewayHistory(resumed.initialHistory, record);
         if (!resumed.running) {
+          _noticePhase(messageId, _assistantById(messageId)?.phase);
           await resumed.close();
           await _clearActiveRunFor(disconnected.storedSessionId);
           _finish(epoch);
@@ -1272,8 +1321,14 @@ class ChatController extends _$ChatController {
   }
 
   void _onEvent(String id, RunEvent event, int epoch) {
+    if (_disposed || epoch != _epoch) return;
     turnCapture.adapterEvent(event);
     switch (event) {
+      case RunOperational(:final notice):
+        final session = state.sessionId;
+        if (session != null) {
+          ref.read(notificationInboxProvider).accept(session, id, notice);
+        }
       case RunActivityPreview(:final text):
         if (!state.reasoning.showActivity) {
           return;
@@ -1312,6 +1367,14 @@ class ChatController extends _$ChatController {
           ),
         );
       case RunToolProgress(:final tool):
+        if (tool.name != '_thinking') {
+          _noticeRun(
+            id,
+            NoticeCategory.progress,
+            toolsInProgress: tool.status == ToolStatus.running,
+            inProgress: true,
+          );
+        }
         if (tool.name == '_thinking' && !state.reasoning.showActivity) return;
         _patch(
           id,
@@ -1352,6 +1415,9 @@ class ChatController extends _$ChatController {
           clarificationError: null,
         );
       case RunStatusEvent(:final status):
+        if (status == RunStatus.running) {
+          _noticeRun(id, NoticeCategory.progress, inProgress: true);
+        }
         if (status == RunStatus.cancelled) {
           _patch(
             id,
@@ -1455,6 +1521,7 @@ class ChatController extends _$ChatController {
     int generation,
   ) async {
     if (!_canListen(epoch, generation)) return;
+    ref.read(notificationInboxProvider).cancelPending();
     final message = _assistantById(messageId);
     if (message == null || _isTerminal(message.phase)) {
       _finish(epoch);
@@ -1611,8 +1678,14 @@ class ChatController extends _$ChatController {
     String error, {
     int? epoch,
     bool clearActiveRun = false,
+    bool? authoritativeFailure,
   }) {
     if (epoch != null && epoch != _epoch) return;
+    _noticeRun(
+      id,
+      NoticeCategory.error,
+      observerError: !(authoritativeFailure ?? clearActiveRun),
+    );
     turnCapture.endTurn('turno falhou');
     _patch(
       id,
@@ -1668,6 +1741,49 @@ class ChatController extends _$ChatController {
             message,
       ],
     );
+    if (_assistantById(id)?.phase != ChatPhase.failed) {
+      _noticePhase(id, _assistantById(id)?.phase);
+    }
+  }
+
+  void _noticePhase(String id, ChatPhase? phase) {
+    switch (phase) {
+      case ChatPhase.done:
+        _noticeRun(id, NoticeCategory.completion);
+      case ChatPhase.failed:
+        _noticeRun(id, NoticeCategory.error);
+      case ChatPhase.cancelled:
+        _noticeRun(id, NoticeCategory.completion, cancelled: true);
+      default:
+        break;
+    }
+  }
+
+  void _noticeRun(
+    String id,
+    NoticeCategory category, {
+    bool cancelled = false,
+    bool cancelRequested = false,
+    bool observerError = false,
+    bool toolsInProgress = false,
+    bool inProgress = false,
+  }) {
+    if (_disposed) return;
+    final session = state.sessionId;
+    if (session != null) {
+      ref
+          .read(notificationInboxProvider)
+          .run(
+            session,
+            id,
+            category,
+            cancelled: cancelled,
+            cancelRequested: cancelRequested,
+            observerError: observerError,
+            toolsInProgress: toolsInProgress,
+            inProgress: inProgress,
+          );
+    }
   }
 
   AssistantMessage? _assistantById(String id) {

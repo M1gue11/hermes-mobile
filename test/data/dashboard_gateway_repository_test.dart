@@ -10,10 +10,154 @@ import 'package:hermes_mobile/domain/models/approval_request.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
+import 'package:hermes_mobile/domain/models/operational_notice.dart';
 import 'package:hermes_mobile/domain/models/tool_call.dart';
+import 'package:hermes_mobile/features/notifications/notification_inbox.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 
 void main() {
+  test(
+    'A60 adapter separa show/clear/subagents e rejeita malformados',
+    () async {
+      final socket = _FakeGatewaySocket();
+      final repository = DashboardGatewayRepository(
+        store: _MemoryDashboardSessionStore(
+          session: (
+            baseUrl: 'https://dashboard.example:8443',
+            cookies: {'session': 'opaque'},
+          ),
+        ),
+        dio: Dio()..httpClientAdapter = _DashboardAdapter(),
+        socketConnector: (uri, {required headers}) async => socket,
+      );
+      final turn = await repository.openLiveTurn(storedSessionId: 'durable');
+      final events = <RunEvent>[];
+      final received = Completer<void>();
+      final subscription = turn.events.listen((event) {
+        events.add(event);
+        if (event is RunUnknown && event.type == 'notification.future') {
+          received.complete();
+        }
+      });
+      socket.emit('notification.show', {
+        'id': ' id ',
+        'key': ' key ',
+        'kind': 'custom',
+        'level': 'info',
+        'text': 'Aviso neutro',
+        'seq': 17,
+      });
+      socket.emit('notification.clear', {'key': ' key '});
+      socket.emit('notification.show', {'key': 1, 'text': 'inválido'});
+      for (final type in [
+        'background.complete',
+        'subagent.spawn_requested',
+        'subagent.start',
+        'subagent.thinking',
+        'subagent.tool',
+        'subagent.progress',
+        'subagent.complete',
+      ]) {
+        socket.emit(type, {
+          'subagent_id': 'real',
+          'goal': 'privado neutro',
+          'summary': 'privado neutro',
+          'text': 'privado neutro',
+          'tool_preview': 'privado neutro',
+        });
+      }
+      socket.emit('notification.future', {'text': 'privado neutro'});
+      await received.future.timeout(const Duration(seconds: 1));
+      expect(events.whereType<RunOperational>(), hasLength(9));
+      final show = (events.first as RunOperational).notice as NoticeShow;
+      expect(show.id, ' id ');
+      expect(show.key, ' key ');
+      expect(show.seq, 17);
+      expect((events[1] as RunOperational).notice, isA<NoticeClear>());
+      expect(events.whereType<RunActivityPreview>(), isEmpty);
+      expect(events.whereType<RunTextDelta>(), isEmpty);
+      expect(events.whereType<RunUnknown>().single.type, 'notification.future');
+      await subscription.cancel();
+      await turn.close();
+    },
+  );
+
+  test(
+    'adapter preserves epoch/live session and local connection fallback across reconnect',
+    () async {
+      final sockets = <_FakeGatewaySocket>[];
+      final repository = DashboardGatewayRepository(
+        store: _MemoryDashboardSessionStore(
+          session: (
+            baseUrl: 'https://dashboard.example:8443',
+            cookies: {'session': 'opaque'},
+          ),
+        ),
+        dio: Dio()..httpClientAdapter = _DashboardAdapter(),
+        socketConnector: (uri, {required headers}) async {
+          final socket = _FakeGatewaySocket(readyPayload: {'replay_epoch': 7});
+          sockets.add(socket);
+          return socket;
+        },
+      );
+      final inbox = NotificationInbox();
+      addTearDown(inbox.dispose);
+      final fallbackTokens = <Object?>[];
+      for (var connection = 0; connection < 2; connection++) {
+        final turn = await repository.openLiveTurn(storedSessionId: 'durable');
+        final done = Completer<void>();
+        final notices = <OperationalNotice>[];
+        final subscription = turn.events.listen((event) {
+          if (event is RunOperational) {
+            notices.add(event.notice);
+            inbox.accept('durable', 'same-message', event.notice);
+            if (notices.length == 5) done.complete();
+          }
+        });
+        final socket = sockets.last;
+        Map<String, dynamic> show(String id) => {
+          'id': id,
+          'key': id,
+          'ttl_ms': null,
+          'kind': 'agent',
+          'level': 'warn',
+          'text': 'Aviso',
+        };
+        socket.emit('notification.show', show('a'), sessionId: 'live1', seq: 1);
+        socket.emit('notification.show', show('b'), sessionId: 'live2', seq: 1);
+        socket.emit('gateway.ready', {'replay_epoch': 8});
+        socket.emit(
+          'notification.clear',
+          {'key': 'a'},
+          sessionId: 'live1',
+          seq: 1,
+        );
+        socket.emit('notification.show', show('c'), sessionId: 'live2', seq: 1);
+        socket.emit('notification.show', {
+          'id': null,
+          'key': null,
+          'ttl_ms': null,
+          'kind': 'agent',
+          'level': 'warn',
+          'text': 'Local',
+        }, seq: 1);
+        await done.future.timeout(const Duration(seconds: 1));
+        expect(notices.first.seqScope!.sessionId, 'live1');
+        expect(notices.first.seqScope!.replayEpoch, 7);
+        expect(notices[2].seqScope!.replayEpoch, 8);
+        fallbackTokens.add(notices.last.seqScope!.localConnection);
+        expect(fallbackTokens.last, isNotNull);
+        await subscription.cancel();
+        await turn.close();
+      }
+      expect(identical(fallbackTokens[0], fallbackTokens[1]), isFalse);
+      expect(
+        inbox.entries,
+        hasLength(4),
+      ); // b, c, and two anonymous local notices
+    },
+  );
+
   test('login Basic salva sessão e credenciais separadamente', () async {
     final store = _MemoryDashboardSessionStore();
     final adapter = _DashboardAdapter();
@@ -1827,13 +1971,23 @@ final class _FakeGatewaySocket implements GatewaySocket {
               as Map)
           .map((key, value) => MapEntry(key.toString(), value));
 
-  void emit(String type, Map<String, dynamic> payload) {
+  void emit(
+    String type,
+    Map<String, dynamic> payload, {
+    String? sessionId,
+    int? seq,
+  }) {
     if (_stream.isClosed) return;
     _stream.add(
       jsonEncode({
         'jsonrpc': '2.0',
         'method': 'event',
-        'params': {'type': type, 'payload': payload},
+        'params': {
+          'type': type,
+          'payload': payload,
+          'session_id': ?sessionId,
+          'seq': ?seq,
+        },
       }),
     );
   }

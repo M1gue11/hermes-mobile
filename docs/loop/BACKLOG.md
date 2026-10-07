@@ -146,8 +146,18 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
 
 ## Notificações
 
-- [ ] **A60 Notificações do Hermes e canal arbitrário do agente.** Entregar em
-  duas fases:
+- [~] **A60 Notificações do Hermes e canal arbitrário do agente.** Fatia in-app
+  na branch exclusiva `feat/notifications-night-20261007` (baseline `08833d0`),
+  **WIP, não aceita para merge**. `notification.show/clear`, sinais genéricos de
+  execução/background/subagents, inbox limitada em memória e preferências nesta
+  abertura do app ficam em Ajustes. Sem ponte OS ou transporte novo. Flutter
+  3.44.6 / Dart 3.12.2 ARM oficial: Claudia executou pub get/codegen/analyze exit
+  0 e suíte completa pós-duas correções: **717 passes, exit 0**. Revisão final
+  encontrou P2 reproduzido em teste isolado (exit 1): erro provisório seguido de
+  retomada idle com histórico vazio vira falha terminal sem fonte autoritativa.
+  Duas rodadas corretivas esgotadas; P2 e aceite em aparelho mantêm A60 `[~]`.
+  Detalhes em [HANDOFF.md](HANDOFF.md) e roteiro exclusivo em
+  [USER_TESTING.md](USER_TESTING.md). Entregar em duas fases:
 
   1. apresentação local segura de eventos úteis, como erro, conclusão de
      trabalho e skill criada;
