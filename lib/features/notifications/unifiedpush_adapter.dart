@@ -33,6 +33,8 @@ class OfficialPushAdapter implements PushAdapter {
   static const instance = 'hermes-operational-v1';
   UnifiedPushPlatform get _platform => UnifiedPushPlatform.instance;
 
+  bool _callbacksInstalled = false;
+
   // Keep callbacks synchronous and nonthrowing at the native channel boundary.
   void _guard(void Function() callback) {
     try {
@@ -44,15 +46,18 @@ class OfficialPushAdapter implements PushAdapter {
 
   @override
   Future<bool> initialize(PushCallbacks callbacks) async {
-    await _platform.initializeCallback(
-      onNewEndpoint: (e, i) => _guard(() => callbacks.endpoint(e, i)),
-      onRegistrationFailed: (r, i) => _guard(() => callbacks.failed(r, i)),
-      onUnregistered: (i) => _guard(() => callbacks.unregistered(i)),
-      onMessage: (m, i) => _guard(() => callbacks.message(m, i)),
-    );
-    await _platform.initializeOnTempUnavailable(
-      (i) => _guard(() => callbacks.unavailable(i)),
-    );
+    if (!_callbacksInstalled) {
+      await _platform.initializeCallback(
+        onNewEndpoint: (e, i) => _guard(() => callbacks.endpoint(e, i)),
+        onRegistrationFailed: (r, i) => _guard(() => callbacks.failed(r, i)),
+        onUnregistered: (i) => _guard(() => callbacks.unregistered(i)),
+        onMessage: (m, i) => _guard(() => callbacks.message(m, i)),
+      );
+      await _platform.initializeOnTempUnavailable(
+        (i) => _guard(() => callbacks.unavailable(i)),
+      );
+      _callbacksInstalled = true;
+    }
     return await _platform.getDistributor() != null;
   }
 

@@ -212,20 +212,53 @@ bytes/codepoints, schema fechado, categoria/resumo fixos e event_id limitado.
 Dedupe é limitado e local ao processo/distribuidor; não autentica o produtor.
 Callbacks não lançam para o canal; trabalho assíncrono é serializado e limitado.
 
-O entrypoint separado usa BindingBase/SchedulerBinding/ServicesBinding, sem
-widgets, runApp, Riverpod, chat ou socket. Não importa main.dart. NÃO está ligado
-à build normal: UnifiedPushService.kt chama DartEntrypoint.createDefault() com
---unifiedpush-bg, e não seleciona biblioteca/função alternativa. Compilar com
--t lib/features/notifications/unifiedpush_entrypoint.dart tornaria todo startup
-headless; não seria uma solução para o aplicativo normal. main.dart e bootstrap
-normal permanecem inalterados. Ao abrir o painel de Notificações, o caminho
-foreground chama a inicialização uma única vez; o opt-in continua explícito e
-não solicita permissão OS automaticamente.
+O main padrão recebe List<String> e despacha --unifiedpush-bg antes de qualquer
+binding de widgets, settings, runApp ou Gate. Chama bootstrapPushHeadless com
+BindingBase/SchedulerBinding/ServicesBinding. O engine registra plugins no root;
+DartPluginRegistrant.ensureInitialized é guardado para isolate secundário, conforme
+a API oficial. Somente o
+namespace seguro UnifiedPush é lido. UnifiedPushService.kt oficial já passa esse
+argumento a DartEntrypoint.createDefault; nenhum target alternativo é necessário.
+O main foreground inicializa widgets e restaura o receptor Android antes de
+settings/runApp. Main e painel usam startPushForeground no mesmo runtime. Início
+serializado/idempotente preserva callbacks após sucesso e supressão após unregister;
+falha transitória permite nova tentativa, sem repetir callbacks já instalados.
+Opt-in continua desligado por padrão e nenhuma permissão OS é solicitada.
 
-Notificador padrão é no-op. A abstração recebe somente texto local genérico,
-sem payload ou endpoint. Banner Android/APK não comprovados; Java/SDK Android
-indisponíveis. Enrollment autenticado, autorização do produtor, ACL, testes de
-aparelho/force-stop/offline e entrega real continuam pendentes. ntfy é apenas
-possível distribuidor, sem configuração de servidor/tópico/ACL.
-Evidências atuais em [RESULT-UNIFIEDPUSH-RECEIVER.md](../../RESULT-UNIFIEDPUSH-RECEIVER.md);
-[RESULT-UNIFIEDPUSH.md](../../RESULT-UNIFIEDPUSH.md) preserva investigação anterior.
+A ponte Android usa agora **flutter_local_notifications 22.3.1**, pin exato
+(SDK ^3.10 / Flutter >=3.38.1), resolvido no cache oficial via pub get offline.
+AndroidPushNotifier é o default real do controller; PushNoticeReceiver exige um
+sink explícito e não tem default Noop. O controller bloqueia mensagens antes do
+receiver enquanto backendEnrolled=false (sempre nesta fatia); decrypted não
+autentica emissor e opt-in continua obrigatório. Instanciar o sink não chama APIs.
+
+O sink inicializa sob demanda pela API oficial initialize, configura o canal
+hermes_operational_v1 (Importance.high), consulta areNotificationsEnabled e chama
+show com id local constante 1, título Hermes e corpo Novo aviso operacional.
+Não encaminha os argumentos de texto da interface; nenhum dado do envelope,
+event_id, URL ou conteúdo arbitrário chega ao plugin. Payload é omitido; o
+pacote Android serializa isso como string vazia. Não há callbacks de tap/actions,
+solicitação automática de permissão ou dependência de Activity. Inicialização,
+canal, consulta e show oficiais usam applicationContext do onAttachedToEngine,
+compatível em fonte com o root engine do UnifiedPushService. Isso não comprova
+execução Android. Canal high não garante banner; preferências OS prevalecem.
+Notificações usam ícone drawable local, visibility private e substituem o mesmo
+id genérico. Desugaring 2.1.4 foi habilitado conforme README oficial; AGP existente
+9.0.1 excede o mínimo 8.11.1 do pacote. POST_NOTIFICATIONS vem do manifest oficial.
+
+Plataforma não Android retorna antes do plugin. MissingPluginException, permissão
+negada e falhas de initialize/canal/consulta/show são absorvidas sem logs ou dados
+de erro. Falhas permitem reinicialização posterior; permissão negada não pede
+consentimento. Testes do boundary usam APIs reais do pacote e mock do MethodChannel
+oficial, cobrindo valores fixos, payload vazio, idempotência, erros e unsupported.
+A execução desses testes continua sujeita ao bloqueio localhost do runner Flutter;
+os testes não abrem sockets próprios.
+
+Java/javac e Android SDK não foram encontrados neste ambiente; APK, execução do
+engine Android, permissão negada nativa e banner real não foram verificados. Enrollment,
+autorização/ACL e testes em aparelho/force-stop/offline continuam pendentes. ntfy
+continua apenas possível distribuidor, sem configuração de servidor/tópico/ACL.
+Evidência desta integração em
+[RESULT-UNIFIEDPUSH-BOOTSTRAP.md](../../RESULT-UNIFIEDPUSH-BOOTSTRAP.md).
+[RESULT-UNIFIEDPUSH-RECEIVER.md](../../RESULT-UNIFIEDPUSH-RECEIVER.md) e
+[RESULT-UNIFIEDPUSH.md](../../RESULT-UNIFIEDPUSH.md) preservam resultados anteriores.

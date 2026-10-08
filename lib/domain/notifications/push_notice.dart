@@ -57,15 +57,8 @@ abstract interface class GenericPushNotifier {
   void show({required String title, required String body});
 }
 
-/// No native display bridge is installed or claimed.
-class NoopPushNotifier implements GenericPushNotifier {
-  const NoopPushNotifier();
-  @override
-  void show({required String title, required String body}) {}
-}
-
 class PushNoticeReceiver {
-  PushNoticeReceiver({this.notifier = const NoopPushNotifier()});
+  PushNoticeReceiver({required this.notifier});
   final GenericPushNotifier notifier;
   final Set<(String, String)> _seen = {};
   int accepted = 0;

@@ -58,6 +58,7 @@ dependencies:
   record: ^7.1.1
   file_selector: ^1.1.0
   # Official callback contract inspected in offline cache; deliberately pinned.
+  flutter_local_notifications: 22.3.1
   unifiedpush_android: 3.5.0
   # Android plugin plus official interface avoid Linux webcrypto/hooks conflict.
   unifiedpush_platform_interface: 4.0.0

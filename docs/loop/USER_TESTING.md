@@ -53,9 +53,9 @@ Aceite Android pendente. Branch WIP com P2 de retomada documentado em
 - Privacidade: captura de turno com sampleText ligado continua metadata somente
   para notification/subagent/background.complete. Usar fixtures neutras; não
   capturar tools args/results, prompts, reasoning ou credenciais na nova inbox.
-- Confirmar ponte Android OS ausente: nenhum banner OS, som, solicitação de
-  permissão ou cron. Não interpretar ausência em background/terminated como
-  falha de uma integração push: essa fase não foi implementada.
+- Confirmar gate pré-enrollment: nenhum banner OS ou solicitação automática
+  de permissão. O sink oficial existe, mas permanece bloqueado pelo controller
+  enquanto enrollment autenticado está pendente.
 
 ## [ ] A75 — clarify batch no Android
 
@@ -100,18 +100,22 @@ Nenhum prompt deve ser reenviado; bolha mantém o lifecycle existente.
 
 Resolução offline **SUPERADO** com os pacotes oficiais Android/interface; receptor
 experimental implementado. Enrollment, ACL, banner/APK e aparelho permanecem
-pendentes. Entry point headless separado compila, mas serviço nativo usa o main
-padrão; bootstrap normal inalterado, sem ligação headless nesta build. Notificador
-é no-op; nenhuma permissão OS solicitada. Os cenários abaixo NÃO foram executados
+pendentes. O main padrão agora despacha --unifiedpush-bg ao bootstrap headless
+antes da UI; foreground restaura o receptor Android no startup, com opt-in
+desligado por padrão e início compartilhado/idempotente com a sheet. A ponte OS usa flutter_local_notifications **22.3.1** (pin exato),
+resolvido offline no cache oficial. initialize/canal/consulta/show usam contexto
+do engine, sem Activity ou pedido de permissão. A execução Android não foi validada. Mensagens pré-enrollment não alcançam o sink; nenhuma permissão
+OS é solicitada. Os cenários abaixo NÃO foram executados
 em aparelho nesta entrega. Evidências em
-[RESULT-UNIFIEDPUSH-RECEIVER.md](../../RESULT-UNIFIEDPUSH-RECEIVER.md):
+[RESULT-UNIFIEDPUSH-BOOTSTRAP.md](../../RESULT-UNIFIEDPUSH-BOOTSTRAP.md):
 
 - Foreground: opt-in explícito; fora de Android, unsupported; ausência/seleção do
   distribuidor exige ação humana. Sem permissão OS automática. Registro deve
   mostrar “Backend pendente — enrollment autenticado ainda não existe”.
 - Background e tela bloqueada: callback headless sem UI/chat/conexão; somente
-  payload decriptado validado e deduplicado. Banner genérico sem conteúdo rico,
-  chaves ou endpoints. Abertura não executa comando nem inventa rota pendente.
+  confirmar bloqueio de mensagens pré-enrollment mesmo com decrypted=true.
+  Banner genérico só será testável após enrollment/ACL e consentimento OS explícito; sem
+  conteúdo rico, chaves ou endpoints. Abertura não executa comando nem inventa rota pendente.
 - Swipe em recentes: medir recepção com o distribuidor escolhido e comportamento
   do fabricante; não confundir swipe com force-stop nem prometer entrega.
 - Offline: medir indisponibilidade temporária, retomada e dedupe; nenhuma mensagem
@@ -120,3 +124,18 @@ em aparelho nesta entrega. Evidências em
   humana do app. Confirmar recuperação segura depois da reabertura.
 - Segundo distribuidor: teste futuro de seleção/troca/revogação e mesmos limites.
   ntfy é só distribuidor selecionável, sem ACL ou enrollment configurados aqui.
+
+### Inventário da ponte Android (2026-10-08)
+
+- flutter_local_notifications **22.3.1**, SDK ^3.10 / Flutter >=3.38.1;
+  app mantém Dart ^3.12.2. unifiedpush_android **3.5.0**,
+  unifiedpush_platform_interface **4.0.0**, flutter_secure_storage **10.3.1**.
+- Dependências transitivas novas no lock: interface local notifications 12.2.0,
+  Linux 8.0.1, Windows 3.1.1, Web 1.0.0, timezone 0.11.1, dbus 0.7.15,
+  petitparser 7.0.2 e xml 7.0.1. O sink do app continua exclusivamente Android.
+- Canal hermes_operational_v1, ícone ic_stat_hermes, id 1; texto somente
+  Hermes / Novo aviso operacional; payload omitido (string vazia no canal oficial).
+  Nenhum tap/action executa comando ou recebe envelope. Falhas são redigidas.
+- Testes de boundary em messenger oficial não validam engine, permissão nativa,
+  banner ou aparelho. Java/SDK Android ausentes: APK não tentado. Enrollment, ACL,
+  opt-in/consentimento OS e os roteiros pendentes de aparelho continuam obrigatórios.

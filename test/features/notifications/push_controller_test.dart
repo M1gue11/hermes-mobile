@@ -1,14 +1,25 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:hermes_mobile/domain/notifications/push_notice.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:unifiedpush_platform_interface/data/push_message.dart';
 import 'package:unifiedpush_platform_interface/data/push_endpoint.dart';
 import 'package:unifiedpush_platform_interface/data/failed_reason.dart';
 import 'package:unifiedpush_platform_interface/data/public_key_set.dart';
 import 'package:hermes_mobile/features/notifications/push_controller.dart';
+import 'package:hermes_mobile/features/notifications/android_push_notifier.dart';
 import 'package:hermes_mobile/features/notifications/push_runtime.dart';
 import 'package:hermes_mobile/features/notifications/push_store.dart';
 import 'package:hermes_mobile/features/notifications/unifiedpush_adapter.dart';
 import 'push_notice_check.dart' show envelope;
+
+class SinkSpy implements GenericPushNotifier {
+  final calls = <String>[];
+  @override
+  void show({required String title, required String body}) {
+    calls.add('$title: $body');
+  }
+}
 
 class MemoryStore implements PushStore {
   Map<String, dynamic> state = {};
@@ -81,16 +92,38 @@ void main() {
   late MemoryStore store;
   late FakeAdapter adapter;
   late PushController controller;
+  late SinkSpy sink;
   const instance = OfficialPushAdapter.instance;
   setUp(() {
     store = MemoryStore();
     adapter = FakeAdapter();
-    controller = PushController(adapter: adapter, store: store, android: true);
+    sink = SinkSpy();
+    controller = PushController(
+      adapter: adapter,
+      store: store,
+      android: true,
+      receiver: PushNoticeReceiver(notifier: sink),
+    );
   });
   tearDown(() async {
     await controller.settled;
     controller.dispose();
   });
+  test(
+    'default receiver has real production sink and enrollment stays blocked',
+    () {
+      final production = PushController(
+        adapter: adapter,
+        store: store,
+        android: true,
+      );
+      expect(production.receiver.notifier, isA<AndroidPushNotifier>());
+      expect(production.backendEnrolled, isFalse);
+      expect(production.optedIn, isFalse);
+      production.dispose();
+    },
+  );
+
   Future<void> select() async {
     await controller.start();
     await controller.enable();
@@ -107,7 +140,8 @@ void main() {
       expect(adapter.registrations, 0);
       adapter.result = true;
       await controller.start();
-      expect(controller.distributorRegistered, true);
+      expect(controller.distributorRegistered, false);
+      expect(adapter.initializations, 1);
       expect(adapter.registrations, 0);
       expect(controller.status, 'Desligado');
       expect(
@@ -207,19 +241,14 @@ void main() {
     expect(adapter.initializations, 1);
   });
   test(
-    'headless backgroundNoUI never invokes normal app or register',
+    'headless receiver never registers or accepts pre-enrollment messages',
     () async {
       store.state = {'opt_in': true, 'distributor': 'com.example.distributor'};
-      var ui = 0;
-      await bootstrapPush(['--unifiedpush-bg'], controller, () async {
-        ui++;
-        throw StateError('chat/socket/global store must not initialize');
-      });
-      expect(ui, 0);
+      await controller.start(background: true);
       expect(adapter.registrations, 0);
       adapter.callbacks.message(PushMessage(envelope(), true), instance);
       await controller.settled;
-      expect(controller.receiver.accepted, 1);
+      expect(controller.receiver.accepted, 0);
       adapter.callbacks.message(PushMessage(envelope(), true), instance);
       adapter.callbacks.message(
         PushMessage(envelope({'event_id': 'event_2'}), false),
@@ -230,20 +259,13 @@ void main() {
         'other',
       );
       await controller.settled;
-      expect(controller.receiver.accepted, 1);
-    },
-  );
-  test(
-    'normal bootstrap calls app once and restores only opted registration',
-    () async {
-      store.state = {'opt_in': true, 'distributor': 'com.example.distributor'};
-      adapter.saved = 'com.example.distributor';
-      var ui = 0;
-      await bootstrapPush([], controller, () async {
-        ui++;
-      });
-      expect(ui, 1);
-      expect(adapter.registrations, 1);
+      adapter.callbacks.message(
+        PushMessage(Uint8List.fromList([255]), true),
+        instance,
+      );
+      await controller.settled;
+      expect(controller.receiver.accepted, 0);
+      expect(sink.calls, isEmpty);
     },
   );
   test('opt-out messages and late endpoints ignored', () async {
@@ -377,6 +399,26 @@ void main() {
       await startPushForeground(controller);
       await controller.settled;
       expect(adapter.initializations, 1);
+    },
+  );
+
+  test(
+    'concurrent initialize and suppressed unregister never reinstall callbacks',
+    () async {
+      await Future.wait([controller.start(), controller.start()]);
+      final callbacks = adapter.callbacks;
+      expect(adapter.initializations, 1);
+      await controller.enable();
+      await controller.choose(distributor: 'com.example.distributor');
+      store.failWrite = true;
+      adapter.callbacks.unregistered(instance);
+      await controller.settled;
+      await controller.start();
+      await startPushForeground(controller);
+      expect(identical(adapter.callbacks, callbacks), true);
+      expect(adapter.initializations, 1);
+      expect(adapter.registrations, 1);
+      expect(controller.optedIn, false);
     },
   );
 

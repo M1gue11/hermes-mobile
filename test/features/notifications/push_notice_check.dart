@@ -79,7 +79,7 @@ void main() {
       'shape',
     );
   }
-  final receiver = PushNoticeReceiver();
+  final receiver = PushNoticeReceiver(notifier: ParserTestNotifier());
   check(receiver.receive('scope_1', envelope(), decrypted: true), 'first');
   check(!receiver.receive('scope_1', envelope(), decrypted: true), 'duplicate');
   check(
@@ -98,4 +98,9 @@ void main() {
   }
   // ignore: avoid_print
   print('Closed parser and scoped dedupe checks passed');
+}
+
+class ParserTestNotifier implements GenericPushNotifier {
+  @override
+  void show({required String title, required String body}) {}
 }

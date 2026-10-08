@@ -20,6 +20,7 @@ class RecordingPlatform extends DefaultUnifiedPush {
     void Function(String)? onUnregistered,
     void Function(PushMessage, String)? onMessage,
   }) async {
+    callbackInitializations++;
     endpoint = onNewEndpoint;
     failed = onRegistrationFailed;
     unregistered = onUnregistered;
@@ -33,6 +34,8 @@ class RecordingPlatform extends DefaultUnifiedPush {
     unavailable = callback;
   }
 
+  bool failLookup = false;
+  int callbackInitializations = 0;
   String? saved;
   String? registeredInstance;
   String? unregisteredInstance;
@@ -44,7 +47,11 @@ class RecordingPlatform extends DefaultUnifiedPush {
     'com.example.distributor',
   ];
   @override
-  Future<String?> getDistributor() async => saved;
+  Future<String?> getDistributor() async {
+    if (failLookup) throw StateError('neutral');
+    return saved;
+  }
+
   @override
   Future<void> saveDistributor(String distributor) async {
     saved = distributor;
@@ -128,6 +135,26 @@ void main() {
       returnsNormally,
     );
     expect(calls, 5);
+  });
+  test('lookup failure retry preserves installed official callbacks', () async {
+    final previous = UnifiedPushPlatform.instance;
+    final platform = RecordingPlatform()..failLookup = true;
+    UnifiedPushPlatform.instance = platform;
+    addTearDown(() => UnifiedPushPlatform.instance = previous);
+    final adapter = OfficialPushAdapter();
+    final callbacks = PushCallbacks(
+      endpoint: (_, _) {},
+      failed: (_, _) {},
+      unregistered: (_) {},
+      message: (_, _) {},
+      unavailable: (_) {},
+    );
+    await expectLater(adapter.initialize(callbacks), throwsStateError);
+    final installed = platform.message;
+    platform.failLookup = false;
+    expect(await adapter.initialize(callbacks), false);
+    expect(platform.callbackInitializations, 1);
+    expect(identical(installed, platform.message), true);
   });
   test(
     'official adapter passes named register defaults and same revoke instance',

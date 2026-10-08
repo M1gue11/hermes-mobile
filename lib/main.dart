@@ -21,18 +21,53 @@ import 'data/platform/device_attachment_source.dart';
 import 'domain/repositories/hermes_repository.dart';
 import 'features/chat/launch_provider.dart';
 import 'features/connection/connection_screen.dart';
+import 'features/notifications/push_runtime.dart';
+import 'features/notifications/unifiedpush_entrypoint.dart';
 import 'features/settings/settings_provider.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+/// Scoped bootstrap overrides for composition tests; production uses these exact
+/// steps in the default entrypoint invoked by UnifiedPushService.
+@visibleForTesting
+class MainStartupOverrides {
+  const MainStartupOverrides({
+    required this.headless,
+    required this.binding,
+    required this.foreground,
+    required this.readSettings,
+    required this.launch,
+  });
+  final Future<void> Function() headless;
+  final void Function() binding;
+  final Future<void> Function() foreground;
+  final Future<StoredAppSettings?> Function() readSettings;
+  final void Function(Widget) launch;
+}
+
+@visibleForTesting
+Future<void> runMainForTest(
+  List<String> args,
+  MainStartupOverrides overrides,
+) => runZoned(() => main(args), zoneValues: {MainStartupOverrides: overrides});
+
+@pragma('vm:entry-point')
+Future<void> main(List<String> args) async {
+  final overrides = Zone.current[MainStartupOverrides] as MainStartupOverrides?;
+  if (args.contains('--unifiedpush-bg')) {
+    await (overrides?.headless ?? bootstrapPushHeadless)();
+    return;
+  }
+  (overrides?.binding ?? WidgetsFlutterBinding.ensureInitialized)();
+  await (overrides?.foreground ?? () => startPushForeground(pushRuntime))();
   StoredAppSettings? settings;
   try {
-    settings = await const SecureAppSettingsStore().read();
+    settings =
+        await (overrides?.readSettings ??
+            () => const SecureAppSettingsStore().read())();
   } catch (_) {
     // Preferência corrompida ou KeyStore temporariamente indisponível não pode
     // impedir o pareamento nem a abertura do app; cada campo tem seu padrão.
   }
-  runApp(
+  (overrides?.launch ?? runApp)(
     HermesStartupSplash(child: HermesConnectionGate(initialSettings: settings)),
   );
 }

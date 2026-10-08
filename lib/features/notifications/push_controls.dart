@@ -31,7 +31,10 @@ class _PushControlsState extends State<PushControls> {
         const Text(
           'Backend pendente — enrollment autenticado ainda não existe',
         ),
-        const Text('Sem exibição de aviso Android nesta fatia.'),
+        const Text(
+          'Aviso Android genérico bloqueado até enrollment autenticado; '
+          'sem prontidão de backend.',
+        ),
         Text(
           pushRuntime.android
               ? pushRuntime.status

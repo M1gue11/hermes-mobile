@@ -11,13 +11,12 @@ class RecordingNotifier implements GenericPushNotifier {
 }
 
 void main() {
-  test('notifier receives generic local text only and default is no-op', () {
+  test('notifier receives generic local text only', () {
     final notifier = RecordingNotifier();
     final receiver = PushNoticeReceiver(notifier: notifier);
     receiver.receive('scope', checks.envelope(), decrypted: true);
     receiver.receive('scope', checks.envelope(), decrypted: true);
     expect(notifier.calls, ['Hermes: Novo aviso operacional']);
-    expect(PushNoticeReceiver().notifier, isA<NoopPushNotifier>());
   });
   test(
     'strict payload validation and bounded scoped event_id dedupe',
