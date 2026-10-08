@@ -7,6 +7,7 @@ import '../../core/widgets/hermes_sheet.dart';
 import '../../domain/models/operational_notice.dart';
 import '../settings/settings_provider.dart';
 import 'notification_inbox.dart';
+import 'push_controls.dart';
 
 Future<void> showNotificationSheet(BuildContext context) => showHermesSheet(
   context,
@@ -29,6 +30,7 @@ class NotificationSheet extends ConsumerWidget {
       builder: (context, _) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const PushControls(),
           Text(
             'Avisos de ${persona.displayName}',
             style: tokens.serif.copyWith(color: tokens.ink),

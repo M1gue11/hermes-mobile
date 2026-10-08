@@ -193,17 +193,39 @@ ou extensão do Gateway exigem decisão explícita do usuário. A direção é m
 núcleo Hermes responsável por chat, sessões e sinais live; a entrega operacional
 durável vive em serviço complementar ou plugin autenticado.
 
-## Fatia 2026-10-07 — contrato UnifiedPush investigado, integração bloqueada
+## Fatia 2026-10-07 — resolução de dependências SUPERADO; receptor experimental
 
-Na branch `feat/unifiedpush-client-20261007` não há receptor UnifiedPush, ponte OS,
-opt-in experimental nem enrollment. A resolução de `unifiedpush: 6.2.0` falhou
-por acesso a pub.dev; nenhuma dependência nova permaneceu. Contrato e evidências
-em [RESULT-UNIFIEDPUSH.md](../../RESULT-UNIFIEDPUSH.md).
+O bloqueio de resolução está **SUPERADO** no aplicativo completo, offline:
+`unifiedpush_android: 3.5.0` + `unifiedpush_platform_interface: 4.0.0`.
+O pacote agregador `unifiedpush: 6.2.0` exige Linux/webcrypto/hooks ^1,
+incompatível com objective_c/hooks ^2 da árvore google_fonts. Sem override ou
+redução de SDK. O plugin Android declara Plugin nativo e UnifiedPushAndroid Dart;
+a resolução Flutter inclui o plugin no registro gerado de dependências.
 
-Registrar o aplicativo no distribuidor apenas fornece um endpoint WebPush e
-material criptográfico da biblioteca. Isso não cadastra o dispositivo no Hermes:
-enrollment autenticado server-side, vínculo/revogação, autorização do produtor e
-ACL continuam pendentes. ntfy seria apenas um distribuidor selecionável pela
-pessoa; servidor, tópico e ACL ntfy não foram configurados. Estado exigido para
-futura UI: **Backend pendente — enrollment autenticado ainda não existe**.
-Não existe prontidão de push foreground/background/terminated nesta branch.
+O adapter usa UnifiedPushPlatform.instance, instala callbacks antes do registro,
+e retorna se há distribuidor salvo, como o wrapper oficial. Esse resultado NÃO
+é enrollment. Opt-in começa desligado. Seleção/padrão exigem consentimento;
+revogação suprime recepção antes de IO e preserva endpoint/seleção em falha.
+Endpoint/chaves ficam somente no namespace secure storage, sem getters de material
+no controller, UI ou logs. Parsing exige decrypted, UTF-8 estrito, limites de
+bytes/codepoints, schema fechado, categoria/resumo fixos e event_id limitado.
+Dedupe é limitado e local ao processo/distribuidor; não autentica o produtor.
+Callbacks não lançam para o canal; trabalho assíncrono é serializado e limitado.
+
+O entrypoint separado usa BindingBase/SchedulerBinding/ServicesBinding, sem
+widgets, runApp, Riverpod, chat ou socket. Não importa main.dart. NÃO está ligado
+à build normal: UnifiedPushService.kt chama DartEntrypoint.createDefault() com
+--unifiedpush-bg, e não seleciona biblioteca/função alternativa. Compilar com
+-t lib/features/notifications/unifiedpush_entrypoint.dart tornaria todo startup
+headless; não seria uma solução para o aplicativo normal. main.dart e bootstrap
+normal permanecem inalterados. Ao abrir o painel de Notificações, o caminho
+foreground chama a inicialização uma única vez; o opt-in continua explícito e
+não solicita permissão OS automaticamente.
+
+Notificador padrão é no-op. A abstração recebe somente texto local genérico,
+sem payload ou endpoint. Banner Android/APK não comprovados; Java/SDK Android
+indisponíveis. Enrollment autenticado, autorização do produtor, ACL, testes de
+aparelho/force-stop/offline e entrega real continuam pendentes. ntfy é apenas
+possível distribuidor, sem configuração de servidor/tópico/ACL.
+Evidências atuais em [RESULT-UNIFIEDPUSH-RECEIVER.md](../../RESULT-UNIFIEDPUSH-RECEIVER.md);
+[RESULT-UNIFIEDPUSH.md](../../RESULT-UNIFIEDPUSH.md) preserva investigação anterior.

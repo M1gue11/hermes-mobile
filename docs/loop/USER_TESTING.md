@@ -98,9 +98,13 @@ local neutro de stop, ocultar/retomar idle com histórico vazio: aviso permanece
 “Não foi possível acompanhar a execução”, substituível por terminal remoto.
 Nenhum prompt deve ser reenviado; bolha mantém o lifecycle existente.
 
-UnifiedPush está bloqueado e ausente; os cenários abaixo são requisitos de uma
-futura fatia com dependência resolvida e enrollment autenticado. Não marcá-los
-como executados nesta entrega:
+Resolução offline **SUPERADO** com os pacotes oficiais Android/interface; receptor
+experimental implementado. Enrollment, ACL, banner/APK e aparelho permanecem
+pendentes. Entry point headless separado compila, mas serviço nativo usa o main
+padrão; bootstrap normal inalterado, sem ligação headless nesta build. Notificador
+é no-op; nenhuma permissão OS solicitada. Os cenários abaixo NÃO foram executados
+em aparelho nesta entrega. Evidências em
+[RESULT-UNIFIEDPUSH-RECEIVER.md](../../RESULT-UNIFIEDPUSH-RECEIVER.md):
 
 - Foreground: opt-in explícito; fora de Android, unsupported; ausência/seleção do
   distribuidor exige ação humana. Sem permissão OS automática. Registro deve
