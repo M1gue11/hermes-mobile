@@ -192,3 +192,18 @@ domínio seguros, sem alegar durabilidade. Serviço externo, infraestrutura de p
 ou extensão do Gateway exigem decisão explícita do usuário. A direção é manter o
 núcleo Hermes responsável por chat, sessões e sinais live; a entrega operacional
 durável vive em serviço complementar ou plugin autenticado.
+
+## Fatia 2026-10-07 — contrato UnifiedPush investigado, integração bloqueada
+
+Na branch `feat/unifiedpush-client-20261007` não há receptor UnifiedPush, ponte OS,
+opt-in experimental nem enrollment. A resolução de `unifiedpush: 6.2.0` falhou
+por acesso a pub.dev; nenhuma dependência nova permaneceu. Contrato e evidências
+em [RESULT-UNIFIEDPUSH.md](../../RESULT-UNIFIEDPUSH.md).
+
+Registrar o aplicativo no distribuidor apenas fornece um endpoint WebPush e
+material criptográfico da biblioteca. Isso não cadastra o dispositivo no Hermes:
+enrollment autenticado server-side, vínculo/revogação, autorização do produtor e
+ACL continuam pendentes. ntfy seria apenas um distribuidor selecionável pela
+pessoa; servidor, tópico e ACL ntfy não foram configurados. Estado exigido para
+futura UI: **Backend pendente — enrollment autenticado ainda não existe**.
+Não existe prontidão de push foreground/background/terminated nesta branch.

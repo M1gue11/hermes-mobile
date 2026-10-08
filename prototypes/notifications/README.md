@@ -2,14 +2,19 @@
 
 **Transporte REAL AUSENTE.** Python stdlib e SQLite apenas; sem HTTP, serviço,
 plugin, daemon, scheduler, regra ativa, credencial, token ou integração Telegram.
-Não altera a fatia A60 Flutter. **WIP, revisão concluída com P2 bloqueante da CLI**;
-15 testes unittest e py_compile passaram (exit 0), mas Claudia reproduziu falha
-por injeção antes de criar schema: arquivo novo fica vazio com identidade zero e
-o próximo `open_private()` o rejeita como DB alheio. Probe isolado exit 1; falta
-publicação/recuperação segura da inicialização sem admitir bancos de terceiros.
-O núcleo transacional e smoke de ingest/dedupe/read/ack/restart foram exercitados,
-mas a entrega não está aceita para deploy. As duas rodadas corretivas da missão
-foram usadas na fatia principal; não houve terceira correção. Nenhuma entrega remota.
+Não altera a fatia A60 Flutter. **WIP, sem aceite de produção.**
+Nesta branch a CLI inicializa schema e application_id em staging exclusivo 0600,
+fecha SQLite, faz fsync e publica via Linux `renameat2(RENAME_NOREPLACE)` no mesmo
+diretório. Nunca substitui um destino existente. Crash antes da publicação deixa
+apenas staging órfão ignorado; a próxima abertura cria outro DB completo. Crash
+após publicação deixa um DB completo reconhecível. Staging órfão não é recuperado
+nem apagado por outras aberturas; a limpeza exige ação do operador.
+Se a primitiva Linux não estiver disponível, falha fechada, sem fallback inseguro.
+Os testes injetam crash de processo após criação (antes de schema), após schema
+(antes de identity), após identity/fsync/publicação/fsync do diretório, e arquivo
+alheio aparecendo antes da publicação. Arquivos vazios preexistentes, identidade
+sem schema, symlinks e hardlinks são rejeitados, sem reparo automático.
+Resultados atuais em [RESULT-UNIFIEDPUSH.md](../../RESULT-UNIFIEDPUSH.md).
 
 `core.py`: `Envelope.parse` valida envelope v1 imutável; `Store.ingest` grava
 atomicamente evento, inbox, outbox e auditoria. `claim`, `valid`, `finish` e

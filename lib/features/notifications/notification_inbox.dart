@@ -15,6 +15,8 @@ typedef NoticeTimer = Timer Function(Duration delay, void Function() callback);
 typedef _Scope = (String, String);
 typedef NoticeSlot = (String, String, String, String?);
 
+enum NoticeProvenance { remoteSignal, localProvisional, remoteTerminal }
+
 /// Identidade local é separada de id/key do servidor. Nada aqui é persistido.
 class InboxEntry {
   const InboxEntry({
@@ -26,6 +28,7 @@ class InboxEntry {
     required this.text,
     required this.createdAt,
     required this.slot,
+    this.provenance = NoticeProvenance.remoteSignal,
     this.serverId,
     this.seq,
     this.key,
@@ -33,6 +36,7 @@ class InboxEntry {
     this.expiresAt,
     this.read = false,
   });
+  final NoticeProvenance provenance;
   final int localId;
   final String sessionId;
   final NoticeCategory category;
@@ -50,6 +54,7 @@ class InboxEntry {
 
   String get location => '/chat/${Uri.encodeComponent(sessionId)}';
   InboxEntry asRead() => InboxEntry(
+    provenance: provenance,
     localId: localId,
     sessionId: sessionId,
     category: category,
@@ -330,6 +335,11 @@ class NotificationInbox extends ChangeNotifier {
       localId: ++_serial,
       sessionId: session,
       category: category,
+      provenance: terminal
+          ? NoticeProvenance.remoteTerminal
+          : cancelRequested || observerError
+          ? NoticeProvenance.localProvisional
+          : NoticeProvenance.remoteSignal,
       origin: 'Execução',
       level: cancelled || cancelRequested
           ? NoticeLevel.info

@@ -4,6 +4,7 @@ import 'package:hermes_mobile/data/hermes_repository_provider.dart';
 import 'package:hermes_mobile/data/gateway_repository_provider.dart';
 import 'package:hermes_mobile/domain/models/conversation.dart';
 import 'package:hermes_mobile/domain/models/run.dart';
+import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/operational_notice.dart';
 import 'package:hermes_mobile/domain/models/tool_call.dart';
@@ -49,6 +50,174 @@ void main() {
     });
     return container;
   }
+
+  for (final terminal in [
+    (
+      category: NoticeCategory.completion,
+      cancelled: false,
+      text: 'Execução concluída.',
+    ),
+    (
+      category: NoticeCategory.completion,
+      cancelled: true,
+      text: 'Execução interrompida.',
+    ),
+    (
+      category: NoticeCategory.error,
+      cancelled: false,
+      text: 'A execução falhou.',
+    ),
+  ]) {
+    test(
+      'local stop error stays provisional on idle resume then ${terminal.text}',
+      () async {
+        final first = FakeGatewayLiveTurn(
+          storedSessionId: 'session-2',
+          liveSessionId: 'live-1',
+        )..interruptError = StateError('Falha neutra');
+        final idle = FakeGatewayLiveTurn(
+          storedSessionId: 'session-2',
+          liveSessionId: 'live-2',
+          running: false,
+        );
+        final gateway = FakeGatewayRepository(turns: [first, idle]);
+        setup(FakeHermesRepository(), gateway: gateway);
+        final controller = container.read(chatControllerProvider.notifier);
+        await controller.newChat();
+        await controller.send('Prompt neutro');
+        await controller.stop();
+        expect(
+          inbox.entries.single.provenance,
+          NoticeProvenance.localProvisional,
+        );
+        await controller.setLiveUpdatesVisible(false);
+        await controller.setLiveUpdatesVisible(true);
+        expect(
+          inbox.entries.single.text,
+          'Não foi possível acompanhar a execução.',
+        );
+        expect(
+          inbox.entries.single.provenance,
+          NoticeProvenance.localProvisional,
+        );
+        expect(idle.submitted, isEmpty);
+        // The authoritative terminal projection for this slot remains replaceable.
+        final slot = inbox.entries.single.slot;
+        inbox.run(
+          slot.$1,
+          slot.$2,
+          terminal.category,
+          cancelled: terminal.cancelled,
+        );
+        expect(inbox.entries.single.text, terminal.text);
+        expect(
+          inbox.entries.single.provenance,
+          NoticeProvenance.remoteTerminal,
+        );
+      },
+    );
+  }
+
+  for (final disconnect in [false, true]) {
+    for (final calls in [
+      (label: 'empty list', value: const [], terminal: true),
+      (
+        label: 'nonempty list',
+        value: const [
+          {
+            'id': 'tool-1',
+            'function': {'name': 'read_file'},
+          },
+        ],
+        terminal: false,
+      ),
+      (
+        label: 'non-list shape',
+        value: const <String, Object>{},
+        terminal: false,
+      ),
+    ]) {
+      test(
+        '${disconnect ? 'disconnect/reconcile' : 'hide/resume'} idle history with ${calls.label}',
+        () async {
+          final first = FakeGatewayLiveTurn(
+            storedSessionId: 'session-2',
+            liveSessionId: 'live-1',
+          );
+          final idle = FakeGatewayLiveTurn(
+            storedSessionId: 'session-2',
+            liveSessionId: 'live-2',
+            running: false,
+            initialHistory: [
+              SessionMessage(
+                id: 'remote',
+                role: 'assistant',
+                content: 'Resposta neutra',
+                toolCalls: calls.value,
+              ),
+            ],
+          );
+          final gateway = FakeGatewayRepository(turns: [first, idle]);
+          setup(FakeHermesRepository(), gateway: gateway);
+          final controller = container.read(chatControllerProvider.notifier);
+          await controller.newChat();
+          await controller.send('Prompt neutro');
+          if (disconnect) {
+            first.addError(StateError('Queda neutra'));
+            await until(
+              () => !container.read(chatControllerProvider).streaming,
+            );
+          } else {
+            await controller.setLiveUpdatesVisible(false);
+            await controller.setLiveUpdatesVisible(true);
+          }
+          if (calls.terminal) {
+            expect(inbox.entries, hasLength(1));
+            expect(inbox.entries.single.text, 'Execução concluída.');
+            expect(inbox.entries.single.category, NoticeCategory.completion);
+            expect(
+              inbox.entries.single.provenance,
+              NoticeProvenance.remoteTerminal,
+            );
+          } else {
+            expect(inbox.entries, isEmpty);
+          }
+          expect(container.read(chatControllerProvider).streaming, isFalse);
+          expect(gateway.openedSessionIds, hasLength(2));
+          expect(first.submitted, ['Prompt neutro']);
+          expect(idle.submitted, isEmpty);
+        },
+      );
+    }
+  }
+
+  test('disconnect idle remote history authorizes completion', () async {
+    final first = FakeGatewayLiveTurn(
+      storedSessionId: 'session-2',
+      liveSessionId: 'live-1',
+    );
+    final idle = FakeGatewayLiveTurn(
+      storedSessionId: 'session-2',
+      liveSessionId: 'live-2',
+      running: false,
+      initialHistory: [
+        const SessionMessage(
+          id: 'remote',
+          role: 'assistant',
+          content: 'Resposta neutra',
+        ),
+      ],
+    );
+    final gateway = FakeGatewayRepository(turns: [first, idle]);
+    setup(FakeHermesRepository(), gateway: gateway);
+    final controller = container.read(chatControllerProvider.notifier);
+    await controller.newChat();
+    await controller.send('Prompt neutro');
+    first.addError(StateError('Queda neutra'));
+    await until(() => !container.read(chatControllerProvider).streaming);
+    expect(inbox.entries.single.text, 'Execução concluída.');
+    expect(idle.submitted, isEmpty);
+  });
 
   test(
     'show/clear isolados da fala; status/tool/thinking/reasoning não vazam',

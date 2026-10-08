@@ -106,6 +106,7 @@ class FakeGatewayLiveTurn implements GatewayLiveTurn {
   bool clarificationExpired = false;
   Map<String, Object?>? serverAnswers;
   final Object? submitError;
+  Object? interruptError;
   bool interrupted = false;
   bool closed = false;
 
@@ -144,7 +145,10 @@ class FakeGatewayLiveTurn implements GatewayLiveTurn {
   Future<void> steer(String text) async => steered.add(text);
 
   @override
-  Future<void> interrupt() async => interrupted = true;
+  Future<void> interrupt() async {
+    if (interruptError != null) throw interruptError!;
+    interrupted = true;
+  }
 
   @override
   Future<void> respondToApproval(

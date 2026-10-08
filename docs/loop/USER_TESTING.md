@@ -89,3 +89,30 @@ Aceite Android pendente. Branch WIP com P2 de retomada documentado em
 - O retorno ao fim, um novo envio e a troca de conversa reatam o acompanhamento
   explicitamente.
 - A interação deve permanecer estável, sem puxões ou stuttering perceptível.
+
+## [ ] Fatia feat/unifiedpush-client-20261007 — P2 e contrato push pendente
+
+Este roteiro não autoriza envio, instalação de APK ou alteração do backend.
+Antes do aceite, reexecutar as regressões Flutter desta branch e verificar erro
+local neutro de stop, ocultar/retomar idle com histórico vazio: aviso permanece
+“Não foi possível acompanhar a execução”, substituível por terminal remoto.
+Nenhum prompt deve ser reenviado; bolha mantém o lifecycle existente.
+
+UnifiedPush está bloqueado e ausente; os cenários abaixo são requisitos de uma
+futura fatia com dependência resolvida e enrollment autenticado. Não marcá-los
+como executados nesta entrega:
+
+- Foreground: opt-in explícito; fora de Android, unsupported; ausência/seleção do
+  distribuidor exige ação humana. Sem permissão OS automática. Registro deve
+  mostrar “Backend pendente — enrollment autenticado ainda não existe”.
+- Background e tela bloqueada: callback headless sem UI/chat/conexão; somente
+  payload decriptado validado e deduplicado. Banner genérico sem conteúdo rico,
+  chaves ou endpoints. Abertura não executa comando nem inventa rota pendente.
+- Swipe em recentes: medir recepção com o distribuidor escolhido e comportamento
+  do fabricante; não confundir swipe com force-stop nem prometer entrega.
+- Offline: medir indisponibilidade temporária, retomada e dedupe; nenhuma mensagem
+  perdida deve ser anunciada como entregue apenas por registro no distribuidor.
+- Force-stop: declarar a limitação Android; não prometer despertar até reabertura
+  humana do app. Confirmar recuperação segura depois da reabertura.
+- Segundo distribuidor: teste futuro de seleção/troca/revogação e mesmos limites.
+  ntfy é só distribuidor selecionável, sem ACL ou enrollment configurados aqui.

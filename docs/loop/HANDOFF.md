@@ -179,3 +179,14 @@ PUB_CACHE=${HERMES_SCRATCH}/notifications-pub-cache ${HERMES_SCRATCH}/flutter-no
 PUB_CACHE=${HERMES_SCRATCH}/notifications-pub-cache ${HERMES_SCRATCH}/flutter-notifications-sdk/bin/flutter test --no-pub test/domain/operational_notice_test.dart test/features/notification_inbox_test.dart test/features/notification_controller_test.dart test/features/notification_sheet_test.dart test/data/dashboard_gateway_repository_test.dart test/core/turn_capture_test.dart
 git diff --check
 ```
+
+## Correções nesta branch — 2026-10-07
+
+`feat/unifiedpush-client-20261007`, baseline `caa81d69436474ee1a1592adbe33635c925f2805`:
+a projeção de avisos idle consulta somente o histórico remoto, nunca a fase da
+bolha local; a entrada da inbox expõe proveniência local provisória/terminal remoto.
+Lifecycle do chat e envio permanecem preservados. CLI publica apenas DB completo
+via rename Linux exclusivo; arquivo existente nunca é substituído ou recuperado
+por identidade zero. Regressões integradas; evidências e limitações atuais em
+[RESULT-UNIFIEDPUSH.md](../../RESULT-UNIFIEDPUSH.md), sem extrapolar resultados da
+branch anterior. UnifiedPush bloqueado na resolução pub.dev, sem implementação.

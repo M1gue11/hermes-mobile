@@ -882,10 +882,7 @@ class ChatController extends _$ChatController {
 
     _applyGatewayHistory(turn.initialHistory, record);
     if (!turn.running) {
-      _noticePhase(
-        record.assistantMessageId,
-        _assistantById(record.assistantMessageId)?.phase,
-      );
+      _noticeGatewayHistory(record.assistantMessageId, turn.initialHistory);
       await turn.close();
       await _clearActiveRunFor(record.sessionId);
       state = state.copyWith(streaming: false, runId: null);
@@ -1262,7 +1259,7 @@ class ChatController extends _$ChatController {
         );
         _applyGatewayHistory(resumed.initialHistory, record);
         if (!resumed.running) {
-          _noticePhase(messageId, _assistantById(messageId)?.phase);
+          _noticeGatewayHistory(messageId, resumed.initialHistory);
           await resumed.close();
           await _clearActiveRunFor(disconnected.storedSessionId);
           _finish(epoch);
@@ -1743,6 +1740,22 @@ class ChatController extends _$ChatController {
     );
     if (_assistantById(id)?.phase != ChatPhase.failed) {
       _noticePhase(id, _assistantById(id)?.phase);
+    }
+  }
+
+  // Only the persisted remote tail can authorize a terminal notice here.
+  // The merged bubble may still carry a local observation/interrupt failure.
+  void _noticeGatewayHistory(String id, List<SessionMessage> history) {
+    if (history.isEmpty) return;
+    final toolCalls = history.last.toolCalls;
+    if (history.last.role != 'assistant' ||
+        history.last.content.trim().isEmpty ||
+        (toolCalls != null && (toolCalls is! List || toolCalls.isNotEmpty))) {
+      return;
+    }
+    final remote = conversationTimeline(history);
+    if (remote.isNotEmpty && remote.last is AssistantMessage) {
+      _noticePhase(id, (remote.last as AssistantMessage).phase);
     }
   }
 

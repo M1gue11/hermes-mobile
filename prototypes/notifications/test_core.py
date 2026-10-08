@@ -229,6 +229,49 @@ class CoreTests(unittest.TestCase):
                                  input='{"version":1,"version":1}', text=True, capture_output=True)
         self.assertEqual(rejected.returncode, 2)
 
+    def test_initialization_crashes_and_foreign_race(self):
+        for stage in ('created', 'schema', 'identity', 'synced', 'published', 'directory_synced'):
+            with self.subTest(stage=stage):
+                path = Path(self.temp.name) / f'crash-{stage}.db'
+                script = """
+import os, sys
+from pathlib import Path
+import cli
+stage, target = sys.argv[1:]
+def crash(current):
+    if current == stage:
+        os._exit(71)
+cli._checkpoint = crash
+cli.open_private(Path(target))
+"""
+                result = subprocess.run([sys.executable, '-c', script, stage, str(path)],
+                                        cwd=Path(__file__).parent, capture_output=True)
+                self.assertEqual(result.returncode, 71)
+                if stage not in ('published', 'directory_synced'):
+                    self.assertFalse(path.exists())
+                else:
+                    self.assertEqual(path.stat().st_nlink, 1)
+                recovered = open_private(path)
+                self.assertEqual(recovered.db.execute('PRAGMA application_id').fetchone()[0], 1313821766)
+                self.assertEqual(recovered.status()['transport'], 'REAL AUSENTE')
+                recovered.close()
+        # A foreign file racing publication must be preserved byte-for-byte.
+        from unittest.mock import patch
+        foreign = Path(self.temp.name) / 'raced.db'
+        def race(stage):
+            if stage == 'synced':
+                foreign.write_bytes(b'foreign fixture')
+                foreign.chmod(0o600)
+        with patch('cli._checkpoint', side_effect=race):
+            with self.assertRaises(sqlite3.DatabaseError):
+                open_private(foreign)
+        self.assertEqual(foreign.read_bytes(), b'foreign fixture')
+        foreign_empty = Path(self.temp.name) / 'empty.db'
+        foreign_empty.touch(mode=0o600)
+        with self.assertRaises(ValueError):
+            open_private(foreign_empty)
+        self.assertEqual(foreign_empty.read_bytes(), b'')
+
     def test_private_cli_path(self):
         private = Path(self.temp.name) / 'cli.db'
         store = open_private(private)
@@ -241,6 +284,19 @@ class CoreTests(unittest.TestCase):
         with self.assertRaises(OSError): open_private(link)
         with self.assertRaises(ValueError): open_private(self.path)
         with self.assertRaises(ValueError): open_private('/tmp/foreign.db')
+        hardlink = Path(self.temp.name) / 'hardlink.db'
+        os.link(private, hardlink)
+        with self.assertRaises(ValueError): open_private(private)
+        with self.assertRaises(ValueError): open_private(hardlink)
+        hardlink.unlink()
+        incomplete = Path(self.temp.name) / 'identity-only.db'
+        db = sqlite3.connect(incomplete)
+        db.execute('PRAGMA application_id=1313821766')
+        db.close()
+        incomplete.chmod(0o600)
+        before = incomplete.read_bytes()
+        with self.assertRaises(sqlite3.OperationalError): open_private(incomplete)
+        self.assertEqual(incomplete.read_bytes(), before)
         private.chmod(0o644)
         with self.assertRaises(ValueError): open_private(private)
 
