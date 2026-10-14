@@ -4,6 +4,7 @@ import 'approval_request.dart';
 import 'clarify_request.dart';
 import 'run.dart';
 import 'tool_call.dart';
+import 'gateway_completion.dart';
 
 part 'run_event.freezed.dart';
 
@@ -34,6 +35,17 @@ sealed class RunEvent with _$RunEvent {
   /// Pedaço do texto final do assistant a ser anexado.
   const factory RunEvent.delta(String text) = RunTextDelta;
 
+  const factory RunEvent.interim({
+    required String text,
+    required bool alreadyStreamed,
+  }) = RunInterim;
+
+  const factory RunEvent.toolRisk({
+    required String toolId,
+    required String risk,
+    @Default(false) bool redacted,
+  }) = RunToolRisk;
+
   /// Progresso de uma tool call (entra na timeline, separada do texto).
   const factory RunEvent.toolProgress(ToolCall tool) = RunToolProgress;
 
@@ -57,10 +69,17 @@ sealed class RunEvent with _$RunEvent {
   const factory RunEvent.status(RunStatus status) = RunStatusEvent;
 
   /// Run concluída com sucesso.
-  const factory RunEvent.completed({String? output}) = RunCompleted;
+  const factory RunEvent.completed({
+    String? output,
+    GatewayCompletion? gateway,
+  }) = RunCompleted;
 
   /// Run falhou.
-  const factory RunEvent.failed({String? error}) = RunFailed;
+  const factory RunEvent.failed({
+    String? error,
+    String? output,
+    GatewayCompletion? gateway,
+  }) = RunFailed;
 
   /// Qualquer evento não reconhecido (forward-compat).
   const factory RunEvent.unknown(String type, Map<String, dynamic> data) =

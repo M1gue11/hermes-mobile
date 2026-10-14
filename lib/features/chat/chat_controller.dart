@@ -18,8 +18,10 @@ import '../../domain/models/model_selection.dart';
 import '../../domain/models/reasoning_config.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
+import '../../domain/models/gateway_turn_projection.dart';
 import '../../domain/models/session_message.dart';
 import '../../domain/models/tool_timeline.dart';
+import '../../domain/models/tool_call.dart';
 import '../../domain/models/turn_activity.dart';
 import '../../domain/repositories/hermes_repository.dart';
 import '../../domain/repositories/gateway_repository.dart';
@@ -43,13 +45,16 @@ final runReconciliationDelayProvider = Provider<Duration>(
   (ref) => const Duration(milliseconds: 250),
 );
 
-enum _GatewayTurnStart { unavailable, submitted, notSubmitted }
+enum _GatewayTurnStart { unavailable, submitted, uncertain, notSubmitted }
 
 /// Coordena sessão, histórico persistido e streaming da Runs API.
 @Riverpod(keepAlive: true)
 class ChatController extends _$ChatController {
   StreamSubscription<RunEvent>? _sub;
   GatewayLiveTurn? _gatewayTurn;
+  final _gatewayCursors = <String, GatewayReplayCursor>{};
+  GatewayLiveTurn? _reconcilingGatewayTurn;
+  final _uncertainSubmissions = <String>{};
   final Stopwatch _reasonWatch = Stopwatch();
   Future<void> _activeRunWrites = Future<void>.value();
   int _epoch = 0;
@@ -86,6 +91,9 @@ class ChatController extends _$ChatController {
     if (!visible) {
       final subscription = _sub;
       final turn = _gatewayTurn;
+      if (turn?.cursor case final cursor?) {
+        _gatewayCursors[turn!.storedSessionId] = cursor;
+      }
       _sub = null;
       _gatewayTurn = null;
       await subscription?.cancel();
@@ -110,15 +118,21 @@ class ChatController extends _$ChatController {
     if (active == null || !_canListen(epoch, generation)) return;
 
     try {
-      final persisted = await _repo.conversationMessages(sessionId);
+      final persisted =
+          active.transport == ActiveTurnTransport.dashboard &&
+              _gatewayCursors.containsKey(sessionId)
+          ? null
+          : await _repo.conversationMessages(sessionId);
       if (!_canListen(epoch, generation)) return;
-      state = state.copyWith(
-        messages: _timelineComTurnoEmCurso(
-          persisted,
-          assistantMessageId: active.assistantMessageId,
-          model: state.modelId,
-        ),
-      );
+      if (persisted != null) {
+        state = state.copyWith(
+          messages: _timelineComTurnoEmCurso(
+            persisted,
+            assistantMessageId: active.assistantMessageId,
+            model: state.modelId,
+          ),
+        );
+      }
     } catch (_) {
       // O registro e o snapshot ainda permitem retomar uma run quando o
       // histórico estiver temporariamente indisponível.
@@ -415,7 +429,8 @@ class ChatController extends _$ChatController {
         ref.read(chatDraftsProvider.notifier).clear(sessionId);
         return true;
       }
-      if (gatewayStart == _GatewayTurnStart.notSubmitted) {
+      if (gatewayStart == _GatewayTurnStart.notSubmitted ||
+          gatewayStart == _GatewayTurnStart.uncertain) {
         return false;
       }
       if (epoch != _epoch) {
@@ -764,6 +779,7 @@ class ChatController extends _$ChatController {
 
     final GatewayLiveTurn turn;
     try {
+      _gatewayCursors.remove(sessionId);
       turn = await gateway.openLiveTurn(storedSessionId: sessionId);
     } catch (error) {
       // Nenhum prompt foi enviado: cair para Runs aqui não duplica o turno.
@@ -795,8 +811,25 @@ class ChatController extends _$ChatController {
     );
 
     try {
-      await turn.submit(text);
+      final receipt = await turn.submit(text);
+      if (_canListen(epoch, listenerGeneration)) {
+        _bindGatewayUserRow(assistantMessageId, receipt.userRowId);
+      }
       return _GatewayTurnStart.submitted;
+    } on GatewaySubmissionUncertain {
+      if (_assistantIsTerminal(assistantMessageId)) {
+        return _GatewayTurnStart.submitted;
+      }
+      _uncertainSubmissions.add(sessionId);
+      unawaited(
+        _reconcileGatewayAfterDisconnect(
+          assistantMessageId,
+          turn,
+          epoch,
+          listenerGeneration,
+        ),
+      );
+      return _GatewayTurnStart.uncertain;
     } catch (error) {
       if (epoch == _epoch && !_assistantIsTerminal(assistantMessageId)) {
         _fail(
@@ -833,7 +866,13 @@ class ChatController extends _$ChatController {
 
     final GatewayLiveTurn turn;
     try {
-      turn = await gateway.openLiveTurn(storedSessionId: record.sessionId);
+      turn = await gateway.openLiveTurn(
+        storedSessionId: record.sessionId,
+        recover: true,
+        after: _assistantById(record.assistantMessageId) == null
+            ? null
+            : _gatewayCursors[record.sessionId],
+      );
     } catch (error) {
       // Sem isto a captura ficava presa em "observando" para sempre: o
       // `beginTurn` acima já consumiu o armamento, e nada a encerrava.
@@ -850,8 +889,9 @@ class ChatController extends _$ChatController {
       return;
     }
 
-    _applyGatewayHistory(turn.initialHistory, record);
-    if (!turn.running) {
+    _applyGatewaySnapshot(turn, record);
+    if (!turn.running && turn.recoveryMode == GatewayRecoveryMode.snapshot) {
+      turnCapture.endTurn('retomada terminal pelo snapshot');
       await turn.close();
       await _clearActiveRunFor(record.sessionId);
       state = state.copyWith(streaming: false, runId: null);
@@ -870,10 +910,9 @@ class ChatController extends _$ChatController {
 
   /// Reconstrói a lista a partir do histórico **sem perder o turno em curso**.
   ///
-  /// A58: nenhum histórico contém o turno em curso, nem o da Runs nem o do
-  /// gateway, porque ele só é persistido ao terminar. Reconstruir sem cuidado
-  /// apagava o parcial que estava na tela, e era isso que fazia sair e voltar
-  /// perder a resposta em andamento.
+  /// O transcript pode conter o user e segmentos intermediários do turno.
+  /// A retomada TUI trata `inflight` e replay separadamente; este helper mantém
+  /// o fallback legado/Runs quando só há histórico persistido e parcial local.
   ///
   /// Duas situações, e as duas terminam com **uma** bolha:
   ///
@@ -922,6 +961,124 @@ class ChatController extends _$ChatController {
     );
   }
 
+  void _applyGatewaySnapshot(GatewayLiveTurn turn, ActiveRunRecord record) {
+    // Open questions are authoritative on the new connection; its queued
+    // open_requests are delivered when the listener is attached below.
+    state = state.copyWith(
+      pendingApproval: null,
+      pendingClarification: null,
+      approvalError: null,
+      clarificationError: null,
+    );
+    if (turn.recoveryMode == GatewayRecoveryMode.gap) return;
+    if (turn.recoveryMode == GatewayRecoveryMode.turn) {
+      final timeline = [
+        ...conversationTimeline(
+          turn.initialHistory,
+          model: _usableModelId(record.model),
+        ),
+      ];
+      var user = timeline.lastIndexWhere((m) => m is UserMessage);
+      final prompt = turn.inflight?.user;
+      if (prompt != null &&
+          prompt.isNotEmpty &&
+          (user < 0 || (timeline[user] as UserMessage).text != prompt)) {
+        timeline.add(
+          ChatMessage.user(
+            id: '${record.assistantMessageId}-user',
+            text: prompt,
+            time: _hhmmFrom(record.startedAt),
+          ),
+        );
+        user = timeline.length - 1;
+      }
+      final prefix = user < 0
+          ? state.messages
+                .where((m) => m.id != record.assistantMessageId)
+                .toList()
+          : timeline.take(user + 1).toList();
+      prefix.add(
+        ChatMessage.assistant(
+          id: record.assistantMessageId,
+          model: _usableModelId(record.model),
+          runId: turn.turnId,
+          time: _hhmmFrom(record.startedAt),
+          phase: ChatPhase.writing,
+        ),
+      );
+      // Replay supplies this turn from its start, so a snapshot or local
+      // partial cannot also be applied as a prefix of its deltas.
+      state = state.copyWith(messages: prefix);
+      return;
+    }
+    final inflight = turn.inflight;
+    if (inflight == null) {
+      _applyGatewayHistory(turn.initialHistory, record);
+      return;
+    }
+    if (_uncertainSubmissions.remove(record.sessionId)) {
+      ref.read(chatDraftsProvider.notifier).clear(record.sessionId);
+    }
+    final local = _assistantById(record.assistantMessageId);
+    final messages = [
+      ...conversationTimeline(
+        turn.initialHistory,
+        model: _usableModelId(record.model),
+      ),
+    ];
+    var user = messages.lastIndexWhere((m) => m is UserMessage);
+    // The inflight user may not have reached the transcript. Do not adopt the
+    // assistant of the previous completed turn in that case.
+    if (inflight.user.isNotEmpty &&
+        (user < 0 || (messages[user] as UserMessage).text != inflight.user)) {
+      messages.add(
+        ChatMessage.user(
+          id: '${record.assistantMessageId}-user',
+          text: inflight.user,
+          time: _hhmmFrom(record.startedAt),
+        ),
+      );
+      user = messages.length - 1;
+    }
+    final assistant = messages.lastIndexWhere((m) => m is AssistantMessage);
+    final persisted = assistant > user
+        ? messages[assistant] as AssistantMessage
+        : null;
+    var text = inflight.assistant;
+    // Local delivery can be ahead of this snapshot. Only a proven prefix
+    // extends it; an unrelated older reply never wins by length.
+    if (local != null && local.text.startsWith(text)) text = local.text;
+    final failed = inflight.status == 'error' || inflight.error != null;
+    final fallback =
+        ChatMessage.assistant(
+              id: record.assistantMessageId,
+              model: _usableModelId(record.model),
+              time: _hhmmFrom(record.startedAt),
+            )
+            as AssistantMessage;
+    final bubble = (local ?? persisted ?? fallback).copyWith(
+      id: record.assistantMessageId,
+      text: text,
+      phase: failed
+          ? ChatPhase.failed
+          : turn.running
+          ? ChatPhase.writing
+          : ChatPhase.done,
+      error: inflight.error,
+      recoverable: inflight.recoverable,
+      runId: turn.turnId,
+      thinking: '',
+    );
+    if (assistant > user) {
+      messages[assistant] = bubble;
+    } else {
+      messages.add(bubble);
+    }
+    state = state.copyWith(
+      messages: _reconcileGatewayTimeline(messages, record),
+    );
+  }
+
   /// Um socket retomado pode começar com um recorte do turno ativo, enquanto
   /// a hidratação HTTP já publicou a conversa inteira. O recorte atualiza a
   /// última resposta, mas nunca tem autoridade para apagar o prefixo visível.
@@ -941,9 +1098,11 @@ class ChatController extends _$ChatController {
     final resumedPrompt = resumed[resumedUser] as UserMessage;
     bool samePrompt(ChatMessage message, UserMessage prompt) =>
         message is UserMessage &&
-        (message.id == prompt.id ||
-            (message.text == prompt.text &&
-                message.scaffolding == prompt.scaffolding));
+        (message.rowId != null && prompt.rowId != null
+            ? message.rowId == prompt.rowId
+            : message.id == prompt.id ||
+                  (message.text == prompt.text &&
+                      message.scaffolding == prompt.scaffolding));
     final currentUser = current.lastIndexWhere(
       (message) => samePrompt(message, resumedPrompt),
     );
@@ -1041,26 +1200,50 @@ class ChatController extends _$ChatController {
   ///
   /// O servidor persiste ao concluir; o app acumula enquanto ouve. Nenhum dos
   /// dois é sempre o mais completo: voltando do background o local está à
-  /// frente, e depois de fechar o app ele está vazio. Reconciliar é ficar com
-  /// o mais completo de cada lado, nunca com o mais curto. Perder texto que já
-  /// esteve na tela é exatamente o defeito que A58 persegue.
+  /// frente, e depois de fechar o app ele está vazio. Texto terminal pode ser
+  /// transformado; tools compactas podem omitir detalhes já vistos. A mesclagem
+  /// usa prefixos de texto e IDs de chamada, sem confundir tools de mesmo nome.
   AssistantMessage _mergeResumed(
     AssistantMessage persistido,
     AssistantMessage? local,
   ) {
     if (local == null) return persistido;
-    String maior(String a, String b) => a.length >= b.length ? a : b;
+    // An unrelated or transformed persisted reply is authoritative. Length
+    // cannot identify a turn or justify retaining superseded streamed text.
+    String enriched(String incoming, String prior) =>
+        incoming.isEmpty || prior.startsWith(incoming) ? prior : incoming;
+    final incomingTools = {
+      for (final t in persistido.tools)
+        if (t.id != null) t.id!: t,
+    };
+    final priorTools = {
+      for (final t in local.tools)
+        if (t.id != null) t.id!: t,
+    };
+    ToolCall projectTool(ToolCall tool) => mergeGatewayToolDetails(
+      incomingTools[tool.id] ?? tool,
+      priorTools[tool.id],
+    );
+    final items = persistido.activityItems.length >= local.activityItems.length
+        ? persistido.activityItems
+        : local.activityItems;
+    final tools = persistido.tools.length >= local.tools.length
+        ? persistido.tools
+        : local.tools;
     return persistido.copyWith(
-      text: maior(persistido.text, local.text),
-      reasoning: maior(persistido.reasoning, local.reasoning),
-      activity: maior(persistido.activity, local.activity),
-      activityItems:
-          persistido.activityItems.length >= local.activityItems.length
-          ? persistido.activityItems
-          : local.activityItems,
-      tools: persistido.tools.length >= local.tools.length
-          ? persistido.tools
-          : local.tools,
+      text: enriched(persistido.text, local.text),
+      reasoning: enriched(persistido.reasoning, local.reasoning),
+      activity: enriched(persistido.activity, local.activity),
+      activityItems: [
+        for (final item in items)
+          if (item is TurnToolActivity)
+            item.copyWith(tool: projectTool(item.tool))
+          else
+            item,
+      ],
+      tools: tools.map(projectTool).toList(),
+      rowId: persistido.rowId ?? local.rowId,
+      warning: persistido.warning ?? local.warning,
       reasonTime: persistido.reasonTime ?? local.reasonTime,
       model: persistido.model ?? local.model,
     );
@@ -1155,7 +1338,7 @@ class ChatController extends _$ChatController {
 
     _sub = turn.events.listen(
       (event) {
-        if (_canListen(epoch, generation)) {
+        if (_canListen(epoch, generation) && !_assistantIsTerminal(messageId)) {
           _onEvent(messageId, event, epoch);
         }
       },
@@ -1170,6 +1353,11 @@ class ChatController extends _$ChatController {
     int epoch,
     int generation,
   ) async {
+    if (identical(_reconcilingGatewayTurn, disconnected)) return;
+    _reconcilingGatewayTurn = disconnected;
+    if (disconnected.cursor case final cursor?) {
+      _gatewayCursors[disconnected.storedSessionId] = cursor;
+    }
     if (identical(_gatewayTurn, disconnected)) _gatewayTurn = null;
     await disconnected.close();
 
@@ -1198,6 +1386,8 @@ class ChatController extends _$ChatController {
         }
         final resumed = await gateway.openLiveTurn(
           storedSessionId: disconnected.storedSessionId,
+          recover: true,
+          after: _gatewayCursors[disconnected.storedSessionId],
         );
         if (!_canListen(epoch, generation) || _assistantIsTerminal(messageId)) {
           await resumed.close();
@@ -1212,8 +1402,10 @@ class ChatController extends _$ChatController {
           model: state.modelId,
           transport: ActiveTurnTransport.dashboard,
         );
-        _applyGatewayHistory(resumed.initialHistory, record);
-        if (!resumed.running) {
+        _applyGatewaySnapshot(resumed, record);
+        if (!resumed.running &&
+            resumed.recoveryMode == GatewayRecoveryMode.snapshot) {
+          turnCapture.endTurn('retomada terminal pelo snapshot');
           await resumed.close();
           await _clearActiveRunFor(disconnected.storedSessionId);
           _finish(epoch);
@@ -1274,6 +1466,39 @@ class ChatController extends _$ChatController {
   void _onEvent(String id, RunEvent event, int epoch) {
     turnCapture.adapterEvent(event);
     switch (event) {
+      case RunInterim(:final text, :final alreadyStreamed):
+        _patch(
+          id,
+          (m) => sealGatewayInterim(
+            m,
+            text: text,
+            alreadyStreamed: alreadyStreamed,
+            id: _nextTurnEventId(id),
+          ),
+        );
+      case RunToolRisk(:final toolId, :final risk, :final redacted):
+        _patch(id, (m) {
+          final tools = m.tools
+              .map(
+                (t) => t.id == toolId
+                    ? t.copyWith(risk: risk, outputRedacted: redacted)
+                    : t,
+              )
+              .toList();
+          final items = m.activityItems
+              .map(
+                (item) => item is TurnToolActivity && item.tool.id == toolId
+                    ? item.copyWith(
+                        tool: item.tool.copyWith(
+                          risk: risk,
+                          outputRedacted: redacted,
+                        ),
+                      )
+                    : item,
+              )
+              .toList();
+          return m.copyWith(tools: tools, activityItems: items);
+        });
       case RunActivityPreview(:final text):
         if (!state.reasoning.showActivity) {
           return;
@@ -1352,6 +1577,13 @@ class ChatController extends _$ChatController {
           clarificationError: null,
         );
       case RunStatusEvent(:final status):
+        if (status == RunStatus.running) {
+          if (state.sessionId case final sessionId?) {
+            if (_uncertainSubmissions.remove(sessionId)) {
+              ref.read(chatDraftsProvider.notifier).clear(sessionId);
+            }
+          }
+        }
         if (status == RunStatus.cancelled) {
           _patch(
             id,
@@ -1362,24 +1594,75 @@ class ChatController extends _$ChatController {
           _clearActiveRun();
           _finish(epoch);
         }
-      case RunCompleted(:final output):
+      case RunCompleted(:final output, :final gateway):
+        if (state.sessionId case final sessionId?) {
+          if (_uncertainSubmissions.remove(sessionId)) {
+            ref.read(chatDraftsProvider.notifier).clear(sessionId);
+          }
+        }
         _patch(
           id,
-          (message) => message.copyWith(
-            phase: ChatPhase.done,
-            text: output?.isNotEmpty == true ? output! : message.text,
-            tools: settleTools(message.tools),
-            activityItems: settleTurnTools(message.activityItems),
-            thinking: '',
-          ),
+          (message) =>
+              settleGatewayResponse(
+                message,
+                output: output,
+                completion: gateway,
+                reasoningId: _nextTurnEventId(id),
+              ).copyWith(
+                phase: ChatPhase.done,
+                tools: settleTools(message.tools),
+                thinking: '',
+              ),
         );
+        _bindGatewayUserRow(id, gateway?.userRowId);
         _captureTurnEnd(id);
         _clearActiveRun();
         _finish(epoch);
         ref.invalidate(conversationFeedProvider);
-      case RunFailed(:final error):
+      case RunFailed(:final error, :final output, :final gateway):
+        if (state.sessionId case final sessionId?) {
+          if (_uncertainSubmissions.remove(sessionId)) {
+            ref.read(chatDraftsProvider.notifier).clear(sessionId);
+          }
+        }
+        _bindGatewayUserRow(id, gateway?.userRowId);
+        _patch(
+          id,
+          (m) => settleGatewayResponse(
+            m,
+            output: output,
+            completion: gateway,
+            reasoningId: _nextTurnEventId(id),
+          ),
+        );
         _fail(id, error ?? 'Falha na run', epoch: epoch, clearActiveRun: true);
       case RunUnknown(:final type, :final data):
+        if (type == 'approval.cancelled') {
+          final pending = state.pendingApproval;
+          final ids = data['request_ids'];
+          if (pending != null &&
+              ids is List &&
+              ids.contains(pending.gatewayRequestId ?? pending.requestId)) {
+            state = state.copyWith(pendingApproval: null, approvalError: null);
+          }
+          break;
+        }
+        if (type == 'session.reclaimed') {
+          final turn = _gatewayTurn;
+          if (turn != null &&
+              (data['session_id'] == turn.liveSessionId ||
+                  data['stored_session_id'] == turn.storedSessionId)) {
+            unawaited(
+              _reconcileGatewayAfterDisconnect(
+                id,
+                turn,
+                epoch,
+                _listenerGeneration,
+              ),
+            );
+          }
+          break;
+        }
         if (type != 'request.cancel') break;
         final requestId = data['id'];
         if (requestId is! String || requestId.isEmpty) break;
@@ -1656,6 +1939,23 @@ class ChatController extends _$ChatController {
     final turn = _gatewayTurn;
     _gatewayTurn = null;
     await turn?.close();
+  }
+
+  void _bindGatewayUserRow(String assistantId, int? rowId) {
+    if (rowId == null) return;
+    final assistantIndex = state.messages.indexWhere(
+      (m) => m.id == assistantId,
+    );
+    final userIndex = state.messages
+        .take(assistantIndex < 0 ? 0 : assistantIndex)
+        .toList()
+        .lastIndexWhere((m) => m is UserMessage);
+    if (userIndex < 0) return;
+    final messages = [...state.messages];
+    messages[userIndex] = (messages[userIndex] as UserMessage).copyWith(
+      rowId: rowId,
+    );
+    state = state.copyWith(messages: messages);
   }
 
   void _patch(String id, AssistantMessage Function(AssistantMessage) update) {

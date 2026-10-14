@@ -17,6 +17,16 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
 - Force uma falha de rede ao responder e confirme que texto/seleção permanecem
   visíveis para retry.
 
+## [ ] B12/B13 — streaming e retomada TUI 0.21.6
+
+- Produzir separadamente um turno com `message.interim` e sinal de
+  `tool.output_risk`: sem duplicação de comentário nem exposição de findings.
+- Validar aprovação pendente durante reconexão, ring expirado e restart real
+  do backend. Fixtures locais cobrem o contrato; esses aceites de runtime
+  ainda não foram executados na build atual. Limites do snapshot e evidência
+  do replay já validado estão na
+  [auditoria](../dashboard-api/mobile-streaming-audit-0.21.6.md).
+
 ## [ ] A73 — expansão estável da timeline
 
 - Abra uma tool: o cabeçalho deve permanecer no mesmo ponto da tela e revelar

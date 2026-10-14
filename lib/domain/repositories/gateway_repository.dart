@@ -1,7 +1,11 @@
 import '../models/approval_request.dart';
 import '../models/composer_attachment.dart';
+import '../models/gateway_inflight.dart';
+import '../models/gateway_recovery.dart';
 import '../models/run_event.dart';
 import '../models/session_message.dart';
+
+export '../models/gateway_recovery.dart';
 
 class ClarifyResponse {
   const ClarifyResponse({this.remaining, this.expired = false});
@@ -20,6 +24,7 @@ const allowedGatewayMethods = <String>{
   'session.list',
   'session.most_recent',
   'session.history',
+  'session.events.since',
   'prompt.submit',
   'session.steer',
   'session.interrupt',
@@ -38,6 +43,7 @@ const knownGatewayEvents = <String>{
   'skin.changed',
   'session.info',
   'message.start',
+  'message.interim',
   'message.delta',
   'message.complete',
   'thinking.delta',
@@ -53,6 +59,10 @@ const knownGatewayEvents = <String>{
   // `tool.output_risk`, `reasoning.available` e `moa.*`. Se algum dia voltar,
   // chega como `RunEvent.unknown` e é decidido de novo, não em silêncio.
   'tool.complete',
+  'tool.output_risk',
+  'session.reclaimed',
+  'approval.cancelled',
+  'todo.updated',
   'approval.request',
   'sudo.request',
   'sudo.expire',
@@ -105,7 +115,11 @@ abstract interface class GatewayRepository {
   /// Abre um socket novo, espera `gateway.ready` e retoma a sessão durável.
   /// Nenhum prompt é enviado por esta operação, portanto ainda é seguro cair
   /// para Runs se ela falhar.
-  Future<GatewayLiveTurn> openLiveTurn({required String storedSessionId});
+  Future<GatewayLiveTurn> openLiveTurn({
+    required String storedSessionId,
+    GatewayReplayCursor? after,
+    bool recover = false,
+  });
 
   /// Diagnóstico: chama métodos da allowlist em sequência num socket só e
   /// devolve o desfecho de cada um.
@@ -146,10 +160,13 @@ abstract interface class GatewayLiveTurn {
   String get liveSessionId;
   String get turnId;
   bool get running;
+  GatewayInflight? get inflight;
+  GatewayReplayCursor? get cursor;
+  GatewayRecoveryMode get recoveryMode;
   List<SessionMessage> get initialHistory;
   Stream<RunEvent> get events;
 
-  Future<void> submit(String text);
+  Future<GatewayPromptReceipt> submit(String text);
   Future<void> steer(String text);
   Future<void> interrupt();
   Future<void> respondToApproval(ApprovalChoice choice, {String? requestId});
@@ -168,6 +185,27 @@ final class GatewayAuthenticationRequired implements Exception {
   ]);
 
   final String message;
+}
+
+class GatewayPromptReceipt {
+  const GatewayPromptReceipt({this.status = 'streaming', this.userRowId});
+  final String status;
+  final int? userRowId;
+}
+
+/// The frame was handed to the socket but no authoritative reply arrived.
+/// Recovery must inspect the remote turn rather than treating this as refusal.
+final class GatewaySubmissionUncertain extends GatewayOperationException {
+  const GatewaySubmissionUncertain()
+    : super(
+        'A confirmação do envio não chegou. Retomando a conversa…',
+        method: 'prompt.submit',
+      );
+}
+
+final class GatewayRequestNotSent extends GatewayOperationException {
+  const GatewayRequestNotSent({required String method})
+    : super('O canal do gateway foi encerrado antes do envio.', method: method);
 }
 
 final class GatewayOperationException implements Exception {

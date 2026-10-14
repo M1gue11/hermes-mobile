@@ -13,6 +13,26 @@ Map<String, dynamic> toolCall(String id, String name, String arguments) => {
 };
 
 void main() {
+  test('REST usa sidecars públicos e mantém commentary sem texto final', () {
+    final projected = SessionMessage.fromJson({
+      'id': 'row-1',
+      'role': 'assistant',
+      'content': 'private provider replay envelope',
+      'reasoning_content': 'private reasoning envelope',
+      'display_content': '',
+      'display_reasoning': '',
+      'display_commentary': ['public commentary'],
+    });
+    final timeline = conversationTimeline([projected]);
+    final assistant = timeline.single as AssistantMessage;
+    expect(assistant.text, isEmpty);
+    expect(assistant.reasoning, isEmpty);
+    expect(assistant.activityItems.single, isA<TurnCommentary>());
+    expect(
+      (assistant.activityItems.single as TurnCommentary).text,
+      'public commentary',
+    );
+  });
   test('turno intermediário de tool call não vira bolha vazia', () {
     final timeline = conversationTimeline([
       const SessionMessage(id: 'm1', role: 'user', content: 'oi'),

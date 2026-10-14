@@ -205,8 +205,11 @@ final class _WidgetGatewayRepository implements GatewayRepository {
   }) async => const [];
 
   @override
-  Future<GatewayLiveTurn> openLiveTurn({required String storedSessionId}) =>
-      throw UnimplementedError();
+  Future<GatewayLiveTurn> openLiveTurn({
+    required String storedSessionId,
+    GatewayReplayCursor? after,
+    bool recover = false,
+  }) => throw UnimplementedError();
 
   @override
   Future<List<GatewayProbeStep>> probeGateway({

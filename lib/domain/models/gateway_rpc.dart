@@ -43,10 +43,19 @@ final class GatewayServerRequestFrame extends GatewayFrame {
 }
 
 final class GatewayEventFrame extends GatewayFrame {
-  const GatewayEventFrame({required this.type, required this.payload});
+  const GatewayEventFrame({
+    required this.type,
+    required this.payload,
+    this.sessionId,
+    this.seq,
+    this.replayed = false,
+  });
 
   final String type;
   final Map<String, dynamic> payload;
+  final String? sessionId;
+  final int? seq;
+  final bool replayed;
 }
 
 final class GatewayProtocolException implements Exception {
@@ -123,6 +132,10 @@ GatewayFrame decodeGatewayFrame(String raw) {
     return GatewayEventFrame(
       type: type,
       payload: payload is Map<String, dynamic> ? payload : const {},
+      sessionId: params['session_id'] is String
+          ? params['session_id'] as String
+          : null,
+      seq: params['seq'] is int ? params['seq'] as int : null,
     );
   }
   if (hasId && decoded['method'] is String) {

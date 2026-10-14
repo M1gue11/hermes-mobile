@@ -55,6 +55,8 @@ List<ToolCall> applyToolEvent(List<ToolCall> current, ToolCall event) {
     detail: event.detail ?? existing.detail,
     output: event.output ?? existing.output,
     duration: event.duration ?? existing.duration,
+    risk: event.risk ?? existing.risk,
+    outputRedacted: event.outputRedacted || existing.outputRedacted,
   );
   return updated;
 }

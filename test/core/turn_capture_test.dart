@@ -9,6 +9,33 @@ import 'package:hermes_mobile/domain/models/turn_activity.dart';
 /// carregar valor de texto nem credencial, e o veredito precisa apontar a
 /// camada certa quando as duas projeções divergem.
 void main() {
+  test('diferença de espaços e ordem JSON não acusa saída truncada', () {
+    final capture = TurnCapture()
+      ..arm(true)
+      ..beginTurn(sessionId: 'test', origin: 'teste');
+    capture.liveProjection(const [
+      TurnActivity.tool(
+        id: 't',
+        tool: ToolCall(
+          id: 'call',
+          name: 'terminal',
+          output: '{"output":"ok","exit_code":0,"error":null}',
+        ),
+      ),
+    ]);
+    capture.historyProjection(const [
+      TurnActivity.tool(
+        id: 't',
+        tool: ToolCall(
+          id: 'call',
+          name: 'terminal',
+          output: '{"error": null, "exit_code": 0, "output": "ok"}',
+        ),
+      ),
+    ]);
+    expect(capture.verdict().first, contains('SIM'));
+    expect(capture.report(), isNot(contains('"output":"ok"')));
+  });
   late TurnCapture capture;
 
   setUp(() {
@@ -18,6 +45,25 @@ void main() {
   });
 
   group('redação', () {
+    test('schema do transcript identifica o contrato sem copiar texto', () {
+      capture.rpcResult('session.resume', {
+        'messages': [
+          {'role': 'user', 'text': 'private prompt', 'row_id': 1},
+          {
+            'role': 'tool',
+            'name': 'terminal',
+            'args': {'command': 'private command'},
+            'tool_call_id': 't',
+          },
+        ],
+      });
+      final report = capture.report();
+      expect(report, contains('schema session.resume'));
+      expect(report, contains('row_id'));
+      expect(report, contains('users=1'));
+      expect(report, contains('tools=1'));
+      expect(report, isNot(contains('private')));
+    });
     test('campo de texto sai como tamanho, nunca como conteúdo', () {
       capture.rawFrame('tool.complete', {
         'name': 'read_file',

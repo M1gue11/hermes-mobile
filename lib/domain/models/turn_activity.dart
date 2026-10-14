@@ -11,6 +11,13 @@ part 'turn_activity.freezed.dart';
 /// ferramenta. A ordem da lista é a ordem observada pelo cliente.
 @freezed
 sealed class TurnActivity with _$TurnActivity {
+  /// Assistant speech sealed before the next tool/response segment.
+  const factory TurnActivity.commentary({
+    required String id,
+    required String text,
+    int? rowId,
+  }) = TurnCommentary;
+
   const factory TurnActivity.activity({
     required String id,
     required String text,
@@ -52,6 +59,8 @@ List<TurnActivity> applyTurnToolEvent(
       detail: event.detail ?? existing.detail,
       output: event.output ?? existing.output,
       duration: event.duration ?? existing.duration,
+      risk: event.risk ?? existing.risk,
+      outputRedacted: event.outputRedacted || existing.outputRedacted,
     ),
   );
   return updated;

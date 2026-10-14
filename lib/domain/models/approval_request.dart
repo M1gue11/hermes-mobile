@@ -25,6 +25,7 @@ class ApprovalRequest {
   const ApprovalRequest({
     required this.runId,
     this.requestId,
+    this.gatewayRequestId,
     required this.command,
     this.description,
     this.patternKey,
@@ -36,6 +37,7 @@ class ApprovalRequest {
   /// Id do envelope JSON-RPC quando a aprovação veio como server request.
   /// Nulo preserva o caminho legado do evento `approval.request`.
   final String? requestId;
+  final String? gatewayRequestId;
 
   /// O comando que o servidor quer executar, já redigido por ele.
   final String command;
@@ -61,6 +63,7 @@ class ApprovalRequest {
         : const <ApprovalChoice>[];
     return ApprovalRequest(
       runId: json['run_id']?.toString() ?? '',
+      gatewayRequestId: _textoOuNulo(json['gateway_request_id']),
       requestId: json['server_request'] == true
           ? _textoOuNulo(json['request_id'])
           : null,

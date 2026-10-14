@@ -18,6 +18,8 @@ abstract class ToolCall with _$ToolCall {
     String? detail,
     String? output,
     String? duration,
+    String? risk,
+    @Default(false) bool outputRedacted,
     @Default(ToolStatus.running) ToolStatus status,
   }) = _ToolCall;
 }

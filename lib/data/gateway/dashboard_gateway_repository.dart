@@ -9,6 +9,8 @@ import '../../domain/models/approval_request.dart';
 import '../../domain/models/clarify_request.dart';
 import '../../domain/models/composer_attachment.dart';
 import '../../domain/models/gateway_rpc.dart';
+import '../../domain/models/gateway_inflight.dart';
+import '../../domain/models/gateway_completion.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
 import '../../domain/models/session_message.dart';
@@ -270,6 +272,7 @@ class DashboardGatewayRepository implements GatewayRepository {
         storedSessionId: storedSessionId,
         liveSessionId: liveSessionId,
         running: _sessionIsRunning(resumed),
+        inflight: GatewayInflight.fromJson(resumed['inflight']),
       );
       _staged = staged;
       _armStagedExpiry(staged);
@@ -393,6 +396,8 @@ class DashboardGatewayRepository implements GatewayRepository {
   @override
   Future<GatewayLiveTurn> openLiveTurn({
     required String storedSessionId,
+    GatewayReplayCursor? after,
+    bool recover = false,
   }) async {
     final stored = storedSessionId.trim();
     if (stored.isEmpty) {
@@ -412,6 +417,9 @@ class DashboardGatewayRepository implements GatewayRepository {
           storedSessionId: stored,
           liveSessionId: staged.liveSessionId,
           running: staged.running,
+          inflight: staged.inflight,
+          after: after,
+          recover: recover,
         );
       } catch (_) {
         // Nenhum prompt foi submetido nessa conexão, então abrir outra não
@@ -441,6 +449,9 @@ class DashboardGatewayRepository implements GatewayRepository {
         storedSessionId: stored,
         liveSessionId: liveSessionId,
         running: _sessionIsRunning(resumed),
+        inflight: GatewayInflight.fromJson(resumed['inflight']),
+        after: after,
+        recover: recover,
         resumedHistory: _historyFrom(resumed),
       );
     } catch (_) {
@@ -530,6 +541,9 @@ class DashboardGatewayRepository implements GatewayRepository {
     required String storedSessionId,
     required String liveSessionId,
     required bool running,
+    GatewayInflight? inflight,
+    GatewayReplayCursor? after,
+    bool recover = false,
     List<SessionMessage> resumedHistory = const [],
   }) async {
     // O contrato medido do 0.20.1 já devolve `messages` no `session.resume`.
@@ -542,11 +556,39 @@ class DashboardGatewayRepository implements GatewayRepository {
       });
       initialHistory = _historyFrom(historyResult);
     }
+    var recoveredRunning = running;
+    var recoveredInflight = inflight;
+    var recoveredLiveId = liveSessionId;
+    final mode = recover
+        ? await client.recover(after, running: running)
+        : GatewayRecoveryMode.snapshot;
+    if (recover && mode == GatewayRecoveryMode.snapshot) {
+      // A truncated replay's watermark is newer than the original resume.
+      // Read state again after abandoning that window, never attach its tail
+      // to an older snapshot. This also refreshes retained errors/open cards.
+      client.prepareSnapshotRecovery();
+      final fresh = await client.call('session.resume', {
+        'session_id': storedSessionId,
+        'source': 'mobile',
+        'close_on_disconnect': false,
+        'eager_build': true,
+      });
+      final id = fresh['session_id'];
+      if (id is String && id.isNotEmpty) {
+        recoveredLiveId = id;
+        client.bindSessionId(id);
+      }
+      initialHistory = _historyFrom(fresh);
+      recoveredRunning = _sessionIsRunning(fresh);
+      recoveredInflight = GatewayInflight.fromJson(fresh['inflight']);
+    }
     return _DashboardLiveTurn(
       client: client,
       storedSessionId: storedSessionId,
-      liveSessionId: liveSessionId,
-      running: running,
+      liveSessionId: recoveredLiveId,
+      running: recoveredRunning,
+      inflight: recoveredInflight,
+      recoveryMode: mode,
       initialHistory: initialHistory,
     );
   }
@@ -571,6 +613,7 @@ class DashboardGatewayRepository implements GatewayRepository {
         heartbeatDeadline: _heartbeatDeadline,
       );
       await client.ready.timeout(const Duration(seconds: 20));
+      await client.capabilitiesReady;
       return client;
     } on GatewayAuthenticationRequired {
       await client?.close();
@@ -751,7 +794,9 @@ class DashboardGatewayRepository implements GatewayRepository {
     final running = resumed['running'];
     if (running == true) return true;
     final inflight = resumed['inflight'];
-    if (inflight == true || (inflight is List && inflight.isNotEmpty)) {
+    if (inflight == true ||
+        (inflight is List && inflight.isNotEmpty) ||
+        (inflight is Map && inflight['streaming'] == true)) {
       return true;
     }
     return switch (resumed['status']?.toString().toLowerCase()) {
@@ -774,13 +819,37 @@ class DashboardGatewayRepository implements GatewayRepository {
         SessionMessage(
           id: json['id']?.toString().trim().isNotEmpty == true
               ? json['id'].toString()
+              : json['row_id'] is int
+              ? 'gateway-row-${json['row_id']}'
               : 'gateway-history-$index',
           role: role,
-          content: _contentText(json['content']),
+          content: _contentText(
+            json['display_content'] ?? json['text'] ?? json['content'],
+          ),
+          rowId: json['row_id'] is int ? json['row_id'] as int : null,
+          displayKind: _optionalText(json['display_kind']),
+          displayMetadata: json['display_metadata'] is Map<String, dynamic>
+              ? json['display_metadata'] as Map<String, dynamic>
+              : null,
+          displayCommentary: json['display_commentary'] is List
+              ? (json['display_commentary'] as List)
+                    .whereType<String>()
+                    .toList()
+              : const [],
           timestamp: _timestamp(json['timestamp'] ?? json['created_at']),
-          reasoning: _optionalText(json['reasoning']),
-          reasoningContent: _optionalText(json['reasoning_content']),
-          toolName: _optionalText(json['tool_name']),
+          reasoning: _optionalText(
+            json['display_reasoning'] ?? json['reasoning'],
+          ),
+          reasoningContent: _optionalText(
+            json['display_reasoning'] ??
+                json['reasoning_content'] ??
+                (json.containsKey('text') ? json['reasoning'] : null),
+          ),
+          toolName: _optionalText(json['name'] ?? json['tool_name']),
+          toolContext: _optionalText(json['context']),
+          toolArgs: json['args'] is Map<String, dynamic>
+              ? json['args'] as Map<String, dynamic>
+              : null,
           toolCallId: _optionalText(json['tool_call_id']),
           toolCalls: json['tool_calls'],
           tokenCount: json['token_count'] is num
@@ -833,12 +902,14 @@ final class _StagedGatewaySession {
     required this.storedSessionId,
     required this.liveSessionId,
     required this.running,
+    this.inflight,
   });
 
   final _GatewaySocketClient client;
   final String storedSessionId;
   final String liveSessionId;
   final bool running;
+  final GatewayInflight? inflight;
   Timer? expiry;
 }
 
@@ -849,6 +920,8 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
     required this.liveSessionId,
     required this.running,
     required this.initialHistory,
+    this.inflight,
+    this.recoveryMode = GatewayRecoveryMode.snapshot,
   });
 
   final _GatewaySocketClient _client;
@@ -866,23 +939,50 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
   final List<SessionMessage> initialHistory;
 
   @override
+  final GatewayInflight? inflight;
+
+  @override
+  GatewayReplayCursor? get cursor => _client.cursor;
+
+  @override
+  final GatewayRecoveryMode recoveryMode;
+
+  @override
   String get turnId => 'gateway:$liveSessionId';
 
   @override
-  Stream<RunEvent> get events => _client.events.asyncExpand((frame) async* {
-    yield* Stream<RunEvent>.fromIterable(_eventsFrom(frame, turnId));
-  });
+  // Keep projection synchronous with seq advancement. asyncExpand would let
+  // the cursor move ahead of deltas still waiting for the reducer on pause.
+  Stream<RunEvent> get events =>
+      _client.events.expand((frame) => _eventsFrom(frame, turnId));
 
   @override
-  Future<void> submit(String text) async {
+  Future<GatewayPromptReceipt> submit(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) {
       throw const GatewayOperationException('A mensagem não pode estar vazia.');
     }
-    await _client.call('prompt.submit', {
-      'session_id': liveSessionId,
-      'text': trimmed,
-    });
+    try {
+      final result = await _client.call('prompt.submit', {
+        'session_id': liveSessionId,
+        'text': trimmed,
+      });
+      return GatewayPromptReceipt(
+        status: result['status'] is String
+            ? result['status'] as String
+            : 'streaming',
+        userRowId: result['user_row_id'] is int
+            ? result['user_row_id'] as int
+            : null,
+      );
+    } on GatewayRequestNotSent {
+      rethrow;
+    } on GatewayOperationException catch (error) {
+      if (error.code != null) rethrow;
+      throw const GatewaySubmissionUncertain();
+    } on TimeoutException {
+      throw const GatewaySubmissionUncertain();
+    }
   }
 
   @override
@@ -1008,6 +1108,7 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
           final request = ApprovalRequest.fromEvent({
             ...frame.params,
             'run_id': turnId,
+            'gateway_request_id': frame.params['request_id'],
             'request_id': frame.id,
             'server_request': true,
           });
@@ -1017,7 +1118,11 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
     }
     if (frame is! GatewayEventFrame) return;
     final type = frame.type;
-    final payload = frame.payload;
+    final payload = <String, dynamic>{
+      ...frame.payload,
+      if (frame.sessionId != null && frame.sessionId!.isNotEmpty)
+        'session_id': frame.sessionId,
+    };
     if (!knownGatewayEvents.contains(type)) {
       yield RunEvent.unknown(type, payload);
       return;
@@ -1031,6 +1136,11 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
       case 'message.delta':
         final text = _rawEventText(payload);
         if (text.isNotEmpty) yield RunEvent.delta(text);
+      case 'message.interim':
+        yield RunEvent.interim(
+          text: _rawEventText(payload),
+          alreadyStreamed: payload['already_streamed'] == true,
+        );
       case 'message.complete':
         final status = payload['status']?.toString().toLowerCase();
         switch (status) {
@@ -1039,10 +1149,19 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
           case null:
           case 'complete':
           case 'completed':
-            yield RunEvent.completed(output: _rawEventText(payload));
+            yield RunEvent.completed(
+              output: _rawEventText(payload),
+              gateway: GatewayCompletion.fromJson(payload),
+            );
           case 'error':
           case 'failed':
-            yield RunEvent.failed(error: _completionFailure(payload));
+            yield RunEvent.failed(
+              error: _completionFailure(payload),
+              output: payload['partial'] == true
+                  ? _rawEventText(payload)
+                  : null,
+              gateway: GatewayCompletion.fromJson(payload),
+            );
           case 'interrupted':
             yield const RunEvent.status(RunStatus.cancelled);
           default:
@@ -1065,6 +1184,7 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
       case 'reasoning.available':
         break;
       case 'status.update':
+        yield RunEvent.thinkingState(_rawEventText(payload));
       case 'tool.generating':
       case 'background.complete':
       case 'review.summary':
@@ -1089,6 +1209,15 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
                   toolPreview(name, args),
               detail: _textOrNull(toolDetail(name, args)),
             ),
+          );
+        }
+      case 'tool.output_risk':
+        final toolId = _textOrNull(payload['tool_id']);
+        if (toolId != null) {
+          yield RunEvent.toolRisk(
+            toolId: toolId,
+            risk: _textOrNull(payload['risk']) ?? 'flagged',
+            redacted: payload['redacted'] == true,
           );
         }
       case 'tool.complete':
@@ -1233,6 +1362,10 @@ final class _GatewaySocketClient {
   final _queuedEvents = <GatewayFrame>[];
   final _queuedUnboundRequests = <GatewayServerRequestFrame>[];
   String? _sessionId;
+  String? _replayEpoch;
+  int _lastSeenSeq = 0;
+  bool _declinesNotShown = false;
+  Future<void>? _capabilities;
   var _seed = 0;
   var _receivedFirstFrame = false;
   var _capabilitiesAdvertised = false;
@@ -1244,9 +1377,113 @@ final class _GatewaySocketClient {
   var _drainScheduled = false;
 
   Future<void> get ready => _ready.future;
+  Future<void> get capabilitiesReady => _capabilities ?? Future<void>.value();
   Stream<GatewayFrame> get events => _events.stream;
 
+  GatewayReplayCursor? get cursor => _sessionId == null || _replayEpoch == null
+      ? null
+      : GatewayReplayCursor(
+          sessionId: _sessionId!,
+          epoch: _replayEpoch!,
+          seq: _lastSeenSeq,
+        );
+
+  Future<GatewayRecoveryMode> recover(
+    GatewayReplayCursor? after, {
+    required bool running,
+  }) async {
+    final sid = _sessionId;
+    final epoch = _replayEpoch;
+    if (sid == null || epoch == null) return GatewayRecoveryMode.snapshot;
+    final sameCursor =
+        after != null && after.sessionId == sid && after.epoch == epoch;
+    final lastSeen = sameCursor ? after.seq : 0;
+    try {
+      final result = await call('session.events.since', {
+        'session_id': sid,
+        'last_seen': lastSeen,
+      }, timeout: const Duration(seconds: 8));
+      if (result['epoch'] is String && result['epoch'] != epoch) {
+        _replayEpoch = result['epoch'] as String;
+        _lastSeenSeq = 0;
+        _queuedEvents.clear();
+        return GatewayRecoveryMode.snapshot;
+      }
+      final raw = result['events'];
+      if (result['truncated'] == true || raw is! List) {
+        // Skip a known hole. Its tail cannot reconstruct a missing prefix.
+        final head = result['latest_seq'];
+        if (head is int) _lastSeenSeq = head;
+        return GatewayRecoveryMode.snapshot;
+      }
+      var replay =
+          raw
+              .whereType<Map>()
+              .map((event) {
+                final frame =
+                    decodeGatewayFrame(
+                          jsonEncode({
+                            'jsonrpc': '2.0',
+                            'method': 'event',
+                            'params': event,
+                          }),
+                        )
+                        as GatewayEventFrame;
+                return GatewayEventFrame(
+                  type: frame.type,
+                  payload: frame.payload,
+                  sessionId: frame.sessionId,
+                  seq: frame.seq,
+                  replayed: true,
+                );
+              })
+              .where((e) => e.sessionId == sid && e.seq != null)
+              .toList()
+            ..sort((a, b) => a.seq!.compareTo(b.seq!));
+      if (!sameCursor) {
+        final start = replay.lastIndexWhere((e) => e.type == 'message.start');
+        if (start < 0 ||
+            (!running &&
+                !replay.skip(start).any((e) => e.type == 'message.complete'))) {
+          return GatewayRecoveryMode.snapshot;
+        }
+        replay = replay.sublist(start);
+        _lastSeenSeq = replay.first.seq! - 1;
+      } else {
+        _lastSeenSeq = lastSeen;
+        if (!running && !replay.any((e) => e.type == 'message.complete')) {
+          return GatewayRecoveryMode.snapshot;
+        }
+      }
+      final queued = List<GatewayFrame>.from(_queuedEvents);
+      _queuedEvents.clear();
+      // The replay precedes frames received while its RPC was in flight.
+      // Dispatch deduplicates their shared seq at the listener boundary.
+      _queuedEvents.addAll(replay);
+      _queuedEvents.addAll(queued);
+      return sameCursor ? GatewayRecoveryMode.gap : GatewayRecoveryMode.turn;
+    } on Object {
+      // Legacy/unsupported replay remains recoverable from the snapshot.
+      return GatewayRecoveryMode.snapshot;
+    }
+  }
+
+  void prepareSnapshotRecovery() {
+    for (final frame in _queuedEvents) {
+      if (frame is GatewayEventFrame &&
+          frame.sessionId == _sessionId &&
+          frame.seq != null &&
+          frame.seq! > _lastSeenSeq) {
+        _lastSeenSeq = frame.seq!;
+      }
+    }
+    _queuedEvents.clear();
+  }
+
   void bindSessionId(String sessionId) {
+    if (_sessionId != null && _sessionId != sessionId.trim()) {
+      _lastSeenSeq = 0;
+    }
     _sessionId = sessionId.trim();
     final pending = List<GatewayServerRequestFrame>.from(
       _queuedUnboundRequests,
@@ -1273,7 +1510,7 @@ final class _GatewaySocketClient {
     while (_queuedEvents.isNotEmpty &&
         _events.hasListener &&
         !_events.isClosed) {
-      _events.add(_queuedEvents.removeAt(0));
+      _emitEvent(_queuedEvents.removeAt(0));
     }
   }
 
@@ -1281,11 +1518,33 @@ final class _GatewaySocketClient {
     if (_events.isClosed) return;
     // Com fila pendente, o frame novo entra atrás dela para manter a ordem.
     if (_events.hasListener && _queuedEvents.isEmpty) {
-      _events.add(frame);
+      _emitEvent(frame);
       return;
     }
     _queuedEvents.add(frame);
     if (_events.hasListener) _scheduleDrain();
+  }
+
+  void _emitEvent(GatewayFrame frame) {
+    if (frame is GatewayEventFrame) {
+      final sid = frame.sessionId;
+      if (sid != null && sid.isNotEmpty && sid != _sessionId) return;
+      final seq = frame.seq;
+      if (sid == _sessionId && seq != null) {
+        if (seq <= _lastSeenSeq) return;
+        _lastSeenSeq = seq;
+      }
+      if (frame.replayed) {
+        turnCapture.rawFrame(
+          frame.type,
+          frame.payload,
+          sessionId: sid,
+          seq: seq,
+          replayed: true,
+        );
+      }
+    }
+    _events.add(frame);
   }
 
   Future<Map<String, dynamic>> call(
@@ -1303,16 +1562,18 @@ final class _GatewaySocketClient {
     // agora, sem código, é o que marca a falha como transitória e leva a nova
     // tentativa a abrir outro socket em vez de esperar o timeout.
     if (_closed || _failed) {
-      throw GatewayOperationException(
-        'O canal do gateway foi encerrado.',
-        method: method,
-      );
+      throw GatewayRequestNotSent(method: method);
     }
     final id = 'mobile-${++_seed}';
     final pending = _PendingCall(method);
     _pending[id] = pending;
     turnCapture.outgoing(method, params);
-    _socket.add(encodeGatewayRequest(id: id, method: method, params: params));
+    try {
+      _socket.add(encodeGatewayRequest(id: id, method: method, params: params));
+    } on Object {
+      _pending.remove(id);
+      throw GatewayRequestNotSent(method: method);
+    }
     return pending.completer.future.timeout(
       timeout,
       onTimeout: () {
@@ -1362,8 +1623,16 @@ final class _GatewaySocketClient {
     _lastLivenessAt = DateTime.now();
     switch (frame) {
       case GatewayEventFrame(:final type, :final payload):
-        turnCapture.rawFrame(type, payload);
+        turnCapture.rawFrame(
+          type,
+          payload,
+          sessionId: frame.sessionId,
+          seq: frame.seq,
+        );
         if (type == 'gateway.ready') {
+          if (payload['replay_epoch'] is String) {
+            _replayEpoch = payload['replay_epoch'] as String;
+          }
           if (!_ready.isCompleted) _ready.complete();
           if (payload['heartbeat'] == true) _startHeartbeat();
           if (!_capabilitiesAdvertised) {
@@ -1371,11 +1640,13 @@ final class _GatewaySocketClient {
             // Older gateways answer -32601; that response is intentionally
             // ignored (o `call` já registra o erro no turnCapture). Anunciar
             // vale em todo socket novo.
-            unawaited(
-              call('client.capabilities', const {
-                'server_requests': true,
-              }).catchError((Object _) => <String, dynamic>{}),
-            );
+            _capabilities =
+                call('client.capabilities', const {'server_requests': true})
+                    .then<void>((result) {
+                      _declinesNotShown = result['declines_not_shown'] == true;
+                    })
+                    .catchError((Object _) {});
+            unawaited(_capabilities!);
           }
         }
         // `gateway.ready` is transport lifecycle, not a run event. Replay only
@@ -1435,7 +1706,7 @@ final class _GatewaySocketClient {
     // responder. `4404` é o voto "não estou mostrando esta sessão", que deixa o
     // pedido aberto até todos os clientes recusarem
     // (`tui_gateway/server_requests.py::_decline`, `NOT_SHOWN_CODE`).
-    if (_windowOwnedRequests.contains(frame.method)) {
+    if (_windowOwnedRequests.contains(frame.method) && _declinesNotShown) {
       _respondServerError(frame.id, 4404, 'not shown in the mobile client');
       return;
     }
@@ -1553,6 +1824,15 @@ final class _GatewaySocketClient {
       _respondServerError(frame.id, -32603, 'mobile session was not bound');
     }
     _closed = true;
+    for (final pending in _pending.values) {
+      pending.completer.completeError(
+        GatewayOperationException(
+          'O canal do gateway foi encerrado.',
+          method: pending.method,
+        ),
+      );
+    }
+    _pending.clear();
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _queuedEvents.clear();

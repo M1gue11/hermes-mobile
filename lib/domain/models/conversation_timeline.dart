@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'chat_message.dart';
 import 'gateway_scaffolding.dart';
 import 'session_message.dart';
@@ -31,7 +33,7 @@ List<ChatMessage> conversationTimeline(
       '${message.id}_history_${activitySerial++}';
 
   void flushPending() {
-    if (pendingTools.isEmpty && pendingReasoning.isEmpty) return;
+    if (pendingActivity.isEmpty && pendingReasoning.isEmpty) return;
     final anchor = lastPending;
     timeline.add(
       ChatMessage.assistant(
@@ -50,7 +52,9 @@ List<ChatMessage> conversationTimeline(
     lastPending = null;
   }
 
-  for (final message in persisted) {
+  for (var messageIndex = 0; messageIndex < persisted.length; messageIndex++) {
+    final message = persisted[messageIndex];
+    if (message.displayKind == 'hidden') continue;
     switch (message.role) {
       case 'user':
         // Um turno do agente nunca atravessa a fala seguinte do usuário: o que
@@ -66,6 +70,7 @@ List<ChatMessage> conversationTimeline(
         timeline.add(
           ChatMessage.user(
             id: message.id,
+            rowId: message.rowId,
             text: message.content,
             time: _timeFrom(message.timestamp) ?? '',
             // Andaime do runtime persistido como `user`. Não vira bolha de fala,
@@ -91,7 +96,31 @@ List<ChatMessage> conversationTimeline(
                   ),
           );
         }
-        for (final tool in _toolCallsOf(message)) {
+        for (final commentary in message.displayCommentary) {
+          pendingActivity.add(
+            TurnActivity.commentary(
+              id: nextActivityId(message),
+              text: commentary,
+            ),
+          );
+        }
+        final calls = _toolCallsOf(message);
+        final nextRows = persisted
+            .skip(messageIndex + 1)
+            .where((m) => m.displayKind != 'hidden' && m.role != 'system');
+        final beforeTool =
+            calls.isNotEmpty ||
+            (nextRows.isNotEmpty && nextRows.first.role == 'tool');
+        if (beforeTool && message.content.trim().isNotEmpty) {
+          pendingActivity.add(
+            TurnActivity.commentary(
+              id: nextActivityId(message),
+              text: message.content,
+              rowId: message.rowId,
+            ),
+          );
+        }
+        for (final tool in calls) {
           pendingActivity = applyTurnToolEvent(
             pendingActivity,
             tool,
@@ -99,7 +128,7 @@ List<ChatMessage> conversationTimeline(
           );
         }
         pendingTools = toolsFromTurnActivity(pendingActivity);
-        if (message.content.trim().isEmpty) {
+        if (message.content.trim().isEmpty || beforeTool) {
           // Turno intermediário: guarda a atividade e não vira bolha.
           lastPending = message;
           continue;
@@ -107,6 +136,7 @@ List<ChatMessage> conversationTimeline(
         timeline.add(
           ChatMessage.assistant(
             id: message.id,
+            rowId: message.rowId,
             phase: ChatPhase.done,
             activity: pendingReasoning.toString(),
             tools: _settle(pendingTools),
@@ -206,8 +236,19 @@ ToolCall? _toolResultEvent(List<ToolCall> tools, SessionMessage result) {
   return ToolCall(
     id: callId ?? existing?.id,
     name: name,
-    arg: existing?.arg ?? '',
-    detail: existing?.detail,
+    arg:
+        existing?.arg ??
+        result.toolContext ??
+        toolPreview(
+          name,
+          result.toolArgs == null ? '' : jsonEncode(result.toolArgs),
+        ),
+    detail:
+        existing?.detail ??
+        toolDetail(
+          name,
+          result.toolArgs == null ? '' : jsonEncode(result.toolArgs),
+        ),
     output: result.content,
     status: ToolStatus.done,
   );

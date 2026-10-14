@@ -21,6 +21,7 @@ sealed class ChatMessage with _$ChatMessage {
     required String id,
     required String text,
     required String time,
+    int? rowId,
 
     /// Turno com papel de usuário que o runtime injetou, e não a pessoa.
     ///
@@ -52,5 +53,8 @@ sealed class ChatMessage with _$ChatMessage {
     String? model,
     String? runId,
     String? error,
+    int? rowId,
+    String? warning,
+    @Default(false) bool recoverable,
   }) = AssistantMessage;
 }

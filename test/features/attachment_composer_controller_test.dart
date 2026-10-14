@@ -234,13 +234,16 @@ final class _FakeGatewayRepository implements GatewayRepository {
   }) async => const [];
 
   @override
-  Future<GatewayLiveTurn> openLiveTurn({required String storedSessionId}) =>
-      throw UnimplementedError();
+  Future<GatewayLiveTurn> openLiveTurn({
+    required String storedSessionId,
+    GatewayReplayCursor? after,
+    bool recover = false,
+  }) => throw UnimplementedError();
 
   @override
-  Future<List<GatewayProbeStep>> probeGateway({String? storedSessionId}) async =>
-      const <GatewayProbeStep>[];
-
+  Future<List<GatewayProbeStep>> probeGateway({
+    String? storedSessionId,
+  }) async => const <GatewayProbeStep>[];
 
   @override
   Future<String> transcribeAudio(ComposerAttachment attachment) async {

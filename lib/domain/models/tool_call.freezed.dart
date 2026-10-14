@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ToolCall {
 
- String? get id; String get name; String get arg; String? get detail; String? get output; String? get duration; ToolStatus get status;
+ String? get id; String get name; String get arg; String? get detail; String? get output; String? get duration; String? get risk; bool get outputRedacted; ToolStatus get status;
 /// Create a copy of ToolCall
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $ToolCallCopyWith<ToolCall> get copyWith => _$ToolCallCopyWithImpl<ToolCall>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolCall&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.arg, arg) || other.arg == arg)&&(identical(other.detail, detail) || other.detail == detail)&&(identical(other.output, output) || other.output == output)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolCall&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.arg, arg) || other.arg == arg)&&(identical(other.detail, detail) || other.detail == detail)&&(identical(other.output, output) || other.output == output)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.risk, risk) || other.risk == risk)&&(identical(other.outputRedacted, outputRedacted) || other.outputRedacted == outputRedacted)&&(identical(other.status, status) || other.status == status));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,arg,detail,output,duration,status);
+int get hashCode => Object.hash(runtimeType,id,name,arg,detail,output,duration,risk,outputRedacted,status);
 
 @override
 String toString() {
-  return 'ToolCall(id: $id, name: $name, arg: $arg, detail: $detail, output: $output, duration: $duration, status: $status)';
+  return 'ToolCall(id: $id, name: $name, arg: $arg, detail: $detail, output: $output, duration: $duration, risk: $risk, outputRedacted: $outputRedacted, status: $status)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $ToolCallCopyWith<$Res>  {
   factory $ToolCallCopyWith(ToolCall value, $Res Function(ToolCall) _then) = _$ToolCallCopyWithImpl;
 @useResult
 $Res call({
- String? id, String name, String arg, String? detail, String? output, String? duration, ToolStatus status
+ String? id, String name, String arg, String? detail, String? output, String? duration, String? risk, bool outputRedacted, ToolStatus status
 });
 
 
@@ -62,7 +62,7 @@ class _$ToolCallCopyWithImpl<$Res>
 
 /// Create a copy of ToolCall
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? name = null,Object? arg = null,Object? detail = freezed,Object? output = freezed,Object? duration = freezed,Object? status = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? name = null,Object? arg = null,Object? detail = freezed,Object? output = freezed,Object? duration = freezed,Object? risk = freezed,Object? outputRedacted = null,Object? status = null,}) {
   return _then(_self.copyWith(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String?,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -70,7 +70,9 @@ as String,arg: null == arg ? _self.arg : arg // ignore: cast_nullable_to_non_nul
 as String,detail: freezed == detail ? _self.detail : detail // ignore: cast_nullable_to_non_nullable
 as String?,output: freezed == output ? _self.output : output // ignore: cast_nullable_to_non_nullable
 as String?,duration: freezed == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
-as String?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String?,risk: freezed == risk ? _self.risk : risk // ignore: cast_nullable_to_non_nullable
+as String?,outputRedacted: null == outputRedacted ? _self.outputRedacted : outputRedacted // ignore: cast_nullable_to_non_nullable
+as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as ToolStatus,
   ));
 }
@@ -156,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? id,  String name,  String arg,  String? detail,  String? output,  String? duration,  ToolStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? id,  String name,  String arg,  String? detail,  String? output,  String? duration,  String? risk,  bool outputRedacted,  ToolStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ToolCall() when $default != null:
-return $default(_that.id,_that.name,_that.arg,_that.detail,_that.output,_that.duration,_that.status);case _:
+return $default(_that.id,_that.name,_that.arg,_that.detail,_that.output,_that.duration,_that.risk,_that.outputRedacted,_that.status);case _:
   return orElse();
 
 }
@@ -177,10 +179,10 @@ return $default(_that.id,_that.name,_that.arg,_that.detail,_that.output,_that.du
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? id,  String name,  String arg,  String? detail,  String? output,  String? duration,  ToolStatus status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? id,  String name,  String arg,  String? detail,  String? output,  String? duration,  String? risk,  bool outputRedacted,  ToolStatus status)  $default,) {final _that = this;
 switch (_that) {
 case _ToolCall():
-return $default(_that.id,_that.name,_that.arg,_that.detail,_that.output,_that.duration,_that.status);case _:
+return $default(_that.id,_that.name,_that.arg,_that.detail,_that.output,_that.duration,_that.risk,_that.outputRedacted,_that.status);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +199,10 @@ return $default(_that.id,_that.name,_that.arg,_that.detail,_that.output,_that.du
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? id,  String name,  String arg,  String? detail,  String? output,  String? duration,  ToolStatus status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? id,  String name,  String arg,  String? detail,  String? output,  String? duration,  String? risk,  bool outputRedacted,  ToolStatus status)?  $default,) {final _that = this;
 switch (_that) {
 case _ToolCall() when $default != null:
-return $default(_that.id,_that.name,_that.arg,_that.detail,_that.output,_that.duration,_that.status);case _:
+return $default(_that.id,_that.name,_that.arg,_that.detail,_that.output,_that.duration,_that.risk,_that.outputRedacted,_that.status);case _:
   return null;
 
 }
@@ -212,7 +214,7 @@ return $default(_that.id,_that.name,_that.arg,_that.detail,_that.output,_that.du
 
 
 class _ToolCall implements ToolCall {
-  const _ToolCall({this.id, required this.name, this.arg = '', this.detail, this.output, this.duration, this.status = ToolStatus.running});
+  const _ToolCall({this.id, required this.name, this.arg = '', this.detail, this.output, this.duration, this.risk, this.outputRedacted = false, this.status = ToolStatus.running});
   
 
 @override final  String? id;
@@ -221,6 +223,8 @@ class _ToolCall implements ToolCall {
 @override final  String? detail;
 @override final  String? output;
 @override final  String? duration;
+@override final  String? risk;
+@override@JsonKey() final  bool outputRedacted;
 @override@JsonKey() final  ToolStatus status;
 
 /// Create a copy of ToolCall
@@ -233,16 +237,16 @@ _$ToolCallCopyWith<_ToolCall> get copyWith => __$ToolCallCopyWithImpl<_ToolCall>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolCall&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.arg, arg) || other.arg == arg)&&(identical(other.detail, detail) || other.detail == detail)&&(identical(other.output, output) || other.output == output)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolCall&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.arg, arg) || other.arg == arg)&&(identical(other.detail, detail) || other.detail == detail)&&(identical(other.output, output) || other.output == output)&&(identical(other.duration, duration) || other.duration == duration)&&(identical(other.risk, risk) || other.risk == risk)&&(identical(other.outputRedacted, outputRedacted) || other.outputRedacted == outputRedacted)&&(identical(other.status, status) || other.status == status));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,arg,detail,output,duration,status);
+int get hashCode => Object.hash(runtimeType,id,name,arg,detail,output,duration,risk,outputRedacted,status);
 
 @override
 String toString() {
-  return 'ToolCall(id: $id, name: $name, arg: $arg, detail: $detail, output: $output, duration: $duration, status: $status)';
+  return 'ToolCall(id: $id, name: $name, arg: $arg, detail: $detail, output: $output, duration: $duration, risk: $risk, outputRedacted: $outputRedacted, status: $status)';
 }
 
 
@@ -253,7 +257,7 @@ abstract mixin class _$ToolCallCopyWith<$Res> implements $ToolCallCopyWith<$Res>
   factory _$ToolCallCopyWith(_ToolCall value, $Res Function(_ToolCall) _then) = __$ToolCallCopyWithImpl;
 @override @useResult
 $Res call({
- String? id, String name, String arg, String? detail, String? output, String? duration, ToolStatus status
+ String? id, String name, String arg, String? detail, String? output, String? duration, String? risk, bool outputRedacted, ToolStatus status
 });
 
 
@@ -270,7 +274,7 @@ class __$ToolCallCopyWithImpl<$Res>
 
 /// Create a copy of ToolCall
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? name = null,Object? arg = null,Object? detail = freezed,Object? output = freezed,Object? duration = freezed,Object? status = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? name = null,Object? arg = null,Object? detail = freezed,Object? output = freezed,Object? duration = freezed,Object? risk = freezed,Object? outputRedacted = null,Object? status = null,}) {
   return _then(_ToolCall(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String?,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -278,7 +282,9 @@ as String,arg: null == arg ? _self.arg : arg // ignore: cast_nullable_to_non_nul
 as String,detail: freezed == detail ? _self.detail : detail // ignore: cast_nullable_to_non_nullable
 as String?,output: freezed == output ? _self.output : output // ignore: cast_nullable_to_non_nullable
 as String?,duration: freezed == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
-as String?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as String?,risk: freezed == risk ? _self.risk : risk // ignore: cast_nullable_to_non_nullable
+as String?,outputRedacted: null == outputRedacted ? _self.outputRedacted : outputRedacted // ignore: cast_nullable_to_non_nullable
+as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as ToolStatus,
   ));
 }

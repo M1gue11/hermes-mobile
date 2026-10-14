@@ -24,6 +24,9 @@ No comportamento observado do Dashboard documentado, o gate exige sessão para t
 
 ## Artefatos
 
+- `mobile-streaming-audit-0.21.6.md`: auditoria do contrato atual de eventos,
+  replay/resume e projeção do turno, com evidências, ajustes e limites de aceite.
+
 - `openapi-0.18.2.json`: snapshot autenticado, sem credenciais, do Dashboard Hermes 0.18.2; referência histórica para REST, não o contrato atual.
 - `endpoint-reference.md`: referência gerada de todas as operações do snapshot.
 - `mobile-mapping.md`: decisão de produto e risco por categoria de rota.

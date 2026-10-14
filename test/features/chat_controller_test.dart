@@ -16,6 +16,7 @@ import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/models/tool_call.dart';
 import 'package:hermes_mobile/domain/models/turn_activity.dart';
+import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
 import 'package:hermes_mobile/features/chat/chat_controller.dart';
 import 'package:hermes_mobile/features/chat/chat_drafts_provider.dart';
 import 'package:hermes_mobile/features/settings/settings_provider.dart';
@@ -51,6 +52,202 @@ ProviderContainer makeContainer([
 );
 
 void main() {
+  test(
+    'snapshot compacto preserva output e risco locais pelo tool_call_id',
+    () async {
+      final first = FakeGatewayLiveTurn(
+        storedSessionId: 'session-2',
+        liveSessionId: 'live',
+      );
+      final second = FakeGatewayLiveTurn(
+        storedSessionId: 'session-2',
+        liveSessionId: 'live',
+        initialHistory: const [
+          SessionMessage(id: 'u', role: 'user', content: 'Pergunta'),
+          SessionMessage(
+            id: 't1',
+            role: 'tool',
+            toolName: 'terminal',
+            toolCallId: 'call-1',
+            toolContext: 'first',
+          ),
+          SessionMessage(
+            id: 't2',
+            role: 'tool',
+            toolName: 'terminal',
+            toolCallId: 'call-2',
+            toolContext: 'second',
+            content: 'second result',
+          ),
+          SessionMessage(id: 'a', role: 'assistant', content: 'Parcial'),
+        ],
+      );
+      final gateway = FakeGatewayRepository(turns: [first, second]);
+      final container = makeContainer(
+        FakeHermesRepository(messages: {'session-2': []}),
+        MemoryActiveRunStore(),
+        gateway,
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(chatControllerProvider.notifier);
+      await controller.openConversation(
+        const Conversation(id: 'session-2', title: 'Test'),
+      );
+      await controller.send('Pergunta');
+      first.add(
+        const RunEvent.toolProgress(
+          ToolCall(
+            id: 'call-1',
+            name: 'terminal',
+            arg: 'first',
+            detail: 'first arguments',
+            output: 'first result',
+            risk: 'flagged',
+            outputRedacted: true,
+            status: ToolStatus.done,
+          ),
+        ),
+      );
+      first.add(
+        const RunEvent.toolProgress(
+          ToolCall(
+            id: 'call-2',
+            name: 'terminal',
+            arg: 'second',
+            status: ToolStatus.running,
+          ),
+        ),
+      );
+      first.add(const RunEvent.delta('Parcial'));
+      await controller.setLiveUpdatesVisible(false);
+      await controller.setLiveUpdatesVisible(true);
+      final assistant =
+          container.read(chatControllerProvider).messages.last
+              as AssistantMessage;
+      expect(assistant.tools, hasLength(2));
+      final firstTool = assistant.tools.singleWhere((t) => t.id == 'call-1');
+      expect(firstTool.output, 'first result');
+      expect(firstTool.detail, 'first arguments');
+      expect(firstTool.risk, 'flagged');
+      expect(firstTool.outputRedacted, true);
+      final secondTool = assistant.tools.singleWhere((t) => t.id == 'call-2');
+      expect(secondTool.output, 'second result');
+      expect(secondTool.status, ToolStatus.done);
+      final firstBlock = assistant.activityItems
+          .whereType<TurnToolActivity>()
+          .singleWhere((b) => b.tool.id == 'call-1');
+      expect(firstBlock.tool.output, firstTool.output);
+      expect(firstBlock.tool.risk, firstTool.risk);
+      expect(second.submitted, isEmpty);
+    },
+  );
+  test(
+    'submit sem ACK retoma turno e preserva parcial sem enviar novamente',
+    () async {
+      final first = FakeGatewayLiveTurn(
+        storedSessionId: 'session-1',
+        liveSessionId: 'live',
+        submitError: const GatewaySubmissionUncertain(),
+      );
+      final resumed = FakeGatewayLiveTurn(
+        storedSessionId: 'session-1',
+        liveSessionId: 'live',
+        initialHistory: const [
+          SessionMessage(id: 'u', role: 'user', content: 'Teste'),
+        ],
+        inflight: const GatewayInflight(
+          user: 'Teste',
+          assistant: 'Recebido',
+          streaming: true,
+        ),
+      );
+      final gateway = FakeGatewayRepository(turns: [first, resumed]);
+      final active = MemoryActiveRunStore();
+      final runs = FakeHermesRepository();
+      final container = makeContainer(runs, active, gateway);
+      addTearDown(container.dispose);
+      final controller = container.read(chatControllerProvider.notifier);
+      await controller.openConversation(
+        const Conversation(id: 'session-1', title: 'Teste'),
+      );
+      expect(await controller.send('Teste'), isFalse);
+      await pumpUntil(
+        () =>
+            (container.read(chatControllerProvider).messages.last
+                    as AssistantMessage)
+                .text ==
+            'Recebido',
+      );
+      expect(active.records['session-1'], isNotNull);
+      expect(resumed.submitted, isEmpty);
+      expect(runs.historicos, isEmpty);
+      expect(container.read(chatControllerProvider).streaming, isTrue);
+      resumed.add(const RunEvent.completed(output: 'Recebido e concluído'));
+      expect(
+        (container.read(chatControllerProvider).messages.last
+                as AssistantMessage)
+            .phase,
+        ChatPhase.done,
+      );
+    },
+  );
+  for (final failed in [false, true]) {
+    test(
+      'cold start restaura inflight ${failed ? "falho" : "ativo"} sem substituir resposta anterior',
+      () async {
+        final active = MemoryActiveRunStore();
+        active.records['session-1'] = ActiveRunRecord(
+          sessionId: 'session-1',
+          runId: 'gateway:live',
+          assistantMessageId: 'active-assistant',
+          startedAt: DateTime.utc(2026, 10, 11),
+          transport: ActiveTurnTransport.dashboard,
+        );
+        final turn = FakeGatewayLiveTurn(
+          storedSessionId: 'session-1',
+          liveSessionId: 'live',
+          running: !failed,
+          initialHistory: const [
+            SessionMessage(id: 'old-user', role: 'user', content: 'Antiga'),
+            SessionMessage(
+              id: 'old-reply',
+              role: 'assistant',
+              content: 'Uma resposta antiga muito longa',
+            ),
+          ],
+          inflight: GatewayInflight(
+            user: 'Nova pergunta',
+            assistant: 'Parcial',
+            streaming: !failed,
+            status: failed ? 'error' : null,
+            error: failed ? 'Provider indisponível' : null,
+          ),
+        );
+        final container = makeContainer(
+          FakeHermesRepository(messages: {'session-1': const []}),
+          active,
+          FakeGatewayRepository(turns: [turn]),
+        );
+        addTearDown(container.dispose);
+        await container
+            .read(chatControllerProvider.notifier)
+            .openConversation(
+              const Conversation(id: 'session-1', title: 'Retomada'),
+            );
+        final state = container.read(chatControllerProvider);
+        final reply = state.messages.last as AssistantMessage;
+        expect(reply.text, 'Parcial');
+        expect(reply.phase, failed ? ChatPhase.failed : ChatPhase.writing);
+        expect(
+          (state.messages[1] as AssistantMessage).text,
+          'Uma resposta antiga muito longa',
+        );
+        expect((state.messages[2] as UserMessage).text, 'Nova pergunta');
+        expect(turn.submitted, isEmpty);
+        expect(state.streaming, !failed);
+      },
+    );
+  }
   test(
     'troca de conversa limpa a anterior antes da hidratação lenta',
     () async {

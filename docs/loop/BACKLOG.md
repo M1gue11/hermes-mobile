@@ -170,19 +170,20 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   para leitura e não deve ser alterado.
 
 - [ ] **B10 Tratar eventos novos do `0.20.1`.** Decidir a semântica de
-  `sessions.changed`, `session.usage` e especialmente `tool.output_risk`, que
-  hoje é descartado apesar de carregar um sinal de segurança. Avaliar também
+  `sessions.changed` e `session.usage`. `tool.output_risk` foi implementado em
+  B12, ainda com aceite real específico pendente. Avaliar também
   os campos adicionais de `session.info`. Nenhum dado sem semântica e tratamento
   seguro confirmados vira texto do assistant ou configuração editável.
 
-- [ ] **B12 Projetar `message.interim` e `tool.output_risk` com segurança.**
-  `message.interim` precisa de bloco próprio e deduplicação por
-  `already_streamed`, inclusive ao reabrir histórico; `tool.output_risk` precisa
-  de uma affordance redigida que preserve o alerta sem expor findings sensíveis
-  nem transformá-los em Markdown do assistant. Implementar somente depois de
-  fixar o modelo, a política de redaction e testes de streaming/reabertura.
+- [~] **B12 Projetar `message.interim` e `tool.output_risk` com segurança.**
+  `message.interim` tem bloco próprio e trata `already_streamed`, inclusive na
+  reconstrução do histórico; `tool.output_risk` tem affordance redigida sem
+  findings sensíveis nem Markdown do assistant. Modelo, projeção, política de
+  redaction e testes implementados em 2026-10-11.
+  Falta aceite real de interim/risco na build atual; ver
+  [auditoria 0.21.6](../dashboard-api/mobile-streaming-audit-0.21.6.md).
 
-- [ ] **B13 Reconciliar eventos TUI após reconexão.** Capturar `seq` e
+- [~] **B13 Reconciliar eventos TUI após reconexão.** Capturar `seq` e
   `session_id` dos frames e `replay_epoch` de `gateway.ready`. Ao recuperar
   uma conversa, consultar `session.events.since` com o último watermark
   confirmado, mesclar sem duplicar timeline e restaurar `open_requests`.
@@ -191,6 +192,11 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   queda entre `tool.start`/`tool.complete`, aprovação pendente, restart do
   backend e ordem de eventos. O suporte a `open_requests` no `session.resume`
   não substitui o replay dos demais eventos.
+  Implementação e fixtures de ordem/dedupe, cursor síncrono, ring truncado e
+  epoch concluídos em 2026-10-11. Aceite real da rotina: 10 tools, replay de
+  13 eventos após background, um submit e reabertura concluída. Restam aprovação
+  pendente, restart e ring expirado, inclusive o limite do snapshot sem watermark
+  atômico; ver a auditoria 0.21.6.
 
 - [ ] **B9 Mostrar subagents na timeline.** Reduzir eventos `subagent.*` em um
   bloco aninhado, sem convertê-los em texto do assistant. Cobrir spawn, thinking,

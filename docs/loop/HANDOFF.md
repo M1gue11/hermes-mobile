@@ -6,6 +6,13 @@ afetado.
 
 ## Checkpoint
 
+- Atualização de streaming de 2026-10-11: análise limpa, 690 testes passaram,
+  APK debug compilado e instalado. Rotina remota validada com 10 tools, replay
+  de 13 eventos após background, um único submit e reabertura com resposta e
+  saída da última tool preservadas. B12/B13 mantêm aceites específicos de
+  interim/risco, aprovação, restart e ring expirado. A auditoria 0.21.6 registra
+  também a correção de perda de output/risco no snapshot compacto.
+
 - O baseline registrado no último pacote foi `flutter analyze` limpo, suíte de
   testes verde e APK debug compilado.
 - O pacote de Ajustes, a lista de conversas, a abertura inicial, a timeline
@@ -31,15 +38,19 @@ afetado.
   ativa. Divulgação da timeline e rolagem manual pausam sem corrigir o offset;
   mudanças de altura só sincronizam o fim durante o acompanhamento.
 - Reconnect nunca reenvia prompt ou resposta interativa.
-- Retomada é monotônica: histórico ou snapshot parcial pode enriquecer o turno
-  ativo, nunca substituir uma timeline mais completa.
+- Retomada usa sessão, epoch e sequência quando o servidor oferece replay;
+  deltas já entregues não são aplicados novamente. Snapshot fallback e
+  transformação terminal têm semânticas próprias: comprimento não é identidade.
 - Histórico concluído do Dashboard usa `session.history` com o id durável; não
   abra sessão live apenas para hidratar a tela.
-- Nenhum histórico contém o turno em curso até ele terminar; qualquer
-  reconstrução deve preservar a bolha viva por `_timelineComTurnoEmCurso`.
+- O transcript pode conter user e segmentos intermediários em curso; `inflight`
+  continua separado e pode reter erro com `running=false`. Não adotar a resposta
+  do turno anterior como parcial do atual.
 - `reasoning.delta`, `thinking.delta` e `reasoning.available` têm semânticas
   diferentes. O contrato medido está em
   [../dashboard-api/tui-eventos-0.20.1-medido.md](../dashboard-api/tui-eventos-0.20.1-medido.md).
+- O delta atual, os ajustes de streaming e a validação ainda pendente estão em
+  [../dashboard-api/mobile-streaming-audit-0.21.6.md](../dashboard-api/mobile-streaming-audit-0.21.6.md).
 - `tool.complete` do TUI carrega `result`, `args` e `tool_id`; a Runs API continua
   sendo um fallback mais pobre por contrato.
 - Segredos nunca entram em terminal, log, screenshot, teste ou documentação.

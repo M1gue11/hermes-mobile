@@ -205,6 +205,40 @@ class TurnCapture extends ChangeNotifier {
     _add(CaptureLayer.saida, 'ok $method', {
       for (final key in result.keys) key: _render(key, result[key]),
     });
+    final messages = result['messages'];
+    if (messages is List && messages.isNotEmpty) {
+      const fields = [
+        'role',
+        'text',
+        'content',
+        'row_id',
+        'name',
+        'tool_name',
+        'tool_call_id',
+        'tool_calls',
+        'context',
+        'args',
+        'reasoning',
+        'reasoning_content',
+        'display_content',
+        'display_reasoning',
+        'display_commentary',
+        'display_kind',
+      ];
+      _add(CaptureLayer.saida, 'schema $method', {
+        'fields': fields
+            .where(
+              (key) => messages.whereType<Map>().any((m) => m.containsKey(key)),
+            )
+            .join(','),
+        'users':
+            '${messages.whereType<Map>().where((m) => m['role'] == 'user').length}',
+        'assistants':
+            '${messages.whereType<Map>().where((m) => m['role'] == 'assistant').length}',
+        'tools':
+            '${messages.whereType<Map>().where((m) => m['role'] == 'tool').length}',
+      });
+    }
   }
 
   /// O turno desistiu do Dashboard TUI e vai correr pela Runs API.
@@ -237,12 +271,21 @@ class TurnCapture extends ChangeNotifier {
   }
 
   /// Frame de evento do gateway TUI, antes de `_eventsFrom`.
-  void rawFrame(String type, Map<String, dynamic> payload) {
+  void rawFrame(
+    String type,
+    Map<String, dynamic> payload, {
+    String? sessionId,
+    int? seq,
+    bool replayed = false,
+  }) {
     if (!_recording) return;
     _tuiFrames++;
     _rawTypes[type] = (_rawTypes[type] ?? 0) + 1;
     _noteToolShape(type, payload);
     _add(CaptureLayer.transporte, type, {
+      if (sessionId != null) 'session_id': _render('session_id', sessionId),
+      if (seq != null) 'seq': '$seq',
+      if (replayed) 'replayed': 'true',
       for (final key in payload.keys) key: _render(key, payload[key]),
     });
   }
@@ -278,6 +321,18 @@ class TurnCapture extends ChangeNotifier {
       RunReasoningDelta(:final text) => ('reasoningDelta', {'text': text}),
       RunThinkingState(:final text) => ('thinkingState', {'text': text}),
       RunTextDelta(:final text) => ('delta', {'text': text}),
+      RunInterim(:final text, :final alreadyStreamed) => (
+        'interim',
+        <String, Object?>{'text': text, 'already_streamed': alreadyStreamed},
+      ),
+      RunToolRisk(:final toolId, :final risk, :final redacted) => (
+        'toolRisk',
+        <String, Object?>{
+          'tool_id': toolId,
+          'risk': risk,
+          'redacted': redacted,
+        },
+      ),
       RunToolProgress(:final tool) => (
         'toolProgress',
         <String, Object?>{
@@ -416,7 +471,9 @@ class TurnCapture extends ChangeNotifier {
         _openByName[name] = open;
         if (open > (_peakByName[name] ?? 0)) _peakByName[name] = open;
         final args = payload['args_text']?.toString();
-        if (args != null) _startDetailLength[idOf(payload) ?? name] = args.length;
+        if (args != null) {
+          _startDetailLength[idOf(payload) ?? name] = args.length;
+        }
       case 'tool.complete' || 'tool.completed':
         final name = nameOf(payload);
         final open = (_openByName[name] ?? 0) - 1;
@@ -459,6 +516,8 @@ class TurnCapture extends ChangeNotifier {
     'choice',
     'kind',
     'state',
+    'version',
+    'release_date',
   };
 
   /// Campos que são identificadores: aparecem encurtados, nunca inteiros.
@@ -492,7 +551,9 @@ class TurnCapture extends ChangeNotifier {
     if (_literal.contains(normalized)) {
       return text.length <= 48 ? text : '${text.substring(0, 48)}…';
     }
-    return _sampleText ? '${text.length}ch «${_oneLine(text, 80)}»' : '${text.length}ch';
+    return _sampleText
+        ? '${text.length}ch «${_oneLine(text, 80)}»'
+        : '${text.length}ch';
   }
 
   static String _shortId(String value) =>
@@ -558,7 +619,8 @@ class TurnCapture extends ChangeNotifier {
       out.writeln('  $step');
     }
     final leitura = _probe.where(
-      (step) => step.contains('session.list') || step.contains('session.history'),
+      (step) =>
+          step.contains('session.list') || step.contains('session.history'),
     );
     final resume = _probe.where((step) => step.contains('session.resume'));
     if (leitura.isNotEmpty && resume.isNotEmpty) {
@@ -567,12 +629,10 @@ class TurnCapture extends ChangeNotifier {
       out.writeln(
         '  -> ${switch ((leituraOk, resumeOk)) {
           (true, true) => 'gateway íntegro; o fallback tem outra causa',
-          (true, false) =>
-            'o SessionDB responde e só session.resume recusa: '
-                'a falha é do resume, não do banco',
-          (false, false) =>
-            'leitura e resume recusam igual: a conexão do banco morreu '
-                'no processo do gateway',
+          (true, false) => 'o SessionDB responde e só session.resume recusa: '
+              'a falha é do resume, não do banco',
+          (false, false) => 'leitura e resume recusam igual: a conexão do banco morreu '
+              'no processo do gateway',
           (false, true) => 'resultado incoerente; repetir a sonda',
         }}',
       );
@@ -599,9 +659,7 @@ class TurnCapture extends ChangeNotifier {
       ..sort((a, b) => b.value.compareTo(a.value));
     out
       ..writeln('$title  (${ordered.length} tipos)')
-      ..writeln(
-        '  ${ordered.map((e) => "${e.key}=${e.value}").join("  ")}',
-      )
+      ..writeln('  ${ordered.map((e) => "${e.key}=${e.value}").join("  ")}')
       ..writeln();
   }
 
@@ -623,8 +681,10 @@ class TurnCapture extends ChangeNotifier {
       }
       final repeats = last - index + 1;
       if (repeats == 1) {
-        out.writeln('  ${_ms(first.at).padLeft(8)}  ${first.label}  '
-            '${_fieldsOf(first)}');
+        out.writeln(
+          '  ${_ms(first.at).padLeft(8)}  ${first.label}  '
+          '${_fieldsOf(first)}',
+        );
       } else {
         out
           ..writeln(
@@ -658,8 +718,8 @@ class TurnCapture extends ChangeNotifier {
   }
 
   String _activityLine(TurnActivity item) => switch (item) {
-    TurnActivityPreview(:final text) =>
-      'atividade  ${_render("text", text)}',
+    TurnCommentary(:final text) => 'comentário  ${_render("text", text)}',
+    TurnActivityPreview(:final text) => 'atividade  ${_render("text", text)}',
     TurnReasoning(:final text) => 'raciocínio  ${_render("text", text)}',
     TurnToolActivity(:final tool) => [
       'tool  ${tool.name}',
@@ -687,11 +747,14 @@ class TurnCapture extends ChangeNotifier {
       for (final par in pares) {
         final vivo = par.live.output?.length ?? 0;
         final salvo = par.history.output?.length ?? 0;
-        if (salvo > vivo) perdas.add('${par.live.name} ${vivo}ch<${salvo}ch');
+        if (salvo > vivo &&
+            !_equivalentOutput(par.live.output, par.history.output)) {
+          perdas.add('${par.live.name} ${vivo}ch<${salvo}ch');
+        }
       }
       lines.add(
         perdas.isEmpty
-            ? 'Q1 output integral ao vivo? SIM (nenhuma tool cresce ao reabrir)'
+            ? 'Q1 output integral ao vivo? SIM (sem perda; formatação JSON normalizada)'
             : 'Q1 output integral ao vivo? NÃO -> ${perdas.join(", ")}',
       );
     }
@@ -725,7 +788,7 @@ class TurnCapture extends ChangeNotifier {
           '${_startsWithoutId == 0 ? "SIM" : (_startsWithId == 0 ? "NÃO" : "PARCIAL")} '
           '($_startsWithId/$inicios com id)'
           '${arriscado ? " | sem id o FIFO por nome não resolve paralelismo: "
-              "${paralelos.map((e) => "${e.key} x${e.value}").join(", ")}" : ""}',
+                    "${paralelos.map((e) => "${e.key} x${e.value}").join(", ")}" : ""}',
         );
       }
       if (progressos > 0) {
@@ -763,7 +826,9 @@ class TurnCapture extends ChangeNotifier {
     // truncado. Comparar o começo é o que reconhece a duplicação real.
     final duplicadas = _previewTexts.where(_repeatsOutput).length;
     if (_completedOutput == null) {
-      lines.add('Q6 prévia repete a resposta final? INDETERMINADO (sem output)');
+      lines.add(
+        'Q6 prévia repete a resposta final? INDETERMINADO (sem output)',
+      );
     } else {
       lines.add(
         duplicadas == 0
@@ -861,6 +926,26 @@ class TurnCapture extends ChangeNotifier {
       pares.add(_ToolPair(live: atual, history: history[alvo]));
     }
     return pares;
+  }
+
+  static bool _equivalentOutput(String? a, String? b) {
+    if (a == b) return true;
+    if (a == null || b == null) return false;
+    Object? canonical(Object? value) {
+      if (value is Map<String, dynamic>) {
+        final keys = value.keys.toList()..sort();
+        return {for (final key in keys) key: canonical(value[key])};
+      }
+      if (value is List) return value.map(canonical).toList();
+      return value;
+    }
+
+    try {
+      return jsonEncode(canonical(jsonDecode(a))) ==
+          jsonEncode(canonical(jsonDecode(b)));
+    } on FormatException {
+      return false;
+    }
   }
 
   static String _ms(Duration value) =>

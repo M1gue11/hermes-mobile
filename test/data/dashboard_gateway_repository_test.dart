@@ -11,9 +11,295 @@ import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/tool_call.dart';
+import 'package:hermes_mobile/domain/models/conversation_timeline.dart';
+import 'package:hermes_mobile/domain/models/chat_message.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 
 void main() {
+  for (final changedEpoch in [false, true]) {
+    test(
+      'snapshot atualiza estado depois de ${changedEpoch ? "restart" : "replay truncado"}',
+      () async {
+        var resumes = 0;
+        final socket = _FakeGatewaySocket(
+          readyPayload: const {'replay_epoch': 'process-2'},
+          replayResult: {
+            'epoch': changedEpoch ? 'process-3' : 'process-2',
+            'truncated': !changedEpoch,
+            'latest_seq': 800,
+            'events': [
+              {
+                'type': 'message.delta',
+                'session_id': 'live-session',
+                'seq': 800,
+                'payload': {'text': 'missing prefix'},
+              },
+            ],
+          },
+          resultFor: (method) => method != 'session.resume'
+              ? null
+              : {
+                  'session_id': 'live-session',
+                  'running': ++resumes == 1,
+                  'messages': [
+                    {'role': 'user', 'text': 'prompt', 'row_id': 1},
+                  ],
+                  'inflight': {
+                    'user': 'prompt',
+                    'assistant': resumes == 1 ? 'partial' : 'retained partial',
+                    'streaming': resumes == 1,
+                    if (resumes > 1) 'error': 'provider failed',
+                    if (resumes > 1) 'status': 'error',
+                    'recoverable': true,
+                  },
+                },
+          onCall: (method, socket) {
+            if (method == 'session.events.since') {
+              socket.emit(
+                'message.delta',
+                {'text': 'stale tail'},
+                sessionId: 'live-session',
+                seq: 801,
+              );
+            }
+          },
+        );
+        final turn = await _replayRepository(socket).openLiveTurn(
+          storedSessionId: 'stored-session',
+          recover: true,
+          after: const GatewayReplayCursor(
+            sessionId: 'live-session',
+            epoch: 'process-2',
+            seq: 1,
+          ),
+        );
+        final events = <RunEvent>[];
+        final subscription = turn.events.listen(events.add);
+        await Future<void>.delayed(Duration.zero);
+        expect(resumes, 2);
+        expect(turn.recoveryMode, GatewayRecoveryMode.snapshot);
+        expect(turn.running, false);
+        expect(turn.inflight?.assistant, 'retained partial');
+        expect(turn.inflight?.status, 'error');
+        expect(events.whereType<RunTextDelta>(), isEmpty);
+        expect(socket.methods, isNot(contains('prompt.submit')));
+        await subscription.cancel();
+        await turn.close();
+      },
+    );
+  }
+  test(
+    'cursor corresponde aos deltas reduzidos ao cancelar listener',
+    () async {
+      final socket = _FakeGatewaySocket(
+        readyPayload: const {'replay_epoch': 'process-1'},
+      );
+      final turn = await _replayRepository(
+        socket,
+      ).openLiveTurn(storedSessionId: 'stored-session');
+      final events = <RunEvent>[];
+      late StreamSubscription<RunEvent> subscription;
+      subscription = turn.events.listen((event) {
+        events.add(event);
+        if (event is RunTextDelta) unawaited(subscription.cancel());
+      });
+      await Future<void>.delayed(Duration.zero);
+      for (var seq = 1; seq <= 20; seq++) {
+        socket.emit(
+          'message.delta',
+          {'text': '$seq'},
+          sessionId: 'live-session',
+          seq: seq,
+        );
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(events.whereType<RunTextDelta>().length, 1);
+      expect(turn.cursor?.seq, 1);
+      await turn.close();
+    },
+  );
+  test(
+    'cold replay escolhe apenas o último turno e entrega seu terminal',
+    () async {
+      final socket = _FakeGatewaySocket(
+        readyPayload: const {'replay_epoch': 'process-1'},
+        resultFor: (method) => method == 'session.resume'
+            ? {
+                'session_id': 'live-session',
+                'running': false,
+                'messages': [
+                  {'role': 'user', 'text': 'prompt'},
+                ],
+              }
+            : null,
+        replayResult: const {
+          'epoch': 'process-1',
+          'latest_seq': 8,
+          'truncated': false,
+          'events': [
+            {'session_id': 'live-session', 'seq': 1, 'type': 'message.start'},
+            {
+              'session_id': 'live-session',
+              'seq': 2,
+              'type': 'message.complete',
+              'payload': {'text': 'old'},
+            },
+            {'session_id': 'live-session', 'seq': 6, 'type': 'message.start'},
+            {
+              'session_id': 'live-session',
+              'seq': 7,
+              'type': 'message.delta',
+              'payload': {'text': 'new'},
+            },
+            {
+              'session_id': 'live-session',
+              'seq': 8,
+              'type': 'message.complete',
+              'payload': {'text': 'new', 'status': 'complete'},
+            },
+          ],
+        },
+      );
+      final turn = await _replayRepository(
+        socket,
+      ).openLiveTurn(storedSessionId: 'stored-session', recover: true);
+      final events = <RunEvent>[];
+      final subscription = turn.events.listen(events.add);
+      await Future<void>.delayed(Duration.zero);
+      expect(turn.recoveryMode, GatewayRecoveryMode.turn);
+      expect(events.whereType<RunTextDelta>().map((e) => e.text), ['new']);
+      expect(events.whereType<RunCompleted>().single.output, 'new');
+      expect(turn.cursor?.seq, 8);
+      await subscription.cancel();
+      await turn.close();
+    },
+  );
+  test('replay preenche a lacuna antes do live e deduplica por seq', () async {
+    final socket = _FakeGatewaySocket(
+      readyPayload: const {'replay_epoch': 'process-1'},
+      replayResult: const {
+        'epoch': 'process-1',
+        'truncated': false,
+        'latest_seq': 12,
+        'events': [
+          {
+            'type': 'message.delta',
+            'session_id': 'live-session',
+            'seq': 11,
+            'payload': {'text': 'gap'},
+          },
+          {
+            'type': 'tool.complete',
+            'session_id': 'live-session',
+            'seq': 12,
+            'payload': {
+              'name': 'terminal',
+              'tool_id': 't1',
+              'result': {'output': 'ok'},
+            },
+          },
+        ],
+        'open_requests': [],
+      },
+      onCall: (method, socket) {
+        if (method != 'session.events.since') return;
+        socket.emit(
+          'message.delta',
+          {'text': 'new'},
+          sessionId: 'live-session',
+          seq: 13,
+        );
+        socket.emit(
+          'message.delta',
+          {'text': 'gap'},
+          sessionId: 'live-session',
+          seq: 11,
+        );
+        socket.emit(
+          'message.delta',
+          {'text': 'foreign'},
+          sessionId: 'other-session',
+          seq: 99,
+        );
+      },
+    );
+    final repository = DashboardGatewayRepository(
+      store: _MemoryDashboardSessionStore(
+        session: (
+          baseUrl: 'https://dashboard.example:8443',
+          cookies: {'session': 'opaque'},
+        ),
+      ),
+      dio: Dio()..httpClientAdapter = _DashboardAdapter(),
+      socketConnector: (uri, {required headers}) async => socket,
+    );
+    final turn = await repository.openLiveTurn(
+      storedSessionId: 'stored-session',
+      recover: true,
+      after: const GatewayReplayCursor(
+        sessionId: 'live-session',
+        epoch: 'process-1',
+        seq: 10,
+      ),
+    );
+    final events = <RunEvent>[];
+    final subscription = turn.events.listen(events.add);
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(turn.recoveryMode, GatewayRecoveryMode.gap);
+    expect(events.whereType<RunTextDelta>().map((e) => e.text), ['gap', 'new']);
+    expect(events.whereType<RunToolProgress>().single.tool.id, 't1');
+    expect(turn.cursor?.seq, 13);
+    expect(socket.paramsFor('session.events.since')['last_seen'], 10);
+    expect(socket.methods, isNot(contains('prompt.submit')));
+    await subscription.cancel();
+    await turn.close();
+  });
+  test(
+    'resume aceita transcript projetado com text, row_id e tools compactas',
+    () async {
+      final socket = _FakeGatewaySocket(
+        resumeMessages: const [
+          {'role': 'user', 'text': 'Verifique', 'row_id': 41},
+          {
+            'role': 'tool',
+            'name': 'terminal',
+            'tool_call_id': 'tool-1',
+            'context': 'sleep 2',
+            'args': {'command': 'sleep 2'},
+          },
+          {
+            'role': 'assistant',
+            'text': 'Pronto',
+            'row_id': 43,
+            'display_kind': 'reply',
+          },
+        ],
+      );
+      final repository = DashboardGatewayRepository(
+        store: _MemoryDashboardSessionStore(
+          session: (
+            baseUrl: 'https://dashboard.example:8443',
+            cookies: {'session': 'opaque'},
+          ),
+        ),
+        dio: Dio()..httpClientAdapter = _DashboardAdapter(),
+        socketConnector: (uri, {required headers}) async => socket,
+      );
+      final turn = await repository.openLiveTurn(
+        storedSessionId: 'stored-session',
+      );
+      final timeline = conversationTimeline(turn.initialHistory);
+      expect((timeline.first as UserMessage).text, 'Verifique');
+      final reply = timeline.last as AssistantMessage;
+      expect(reply.text, 'Pronto');
+      expect(reply.id, 'gateway-row-43');
+      expect(turn.initialHistory.last.rowId, 43);
+      expect(reply.tools.single.id, 'tool-1');
+      expect(reply.tools.single.detail, 'sleep 2');
+      expect(reply.tools.single.arg, 'sleep 2');
+      await turn.close();
+    },
+  );
   test('login Basic salva sessão e credenciais separadamente', () async {
     final store = _MemoryDashboardSessionStore();
     final adapter = _DashboardAdapter();
@@ -1710,6 +1996,18 @@ final class _DashboardAdapter implements HttpClientAdapter {
   );
 }
 
+DashboardGatewayRepository _replayRepository(_FakeGatewaySocket socket) =>
+    DashboardGatewayRepository(
+      store: _MemoryDashboardSessionStore(
+        session: (
+          baseUrl: 'https://dashboard.example:8443',
+          cookies: {'session': 'opaque'},
+        ),
+      ),
+      dio: Dio()..httpClientAdapter = _DashboardAdapter(),
+      socketConnector: (uri, {required headers}) async => socket,
+    );
+
 final class _FakeGatewaySocket implements GatewaySocket {
   _FakeGatewaySocket({
     this.firstEvent = 'gateway.ready',
@@ -1719,6 +2017,9 @@ final class _FakeGatewaySocket implements GatewaySocket {
     this.openRequests,
     this.respondToHeartbeat = true,
     this.failureDelay,
+    this.replayResult,
+    this.onCall,
+    this.resultFor,
   }) {
     _stream = StreamController<dynamic>(
       onListen: () {
@@ -1729,6 +2030,9 @@ final class _FakeGatewaySocket implements GatewaySocket {
 
   final String firstEvent;
   final Map<String, dynamic>? readyPayload;
+  final Map<String, dynamic>? replayResult;
+  final void Function(String method, _FakeGatewaySocket socket)? onCall;
+  final Map<String, dynamic>? Function(String method)? resultFor;
 
   /// Métodos que este socket responde com erro JSON-RPC.
   final Map<String, ({int code, String message})> failures;
@@ -1765,6 +2069,7 @@ final class _FakeGatewaySocket implements GatewaySocket {
     }
     requests.add(request);
     final method = request['method'] as String;
+    onCall?.call(method, this);
     if (method == 'gateway.ping' && !respondToHeartbeat) return;
     final failure = failures[method];
     if (failure != null) {
@@ -1780,40 +2085,47 @@ final class _FakeGatewaySocket implements GatewaySocket {
       });
       return;
     }
-    final result = switch (method) {
-      'session.resume' => {
-        'session_id': 'live-session',
-        'running': true,
-        'status': 'streaming',
-        if (resumeMessages != null) 'messages': resumeMessages,
-        if (openRequests != null) 'open_requests': openRequests,
-      },
-      'session.history' => {
-        'count': 1,
-        'messages': [
-          {'id': 'message-1', 'role': 'user', 'content': 'Pergunta anterior'},
-        ],
-      },
-      'file.attach' => {
-        'attached': true,
-        'name': 'nota.txt',
-        'ref_text': '@file:.hermes/desktop-attachments/nota.txt',
-      },
-      'prompt.submit' => {'status': 'streaming'},
-      'session.interrupt' => {'status': 'interrupted'},
-      'approval.respond' => {'resolved': true},
-      'clarify.lock' => {
-        'status': 'ok',
-        'remaining': ((request['params'] as Map)['question_id'] == 'q0')
-            ? ['q1']
-            : const <String>[],
-      },
-      'client.capabilities' => {
-        'server_requests': ['clarify', 'approval'],
-        'declines_not_shown': true,
-      },
-      _ => <String, dynamic>{},
-    };
+    final result =
+        resultFor?.call(method) ??
+        switch (method) {
+          'session.resume' => {
+            'session_id': 'live-session',
+            'running': true,
+            'status': 'streaming',
+            if (resumeMessages != null) 'messages': resumeMessages,
+            if (openRequests != null) 'open_requests': openRequests,
+          },
+          'session.history' => {
+            'count': 1,
+            'messages': [
+              {
+                'id': 'message-1',
+                'role': 'user',
+                'content': 'Pergunta anterior',
+              },
+            ],
+          },
+          'session.events.since' => replayResult ?? <String, dynamic>{},
+          'file.attach' => {
+            'attached': true,
+            'name': 'nota.txt',
+            'ref_text': '@file:.hermes/desktop-attachments/nota.txt',
+          },
+          'prompt.submit' => {'status': 'streaming'},
+          'session.interrupt' => {'status': 'interrupted'},
+          'approval.respond' => {'resolved': true},
+          'clarify.lock' => {
+            'status': 'ok',
+            'remaining': ((request['params'] as Map)['question_id'] == 'q0')
+                ? ['q1']
+                : const <String>[],
+          },
+          'client.capabilities' => {
+            'server_requests': ['clarify', 'approval'],
+            'declines_not_shown': true,
+          },
+          _ => <String, dynamic>{},
+        };
     scheduleMicrotask(() {
       if (_stream.isClosed) return;
       _stream.add(
@@ -1827,13 +2139,23 @@ final class _FakeGatewaySocket implements GatewaySocket {
               as Map)
           .map((key, value) => MapEntry(key.toString(), value));
 
-  void emit(String type, Map<String, dynamic> payload) {
+  void emit(
+    String type,
+    Map<String, dynamic> payload, {
+    String? sessionId,
+    int? seq,
+  }) {
     if (_stream.isClosed) return;
     _stream.add(
       jsonEncode({
         'jsonrpc': '2.0',
         'method': 'event',
-        'params': {'type': type, 'payload': payload},
+        'params': {
+          'type': type,
+          'payload': payload,
+          'session_id': ?sessionId,
+          'seq': ?seq,
+        },
       }),
     );
   }

@@ -86,10 +86,11 @@ extension TurnActivityPatterns on TurnActivity {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( TurnActivityPreview value)?  activity,TResult Function( TurnReasoning value)?  reasoning,TResult Function( TurnToolActivity value)?  tool,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( TurnCommentary value)?  commentary,TResult Function( TurnActivityPreview value)?  activity,TResult Function( TurnReasoning value)?  reasoning,TResult Function( TurnToolActivity value)?  tool,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case TurnActivityPreview() when activity != null:
+case TurnCommentary() when commentary != null:
+return commentary(_that);case TurnActivityPreview() when activity != null:
 return activity(_that);case TurnReasoning() when reasoning != null:
 return reasoning(_that);case TurnToolActivity() when tool != null:
 return tool(_that);case _:
@@ -110,10 +111,11 @@ return tool(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( TurnActivityPreview value)  activity,required TResult Function( TurnReasoning value)  reasoning,required TResult Function( TurnToolActivity value)  tool,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( TurnCommentary value)  commentary,required TResult Function( TurnActivityPreview value)  activity,required TResult Function( TurnReasoning value)  reasoning,required TResult Function( TurnToolActivity value)  tool,}){
 final _that = this;
 switch (_that) {
-case TurnActivityPreview():
+case TurnCommentary():
+return commentary(_that);case TurnActivityPreview():
 return activity(_that);case TurnReasoning():
 return reasoning(_that);case TurnToolActivity():
 return tool(_that);}
@@ -130,10 +132,11 @@ return tool(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( TurnActivityPreview value)?  activity,TResult? Function( TurnReasoning value)?  reasoning,TResult? Function( TurnToolActivity value)?  tool,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( TurnCommentary value)?  commentary,TResult? Function( TurnActivityPreview value)?  activity,TResult? Function( TurnReasoning value)?  reasoning,TResult? Function( TurnToolActivity value)?  tool,}){
 final _that = this;
 switch (_that) {
-case TurnActivityPreview() when activity != null:
+case TurnCommentary() when commentary != null:
+return commentary(_that);case TurnActivityPreview() when activity != null:
 return activity(_that);case TurnReasoning() when reasoning != null:
 return reasoning(_that);case TurnToolActivity() when tool != null:
 return tool(_that);case _:
@@ -153,9 +156,10 @@ return tool(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String text)?  activity,TResult Function( String id,  String text)?  reasoning,TResult Function( String id,  ToolCall tool)?  tool,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String text,  int? rowId)?  commentary,TResult Function( String id,  String text)?  activity,TResult Function( String id,  String text)?  reasoning,TResult Function( String id,  ToolCall tool)?  tool,required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case TurnActivityPreview() when activity != null:
+case TurnCommentary() when commentary != null:
+return commentary(_that.id,_that.text,_that.rowId);case TurnActivityPreview() when activity != null:
 return activity(_that.id,_that.text);case TurnReasoning() when reasoning != null:
 return reasoning(_that.id,_that.text);case TurnToolActivity() when tool != null:
 return tool(_that.id,_that.tool);case _:
@@ -176,9 +180,10 @@ return tool(_that.id,_that.tool);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String text)  activity,required TResult Function( String id,  String text)  reasoning,required TResult Function( String id,  ToolCall tool)  tool,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String text,  int? rowId)  commentary,required TResult Function( String id,  String text)  activity,required TResult Function( String id,  String text)  reasoning,required TResult Function( String id,  ToolCall tool)  tool,}) {final _that = this;
 switch (_that) {
-case TurnActivityPreview():
+case TurnCommentary():
+return commentary(_that.id,_that.text,_that.rowId);case TurnActivityPreview():
 return activity(_that.id,_that.text);case TurnReasoning():
 return reasoning(_that.id,_that.text);case TurnToolActivity():
 return tool(_that.id,_that.tool);}
@@ -195,9 +200,10 @@ return tool(_that.id,_that.tool);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String text)?  activity,TResult? Function( String id,  String text)?  reasoning,TResult? Function( String id,  ToolCall tool)?  tool,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String text,  int? rowId)?  commentary,TResult? Function( String id,  String text)?  activity,TResult? Function( String id,  String text)?  reasoning,TResult? Function( String id,  ToolCall tool)?  tool,}) {final _that = this;
 switch (_that) {
-case TurnActivityPreview() when activity != null:
+case TurnCommentary() when commentary != null:
+return commentary(_that.id,_that.text,_that.rowId);case TurnActivityPreview() when activity != null:
 return activity(_that.id,_that.text);case TurnReasoning() when reasoning != null:
 return reasoning(_that.id,_that.text);case TurnToolActivity() when tool != null:
 return tool(_that.id,_that.tool);case _:
@@ -211,9 +217,79 @@ return tool(_that.id,_that.tool);case _:
 /// @nodoc
 
 
+class TurnCommentary implements TurnActivity {
+  const TurnCommentary({required this.id, required this.text, this.rowId});
+
+
+@override final  String id;
+ final  String text;
+ final  int? rowId;
+
+/// Create a copy of TurnActivity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TurnCommentaryCopyWith<TurnCommentary> get copyWith => _$TurnCommentaryCopyWithImpl<TurnCommentary>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TurnCommentary&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.rowId, rowId) || other.rowId == rowId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,text,rowId);
+
+@override
+String toString() {
+  return 'TurnActivity.commentary(id: $id, text: $text, rowId: $rowId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TurnCommentaryCopyWith<$Res> implements $TurnActivityCopyWith<$Res> {
+  factory $TurnCommentaryCopyWith(TurnCommentary value, $Res Function(TurnCommentary) _then) = _$TurnCommentaryCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String text, int? rowId
+});
+
+
+
+
+}
+/// @nodoc
+class _$TurnCommentaryCopyWithImpl<$Res>
+    implements $TurnCommentaryCopyWith<$Res> {
+  _$TurnCommentaryCopyWithImpl(this._self, this._then);
+
+  final TurnCommentary _self;
+  final $Res Function(TurnCommentary) _then;
+
+/// Create a copy of TurnActivity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? text = null,Object? rowId = freezed,}) {
+  return _then(TurnCommentary(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
+as String,rowId: freezed == rowId ? _self.rowId : rowId // ignore: cast_nullable_to_non_nullable
+as int?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class TurnActivityPreview implements TurnActivity {
   const TurnActivityPreview({required this.id, required this.text});
-  
+
 
 @override final  String id;
  final  String text;
@@ -281,7 +357,7 @@ as String,
 
 class TurnReasoning implements TurnActivity {
   const TurnReasoning({required this.id, required this.text});
-  
+
 
 @override final  String id;
  final  String text;
@@ -349,7 +425,7 @@ as String,
 
 class TurnToolActivity implements TurnActivity {
   const TurnToolActivity({required this.id, required this.tool});
-  
+
 
 @override final  String id;
  final  ToolCall tool;
@@ -414,7 +490,7 @@ as ToolCall,
 @override
 @pragma('vm:prefer-inline')
 $ToolCallCopyWith<$Res> get tool {
-  
+
   return $ToolCallCopyWith<$Res>(_self.tool, (value) {
     return _then(_self.copyWith(tool: value));
   });

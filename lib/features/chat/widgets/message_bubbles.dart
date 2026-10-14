@@ -249,6 +249,11 @@ class AssistantBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final scaffolding = splitGatewayScaffolding(message.text);
     final visibleText = scaffolding?.visible ?? message.text;
+    final copyText = [
+      for (final item in message.activityItems)
+        if (item is TurnCommentary) item.text,
+      if (visibleText.isNotEmpty) visibleText,
+    ].join('\n\n');
     final active =
         message.phase == ChatPhase.reasoning ||
         message.phase == ChatPhase.writing;
@@ -287,6 +292,7 @@ class AssistantBubble extends StatelessWidget {
             (message.activityItems.isNotEmpty || message.thinking.isNotEmpty))
           _ChronologicalTimeline(
             message: message,
+            persona: persona,
             onInteraction: onTimelineInteraction,
           )
         else ...[
@@ -305,6 +311,12 @@ class AssistantBubble extends StatelessWidget {
               onInteraction: onTimelineInteraction,
             ),
           ],
+          for (final item in message.activityItems)
+            if (item is TurnCommentary)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: HermesMarkdown(item.text, persona: persona),
+              ),
         ],
 
         if (scaffolding != null) ...[
@@ -362,8 +374,16 @@ class AssistantBubble extends StatelessWidget {
         // Vale também para turno que falhou ou foi cancelado com texto
         // parcial: o que o Hermes chegou a escrever é trabalho dele e se copia
         // igual. Ver A33.
-        if (!active && visibleText.trim().isNotEmpty)
-          _CopyResponse(markdown: visibleText),
+        if (message.warning?.isNotEmpty == true)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              message.warning!,
+              style: t.mono.copyWith(fontSize: 11, color: t.dim),
+            ),
+          ),
+        if (!active && copyText.trim().isNotEmpty)
+          _CopyResponse(markdown: copyText),
       ],
     );
   }
@@ -573,9 +593,14 @@ class _ReasoningBlockState extends State<_ReasoningBlock> {
 /// A linha é uma estrutura única, não uma pilha de cards: notas e ferramentas
 /// mantêm a densidade do Hermes Desktop e a posição em que chegaram no stream.
 class _ChronologicalTimeline extends StatelessWidget {
-  const _ChronologicalTimeline({required this.message, this.onInteraction});
+  const _ChronologicalTimeline({
+    required this.message,
+    required this.persona,
+    this.onInteraction,
+  });
 
   final AssistantMessage message;
+  final AgentPersona persona;
   final TimelineInteractionCallback? onInteraction;
 
   @override
@@ -595,6 +620,11 @@ class _ChronologicalTimeline extends StatelessWidget {
       final first = index == 0;
       final last = index == total - 1;
       events.add(switch (items[index]) {
+        TurnCommentary(:final id, :final text) => Padding(
+          key: ValueKey('turn-commentary-$id'),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: HermesMarkdown(text, persona: persona),
+        ),
         TurnActivityPreview(:final id, :final text) => _ChronologicalNote(
           key: ValueKey('turn-activity-$id'),
           label: 'Atividade',
@@ -1155,6 +1185,19 @@ class _ToolEventRowState extends State<_ToolEventRow> {
                               tool.arg,
                               key: ValueKey(
                                 'turn-tool-preview-${widget.eventId}',
+                              ),
+                            ),
+                          ),
+                        if (tool.risk != null || tool.outputRedacted)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              tool.outputRedacted
+                                  ? 'Saída sinalizada e redigida pelo Hermes'
+                                  : 'Saída sinalizada pelo Hermes',
+                              style: HermesTokens.of(context).mono.copyWith(
+                                fontSize: 11,
+                                color: HermesTokens.of(context).accent,
                               ),
                             ),
                           ),

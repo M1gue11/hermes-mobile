@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:hermes_mobile/domain/models/approval_request.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
+import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 
@@ -45,6 +46,8 @@ class FakeGatewayRepository implements GatewayRepository {
   @override
   Future<GatewayLiveTurn> openLiveTurn({
     required String storedSessionId,
+    GatewayReplayCursor? after,
+    bool recover = false,
   }) async {
     openedSessionIds.add(storedSessionId);
     if (turns.isEmpty) {
@@ -92,6 +95,9 @@ class FakeGatewayLiveTurn implements GatewayLiveTurn {
     required this.liveSessionId,
     this.running = true,
     this.initialHistory = const [],
+    this.inflight,
+    this.cursor,
+    this.recoveryMode = GatewayRecoveryMode.snapshot,
     this.submitError,
   });
 
@@ -125,6 +131,15 @@ class FakeGatewayLiveTurn implements GatewayLiveTurn {
   final List<SessionMessage> initialHistory;
 
   @override
+  final GatewayInflight? inflight;
+
+  @override
+  final GatewayReplayCursor? cursor;
+
+  @override
+  final GatewayRecoveryMode recoveryMode;
+
+  @override
   Stream<RunEvent> get events => _events.stream;
 
   void add(RunEvent event) => _events.add(event);
@@ -134,10 +149,11 @@ class FakeGatewayLiveTurn implements GatewayLiveTurn {
   Future<void> finishStream() => _events.close();
 
   @override
-  Future<void> submit(String text) async {
+  Future<GatewayPromptReceipt> submit(String text) async {
     final error = submitError;
     if (error != null) throw error;
     submitted.add(text);
+    return const GatewayPromptReceipt();
   }
 
   @override

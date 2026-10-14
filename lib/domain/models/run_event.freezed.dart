@@ -55,14 +55,16 @@ extension RunEventPatterns on RunEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RunActivityPreview value)?  activityPreview,TResult Function( RunReasoningDelta value)?  reasoningDelta,TResult Function( RunThinkingState value)?  thinkingState,TResult Function( RunTextDelta value)?  delta,TResult Function( RunToolProgress value)?  toolProgress,TResult Function( RunApprovalRequest value)?  approvalRequest,TResult Function( RunApprovalResolved value)?  approvalResolved,TResult Function( RunClarifyRequest value)?  clarifyRequest,TResult Function( RunClarifyResolved value)?  clarifyResolved,TResult Function( RunStatusEvent value)?  status,TResult Function( RunCompleted value)?  completed,TResult Function( RunFailed value)?  failed,TResult Function( RunUnknown value)?  unknown,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RunActivityPreview value)?  activityPreview,TResult Function( RunReasoningDelta value)?  reasoningDelta,TResult Function( RunThinkingState value)?  thinkingState,TResult Function( RunTextDelta value)?  delta,TResult Function( RunInterim value)?  interim,TResult Function( RunToolRisk value)?  toolRisk,TResult Function( RunToolProgress value)?  toolProgress,TResult Function( RunApprovalRequest value)?  approvalRequest,TResult Function( RunApprovalResolved value)?  approvalResolved,TResult Function( RunClarifyRequest value)?  clarifyRequest,TResult Function( RunClarifyResolved value)?  clarifyResolved,TResult Function( RunStatusEvent value)?  status,TResult Function( RunCompleted value)?  completed,TResult Function( RunFailed value)?  failed,TResult Function( RunUnknown value)?  unknown,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that);case RunReasoningDelta() when reasoningDelta != null:
 return reasoningDelta(_that);case RunThinkingState() when thinkingState != null:
 return thinkingState(_that);case RunTextDelta() when delta != null:
-return delta(_that);case RunToolProgress() when toolProgress != null:
+return delta(_that);case RunInterim() when interim != null:
+return interim(_that);case RunToolRisk() when toolRisk != null:
+return toolRisk(_that);case RunToolProgress() when toolProgress != null:
 return toolProgress(_that);case RunApprovalRequest() when approvalRequest != null:
 return approvalRequest(_that);case RunApprovalResolved() when approvalResolved != null:
 return approvalResolved(_that);case RunClarifyRequest() when clarifyRequest != null:
@@ -89,14 +91,16 @@ return unknown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RunActivityPreview value)  activityPreview,required TResult Function( RunReasoningDelta value)  reasoningDelta,required TResult Function( RunThinkingState value)  thinkingState,required TResult Function( RunTextDelta value)  delta,required TResult Function( RunToolProgress value)  toolProgress,required TResult Function( RunApprovalRequest value)  approvalRequest,required TResult Function( RunApprovalResolved value)  approvalResolved,required TResult Function( RunClarifyRequest value)  clarifyRequest,required TResult Function( RunClarifyResolved value)  clarifyResolved,required TResult Function( RunStatusEvent value)  status,required TResult Function( RunCompleted value)  completed,required TResult Function( RunFailed value)  failed,required TResult Function( RunUnknown value)  unknown,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RunActivityPreview value)  activityPreview,required TResult Function( RunReasoningDelta value)  reasoningDelta,required TResult Function( RunThinkingState value)  thinkingState,required TResult Function( RunTextDelta value)  delta,required TResult Function( RunInterim value)  interim,required TResult Function( RunToolRisk value)  toolRisk,required TResult Function( RunToolProgress value)  toolProgress,required TResult Function( RunApprovalRequest value)  approvalRequest,required TResult Function( RunApprovalResolved value)  approvalResolved,required TResult Function( RunClarifyRequest value)  clarifyRequest,required TResult Function( RunClarifyResolved value)  clarifyResolved,required TResult Function( RunStatusEvent value)  status,required TResult Function( RunCompleted value)  completed,required TResult Function( RunFailed value)  failed,required TResult Function( RunUnknown value)  unknown,}){
 final _that = this;
 switch (_that) {
 case RunActivityPreview():
 return activityPreview(_that);case RunReasoningDelta():
 return reasoningDelta(_that);case RunThinkingState():
 return thinkingState(_that);case RunTextDelta():
-return delta(_that);case RunToolProgress():
+return delta(_that);case RunInterim():
+return interim(_that);case RunToolRisk():
+return toolRisk(_that);case RunToolProgress():
 return toolProgress(_that);case RunApprovalRequest():
 return approvalRequest(_that);case RunApprovalResolved():
 return approvalResolved(_that);case RunClarifyRequest():
@@ -119,14 +123,16 @@ return unknown(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RunActivityPreview value)?  activityPreview,TResult? Function( RunReasoningDelta value)?  reasoningDelta,TResult? Function( RunThinkingState value)?  thinkingState,TResult? Function( RunTextDelta value)?  delta,TResult? Function( RunToolProgress value)?  toolProgress,TResult? Function( RunApprovalRequest value)?  approvalRequest,TResult? Function( RunApprovalResolved value)?  approvalResolved,TResult? Function( RunClarifyRequest value)?  clarifyRequest,TResult? Function( RunClarifyResolved value)?  clarifyResolved,TResult? Function( RunStatusEvent value)?  status,TResult? Function( RunCompleted value)?  completed,TResult? Function( RunFailed value)?  failed,TResult? Function( RunUnknown value)?  unknown,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RunActivityPreview value)?  activityPreview,TResult? Function( RunReasoningDelta value)?  reasoningDelta,TResult? Function( RunThinkingState value)?  thinkingState,TResult? Function( RunTextDelta value)?  delta,TResult? Function( RunInterim value)?  interim,TResult? Function( RunToolRisk value)?  toolRisk,TResult? Function( RunToolProgress value)?  toolProgress,TResult? Function( RunApprovalRequest value)?  approvalRequest,TResult? Function( RunApprovalResolved value)?  approvalResolved,TResult? Function( RunClarifyRequest value)?  clarifyRequest,TResult? Function( RunClarifyResolved value)?  clarifyResolved,TResult? Function( RunStatusEvent value)?  status,TResult? Function( RunCompleted value)?  completed,TResult? Function( RunFailed value)?  failed,TResult? Function( RunUnknown value)?  unknown,}){
 final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that);case RunReasoningDelta() when reasoningDelta != null:
 return reasoningDelta(_that);case RunThinkingState() when thinkingState != null:
 return thinkingState(_that);case RunTextDelta() when delta != null:
-return delta(_that);case RunToolProgress() when toolProgress != null:
+return delta(_that);case RunInterim() when interim != null:
+return interim(_that);case RunToolRisk() when toolRisk != null:
+return toolRisk(_that);case RunToolProgress() when toolProgress != null:
 return toolProgress(_that);case RunApprovalRequest() when approvalRequest != null:
 return approvalRequest(_that);case RunApprovalResolved() when approvalResolved != null:
 return approvalResolved(_that);case RunClarifyRequest() when clarifyRequest != null:
@@ -152,21 +158,23 @@ return unknown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String text)?  activityPreview,TResult Function( String text)?  reasoningDelta,TResult Function( String text)?  thinkingState,TResult Function( String text)?  delta,TResult Function( ToolCall tool)?  toolProgress,TResult Function( ApprovalRequest request)?  approvalRequest,TResult Function( ApprovalChoice choice)?  approvalResolved,TResult Function( ClarifyRequest request)?  clarifyRequest,TResult Function()?  clarifyResolved,TResult Function( RunStatus status)?  status,TResult Function( String? output)?  completed,TResult Function( String? error)?  failed,TResult Function( String type,  Map<String, dynamic> data)?  unknown,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String text)?  activityPreview,TResult Function( String text)?  reasoningDelta,TResult Function( String text)?  thinkingState,TResult Function( String text)?  delta,TResult Function( String text,  bool alreadyStreamed)?  interim,TResult Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult Function( ToolCall tool)?  toolProgress,TResult Function( ApprovalRequest request)?  approvalRequest,TResult Function( ApprovalChoice choice)?  approvalResolved,TResult Function( ClarifyRequest request)?  clarifyRequest,TResult Function()?  clarifyResolved,TResult Function( RunStatus status)?  status,TResult Function( String? output,  GatewayCompletion? gateway)?  completed,TResult Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult Function( String type,  Map<String, dynamic> data)?  unknown,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that.text);case RunReasoningDelta() when reasoningDelta != null:
 return reasoningDelta(_that.text);case RunThinkingState() when thinkingState != null:
 return thinkingState(_that.text);case RunTextDelta() when delta != null:
-return delta(_that.text);case RunToolProgress() when toolProgress != null:
+return delta(_that.text);case RunInterim() when interim != null:
+return interim(_that.text,_that.alreadyStreamed);case RunToolRisk() when toolRisk != null:
+return toolRisk(_that.toolId,_that.risk,_that.redacted);case RunToolProgress() when toolProgress != null:
 return toolProgress(_that.tool);case RunApprovalRequest() when approvalRequest != null:
 return approvalRequest(_that.request);case RunApprovalResolved() when approvalResolved != null:
 return approvalResolved(_that.choice);case RunClarifyRequest() when clarifyRequest != null:
 return clarifyRequest(_that.request);case RunClarifyResolved() when clarifyResolved != null:
 return clarifyResolved();case RunStatusEvent() when status != null:
 return status(_that.status);case RunCompleted() when completed != null:
-return completed(_that.output);case RunFailed() when failed != null:
-return failed(_that.error);case RunUnknown() when unknown != null:
+return completed(_that.output,_that.gateway);case RunFailed() when failed != null:
+return failed(_that.error,_that.output,_that.gateway);case RunUnknown() when unknown != null:
 return unknown(_that.type,_that.data);case _:
   return orElse();
 
@@ -185,21 +193,23 @@ return unknown(_that.type,_that.data);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String text)  activityPreview,required TResult Function( String text)  reasoningDelta,required TResult Function( String text)  thinkingState,required TResult Function( String text)  delta,required TResult Function( ToolCall tool)  toolProgress,required TResult Function( ApprovalRequest request)  approvalRequest,required TResult Function( ApprovalChoice choice)  approvalResolved,required TResult Function( ClarifyRequest request)  clarifyRequest,required TResult Function()  clarifyResolved,required TResult Function( RunStatus status)  status,required TResult Function( String? output)  completed,required TResult Function( String? error)  failed,required TResult Function( String type,  Map<String, dynamic> data)  unknown,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String text)  activityPreview,required TResult Function( String text)  reasoningDelta,required TResult Function( String text)  thinkingState,required TResult Function( String text)  delta,required TResult Function( String text,  bool alreadyStreamed)  interim,required TResult Function( String toolId,  String risk,  bool redacted)  toolRisk,required TResult Function( ToolCall tool)  toolProgress,required TResult Function( ApprovalRequest request)  approvalRequest,required TResult Function( ApprovalChoice choice)  approvalResolved,required TResult Function( ClarifyRequest request)  clarifyRequest,required TResult Function()  clarifyResolved,required TResult Function( RunStatus status)  status,required TResult Function( String? output,  GatewayCompletion? gateway)  completed,required TResult Function( String? error,  String? output,  GatewayCompletion? gateway)  failed,required TResult Function( String type,  Map<String, dynamic> data)  unknown,}) {final _that = this;
 switch (_that) {
 case RunActivityPreview():
 return activityPreview(_that.text);case RunReasoningDelta():
 return reasoningDelta(_that.text);case RunThinkingState():
 return thinkingState(_that.text);case RunTextDelta():
-return delta(_that.text);case RunToolProgress():
+return delta(_that.text);case RunInterim():
+return interim(_that.text,_that.alreadyStreamed);case RunToolRisk():
+return toolRisk(_that.toolId,_that.risk,_that.redacted);case RunToolProgress():
 return toolProgress(_that.tool);case RunApprovalRequest():
 return approvalRequest(_that.request);case RunApprovalResolved():
 return approvalResolved(_that.choice);case RunClarifyRequest():
 return clarifyRequest(_that.request);case RunClarifyResolved():
 return clarifyResolved();case RunStatusEvent():
 return status(_that.status);case RunCompleted():
-return completed(_that.output);case RunFailed():
-return failed(_that.error);case RunUnknown():
+return completed(_that.output,_that.gateway);case RunFailed():
+return failed(_that.error,_that.output,_that.gateway);case RunUnknown():
 return unknown(_that.type,_that.data);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -214,21 +224,23 @@ return unknown(_that.type,_that.data);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String text)?  activityPreview,TResult? Function( String text)?  reasoningDelta,TResult? Function( String text)?  thinkingState,TResult? Function( String text)?  delta,TResult? Function( ToolCall tool)?  toolProgress,TResult? Function( ApprovalRequest request)?  approvalRequest,TResult? Function( ApprovalChoice choice)?  approvalResolved,TResult? Function( ClarifyRequest request)?  clarifyRequest,TResult? Function()?  clarifyResolved,TResult? Function( RunStatus status)?  status,TResult? Function( String? output)?  completed,TResult? Function( String? error)?  failed,TResult? Function( String type,  Map<String, dynamic> data)?  unknown,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String text)?  activityPreview,TResult? Function( String text)?  reasoningDelta,TResult? Function( String text)?  thinkingState,TResult? Function( String text)?  delta,TResult? Function( String text,  bool alreadyStreamed)?  interim,TResult? Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult? Function( ToolCall tool)?  toolProgress,TResult? Function( ApprovalRequest request)?  approvalRequest,TResult? Function( ApprovalChoice choice)?  approvalResolved,TResult? Function( ClarifyRequest request)?  clarifyRequest,TResult? Function()?  clarifyResolved,TResult? Function( RunStatus status)?  status,TResult? Function( String? output,  GatewayCompletion? gateway)?  completed,TResult? Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult? Function( String type,  Map<String, dynamic> data)?  unknown,}) {final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that.text);case RunReasoningDelta() when reasoningDelta != null:
 return reasoningDelta(_that.text);case RunThinkingState() when thinkingState != null:
 return thinkingState(_that.text);case RunTextDelta() when delta != null:
-return delta(_that.text);case RunToolProgress() when toolProgress != null:
+return delta(_that.text);case RunInterim() when interim != null:
+return interim(_that.text,_that.alreadyStreamed);case RunToolRisk() when toolRisk != null:
+return toolRisk(_that.toolId,_that.risk,_that.redacted);case RunToolProgress() when toolProgress != null:
 return toolProgress(_that.tool);case RunApprovalRequest() when approvalRequest != null:
 return approvalRequest(_that.request);case RunApprovalResolved() when approvalResolved != null:
 return approvalResolved(_that.choice);case RunClarifyRequest() when clarifyRequest != null:
 return clarifyRequest(_that.request);case RunClarifyResolved() when clarifyResolved != null:
 return clarifyResolved();case RunStatusEvent() when status != null:
 return status(_that.status);case RunCompleted() when completed != null:
-return completed(_that.output);case RunFailed() when failed != null:
-return failed(_that.error);case RunUnknown() when unknown != null:
+return completed(_that.output,_that.gateway);case RunFailed() when failed != null:
+return failed(_that.error,_that.output,_that.gateway);case RunUnknown() when unknown != null:
 return unknown(_that.type,_that.data);case _:
   return null;
 
@@ -242,7 +254,7 @@ return unknown(_that.type,_that.data);case _:
 
 class RunActivityPreview implements RunEvent {
   const RunActivityPreview(this.text);
-  
+
 
  final  String text;
 
@@ -308,7 +320,7 @@ as String,
 
 class RunReasoningDelta implements RunEvent {
   const RunReasoningDelta(this.text);
-  
+
 
  final  String text;
 
@@ -374,7 +386,7 @@ as String,
 
 class RunThinkingState implements RunEvent {
   const RunThinkingState(this.text);
-  
+
 
  final  String text;
 
@@ -440,7 +452,7 @@ as String,
 
 class RunTextDelta implements RunEvent {
   const RunTextDelta(this.text);
-  
+
 
  final  String text;
 
@@ -504,9 +516,147 @@ as String,
 /// @nodoc
 
 
+class RunInterim implements RunEvent {
+  const RunInterim({required this.text, required this.alreadyStreamed});
+
+
+ final  String text;
+ final  bool alreadyStreamed;
+
+/// Create a copy of RunEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$RunInterimCopyWith<RunInterim> get copyWith => _$RunInterimCopyWithImpl<RunInterim>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RunInterim&&(identical(other.text, text) || other.text == text)&&(identical(other.alreadyStreamed, alreadyStreamed) || other.alreadyStreamed == alreadyStreamed));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,text,alreadyStreamed);
+
+@override
+String toString() {
+  return 'RunEvent.interim(text: $text, alreadyStreamed: $alreadyStreamed)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $RunInterimCopyWith<$Res> implements $RunEventCopyWith<$Res> {
+  factory $RunInterimCopyWith(RunInterim value, $Res Function(RunInterim) _then) = _$RunInterimCopyWithImpl;
+@useResult
+$Res call({
+ String text, bool alreadyStreamed
+});
+
+
+
+
+}
+/// @nodoc
+class _$RunInterimCopyWithImpl<$Res>
+    implements $RunInterimCopyWith<$Res> {
+  _$RunInterimCopyWithImpl(this._self, this._then);
+
+  final RunInterim _self;
+  final $Res Function(RunInterim) _then;
+
+/// Create a copy of RunEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? text = null,Object? alreadyStreamed = null,}) {
+  return _then(RunInterim(
+text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
+as String,alreadyStreamed: null == alreadyStreamed ? _self.alreadyStreamed : alreadyStreamed // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class RunToolRisk implements RunEvent {
+  const RunToolRisk({required this.toolId, required this.risk, this.redacted = false});
+
+
+ final  String toolId;
+ final  String risk;
+@JsonKey() final  bool redacted;
+
+/// Create a copy of RunEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$RunToolRiskCopyWith<RunToolRisk> get copyWith => _$RunToolRiskCopyWithImpl<RunToolRisk>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RunToolRisk&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.risk, risk) || other.risk == risk)&&(identical(other.redacted, redacted) || other.redacted == redacted));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,toolId,risk,redacted);
+
+@override
+String toString() {
+  return 'RunEvent.toolRisk(toolId: $toolId, risk: $risk, redacted: $redacted)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $RunToolRiskCopyWith<$Res> implements $RunEventCopyWith<$Res> {
+  factory $RunToolRiskCopyWith(RunToolRisk value, $Res Function(RunToolRisk) _then) = _$RunToolRiskCopyWithImpl;
+@useResult
+$Res call({
+ String toolId, String risk, bool redacted
+});
+
+
+
+
+}
+/// @nodoc
+class _$RunToolRiskCopyWithImpl<$Res>
+    implements $RunToolRiskCopyWith<$Res> {
+  _$RunToolRiskCopyWithImpl(this._self, this._then);
+
+  final RunToolRisk _self;
+  final $Res Function(RunToolRisk) _then;
+
+/// Create a copy of RunEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? toolId = null,Object? risk = null,Object? redacted = null,}) {
+  return _then(RunToolRisk(
+toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
+as String,risk: null == risk ? _self.risk : risk // ignore: cast_nullable_to_non_nullable
+as String,redacted: null == redacted ? _self.redacted : redacted // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class RunToolProgress implements RunEvent {
   const RunToolProgress(this.tool);
-  
+
 
  final  ToolCall tool;
 
@@ -569,7 +719,7 @@ as ToolCall,
 @override
 @pragma('vm:prefer-inline')
 $ToolCallCopyWith<$Res> get tool {
-  
+
   return $ToolCallCopyWith<$Res>(_self.tool, (value) {
     return _then(_self.copyWith(tool: value));
   });
@@ -581,7 +731,7 @@ $ToolCallCopyWith<$Res> get tool {
 
 class RunApprovalRequest implements RunEvent {
   const RunApprovalRequest(this.request);
-  
+
 
  final  ApprovalRequest request;
 
@@ -647,7 +797,7 @@ as ApprovalRequest,
 
 class RunApprovalResolved implements RunEvent {
   const RunApprovalResolved(this.choice);
-  
+
 
  final  ApprovalChoice choice;
 
@@ -713,7 +863,7 @@ as ApprovalChoice,
 
 class RunClarifyRequest implements RunEvent {
   const RunClarifyRequest(this.request);
-  
+
 
  final  ClarifyRequest request;
 
@@ -779,7 +929,7 @@ as ClarifyRequest,
 
 class RunClarifyResolved implements RunEvent {
   const RunClarifyResolved();
-  
+
 
 
 
@@ -811,7 +961,7 @@ String toString() {
 
 class RunStatusEvent implements RunEvent {
   const RunStatusEvent(this.status);
-  
+
 
  final  RunStatus status;
 
@@ -876,10 +1026,11 @@ as RunStatus,
 
 
 class RunCompleted implements RunEvent {
-  const RunCompleted({this.output});
-  
+  const RunCompleted({this.output, this.gateway});
+
 
  final  String? output;
+ final  GatewayCompletion? gateway;
 
 /// Create a copy of RunEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -891,16 +1042,16 @@ $RunCompletedCopyWith<RunCompleted> get copyWith => _$RunCompletedCopyWithImpl<R
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RunCompleted&&(identical(other.output, output) || other.output == output));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RunCompleted&&(identical(other.output, output) || other.output == output)&&(identical(other.gateway, gateway) || other.gateway == gateway));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,output);
+int get hashCode => Object.hash(runtimeType,output,gateway);
 
 @override
 String toString() {
-  return 'RunEvent.completed(output: $output)';
+  return 'RunEvent.completed(output: $output, gateway: $gateway)';
 }
 
 
@@ -911,7 +1062,7 @@ abstract mixin class $RunCompletedCopyWith<$Res> implements $RunEventCopyWith<$R
   factory $RunCompletedCopyWith(RunCompleted value, $Res Function(RunCompleted) _then) = _$RunCompletedCopyWithImpl;
 @useResult
 $Res call({
- String? output
+ String? output, GatewayCompletion? gateway
 });
 
 
@@ -928,10 +1079,11 @@ class _$RunCompletedCopyWithImpl<$Res>
 
 /// Create a copy of RunEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? output = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? output = freezed,Object? gateway = freezed,}) {
   return _then(RunCompleted(
 output: freezed == output ? _self.output : output // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,gateway: freezed == gateway ? _self.gateway : gateway // ignore: cast_nullable_to_non_nullable
+as GatewayCompletion?,
   ));
 }
 
@@ -942,10 +1094,12 @@ as String?,
 
 
 class RunFailed implements RunEvent {
-  const RunFailed({this.error});
-  
+  const RunFailed({this.error, this.output, this.gateway});
+
 
  final  String? error;
+ final  String? output;
+ final  GatewayCompletion? gateway;
 
 /// Create a copy of RunEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -957,16 +1111,16 @@ $RunFailedCopyWith<RunFailed> get copyWith => _$RunFailedCopyWithImpl<RunFailed>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RunFailed&&(identical(other.error, error) || other.error == error));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RunFailed&&(identical(other.error, error) || other.error == error)&&(identical(other.output, output) || other.output == output)&&(identical(other.gateway, gateway) || other.gateway == gateway));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,error);
+int get hashCode => Object.hash(runtimeType,error,output,gateway);
 
 @override
 String toString() {
-  return 'RunEvent.failed(error: $error)';
+  return 'RunEvent.failed(error: $error, output: $output, gateway: $gateway)';
 }
 
 
@@ -977,7 +1131,7 @@ abstract mixin class $RunFailedCopyWith<$Res> implements $RunEventCopyWith<$Res>
   factory $RunFailedCopyWith(RunFailed value, $Res Function(RunFailed) _then) = _$RunFailedCopyWithImpl;
 @useResult
 $Res call({
- String? error
+ String? error, String? output, GatewayCompletion? gateway
 });
 
 
@@ -994,10 +1148,12 @@ class _$RunFailedCopyWithImpl<$Res>
 
 /// Create a copy of RunEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? error = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? error = freezed,Object? output = freezed,Object? gateway = freezed,}) {
   return _then(RunFailed(
 error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,output: freezed == output ? _self.output : output // ignore: cast_nullable_to_non_nullable
+as String?,gateway: freezed == gateway ? _self.gateway : gateway // ignore: cast_nullable_to_non_nullable
+as GatewayCompletion?,
   ));
 }
 
@@ -1009,7 +1165,7 @@ as String?,
 
 class RunUnknown implements RunEvent {
   const RunUnknown(this.type, final  Map<String, dynamic> data): _data = data;
-  
+
 
  final  String type;
  final  Map<String, dynamic> _data;

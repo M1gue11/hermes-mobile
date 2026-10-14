@@ -2,6 +2,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_mobile/domain/models/gateway_rpc.dart';
 
 void main() {
+  test('preserva sessão e sequência fora do payload do evento', () {
+    final frame =
+        decodeGatewayFrame(
+              '{"jsonrpc":"2.0","method":"event",'
+              '"params":{"type":"message.delta","session_id":"live","seq":37,'
+              '"payload":{"text":"a"}}}',
+            )
+            as GatewayEventFrame;
+    expect(frame.sessionId, 'live');
+    expect(frame.seq, 37);
+    expect(frame.payload, {'text': 'a'});
+  });
   test('correlaciona resultado por id', () {
     final frame = decodeGatewayFrame(
       '{"jsonrpc":"2.0","id":"m1","result":{"session_id":"live"}}',
