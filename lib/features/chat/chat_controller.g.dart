@@ -44,7 +44,7 @@ final class ChatControllerProvider
   }
 }
 
-String _$chatControllerHash() => r'2b97a2104a4523d7e3719209db370c33b696d825';
+String _$chatControllerHash() => r'cb831e2353721b01539f6fd05d6e4d8efb170d6e';
 
 /// Coordena sessão, histórico persistido e streaming da Runs API.
 

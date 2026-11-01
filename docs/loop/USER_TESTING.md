@@ -70,3 +70,15 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
   aparece o aviso de que o `SKILL.md` mudou no servidor.
 - Saia do Dashboard (sem sessão): o catálogo volta a
   `API SERVER · SOMENTE LEITURA`, sem lápis nem chave.
+
+## [ ] A95 - agendamentos
+
+- Em Ajustes, abra Agendamentos: as rotinas do servidor aparecem, ativas antes
+  das pausadas, com a próxima execução no horário local.
+- Crie uma rotina com agenda `every 30m` e um pedido curto: ela aparece na
+  lista. Tente uma agenda inválida (`every xyz`): o formulário fica aberto com
+  a causa devolvida pelo servidor.
+- Abra a rotina e toque em Executar agora: a lista passa a mostrar
+  "Rodando agora" e, ao terminar, a última execução.
+- Pause e retome; confira no `hermes cron list` do servidor que o estado bate.
+- Exclua a rotina de teste confirmando no diálogo.

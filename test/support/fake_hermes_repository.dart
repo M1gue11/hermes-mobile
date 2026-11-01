@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:hermes_mobile/domain/models/approval_request.dart';
 import 'package:hermes_mobile/domain/models/capabilities.dart';
 import 'package:hermes_mobile/domain/models/conversation.dart';
+import 'package:hermes_mobile/domain/models/cron_job.dart';
 import 'package:hermes_mobile/domain/models/conversation_page.dart';
 import 'package:hermes_mobile/domain/models/health_status.dart';
 import 'package:hermes_mobile/domain/models/hermes_model.dart';
@@ -478,4 +479,68 @@ class FakeHermesRepository implements HermesRepository {
   @override
   Future<Run> stopRun(String runId) async =>
       Run(runId: runId, status: RunStatus.stopping);
+
+  List<CronJob> rotinas = [];
+  final List<String> acoesEmRotinas = [];
+  Object? falhaEmRotinas;
+
+  @override
+  Future<List<CronJob>> jobs() async {
+    final falha = falhaEmRotinas;
+    if (falha != null) throw falha;
+    return List.of(rotinas);
+  }
+
+  @override
+  Future<CronJob> createJob({
+    required String name,
+    required String schedule,
+    required String prompt,
+  }) async {
+    final falha = falhaEmRotinas;
+    if (falha != null) throw falha;
+    final job = CronJob(
+      id: 'job${rotinas.length + 1}'.padRight(12, '0'),
+      name: name,
+      schedule: schedule,
+      prompt: prompt,
+    );
+    acoesEmRotinas.add('create:$name');
+    rotinas = [...rotinas, job];
+    return job;
+  }
+
+  CronJob _mudarRotina(String acao, String id, CronJob Function(CronJob) f) {
+    acoesEmRotinas.add('$acao:$id');
+    final job = f(rotinas.firstWhere((item) => item.id == id));
+    rotinas = [for (final item in rotinas) item.id == id ? job : item];
+    return job;
+  }
+
+  @override
+  Future<CronJob> pauseJob(String id) async => _mudarRotina(
+    'pause',
+    id,
+    (job) => job.copyWith(enabled: false, state: 'paused'),
+  );
+
+  @override
+  Future<CronJob> resumeJob(String id) async => _mudarRotina(
+    'resume',
+    id,
+    (job) => job.copyWith(enabled: true, state: 'scheduled'),
+  );
+
+  @override
+  Future<CronJob> runJobNow(String id) async =>
+      _mudarRotina('run', id, (job) => job.copyWith(running: true));
+
+  @override
+  Future<void> deleteJob(String id) async {
+    acoesEmRotinas.add('delete:$id');
+    rotinas = [
+      for (final item in rotinas)
+        if (item.id != id) item,
+    ];
+  }
 }

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_mobile/domain/models/approval_request.dart';
+import 'package:hermes_mobile/domain/models/cron_job.dart';
 import 'package:hermes_mobile/domain/models/hermes_failure.dart';
 import 'package:hermes_mobile/data/http/http_hermes_repository.dart';
 
@@ -198,6 +199,121 @@ void main() {
         await repository.conversationPage();
 
         expect(adapter.ultimo!.queryParameters, {'limit': 50, 'offset': 0});
+      });
+    });
+
+    group('agendamentos', () {
+      test('lista inclui pausadas e lê o formato do servidor', () async {
+        final adapter = _RecordingAdapter({
+          'jobs': [
+            {
+              'id': 'abc123def456',
+              'name': 'Resumo da manhã',
+              'prompt': 'Resuma meus e-mails.',
+              'schedule': {'kind': 'cron', 'expr': '0 9 * * *'},
+              'schedule_display': '0 9 * * *',
+              'repeat': {'times': 5, 'completed': 2},
+              'enabled': false,
+              'state': 'paused',
+              'paused_reason': 'Pausada pelo operador.',
+              'next_run_at': null,
+              'last_run_at': '2026-10-31T09:00:00-03:00',
+              'last_status': 'ok',
+              'last_error': null,
+              'latest_execution': {'status': 'completed'},
+              'live_execution': null,
+            },
+            {
+              'id': 'fff000fff000',
+              'name': 'Varredura',
+              'schedule': {'kind': 'interval', 'minutes': 30},
+              'enabled': true,
+              'state': 'scheduled',
+              'live_execution': {'status': 'running'},
+            },
+            {'name': 'sem id'},
+          ],
+        });
+        final repository = HttpHermesRepository(
+          apiKey: 'test-key',
+          dio: Dio()..httpClientAdapter = adapter,
+        );
+
+        final jobs = await repository.jobs();
+
+        expect(adapter.ultimo!.path, '/api/jobs');
+        expect(adapter.ultimo!.queryParameters, {'include_disabled': true});
+        expect(jobs, hasLength(2));
+        expect(jobs.first.status, CronJobStatus.paused);
+        expect(jobs.first.schedule, '0 9 * * *');
+        expect(jobs.first.repeatTimes, 5);
+        expect(jobs.first.repeatCompleted, 2);
+        expect(jobs.first.pausedReason, 'Pausada pelo operador.');
+        expect(jobs.first.lastRunAt, DateTime.utc(2026, 10, 31, 12));
+        expect(jobs.last.status, CronJobStatus.running);
+        expect(jobs.last.schedule, isEmpty);
+      });
+
+      test('criação manda nome, agenda e pedido', () async {
+        final adapter = _RecordingAdapter({
+          'job': {'id': 'abc123def456', 'name': 'Diário', 'state': 'scheduled'},
+        });
+        final repository = HttpHermesRepository(
+          apiKey: 'test-key',
+          dio: Dio()..httpClientAdapter = adapter,
+        );
+
+        final job = await repository.createJob(
+          name: 'Diário',
+          schedule: 'every day at 9am',
+          prompt: 'Resuma o dia.',
+        );
+
+        expect(adapter.ultimo!.method, 'POST');
+        expect(adapter.ultimo!.data, {
+          'name': 'Diário',
+          'schedule': 'every day at 9am',
+          'prompt': 'Resuma o dia.',
+        });
+        expect(job.id, 'abc123def456');
+      });
+
+      test('recusa em texto simples chega como mensagem do servidor', () {
+        final repository = HttpHermesRepository(
+          apiKey: 'test-key',
+          dio: Dio()
+            ..httpClientAdapter = _JsonAdapter({
+              'error': "Invalid duration: 'xyz'.",
+            }, statusCode: 400),
+        );
+
+        expect(
+          repository.createJob(name: 'x', schedule: 'every xyz', prompt: 'y'),
+          throwsA(
+            isA<HermesFailure>().having(
+              (f) => f.serverMessage,
+              'serverMessage',
+              "Invalid duration: 'xyz'.",
+            ),
+          ),
+        );
+      });
+
+      test('servidor sem cron responde 501', () {
+        final repository = HttpHermesRepository(
+          apiKey: 'test-key',
+          dio: Dio()
+            ..httpClientAdapter = _JsonAdapter({
+              'error': 'Cron module not available',
+            }, statusCode: 501),
+        );
+
+        expect(
+          repository.jobs(),
+          throwsA(
+            isA<HermesFailure>().having((f) => f.statusCode, 'status', 501),
+          ),
+        );
       });
     });
 

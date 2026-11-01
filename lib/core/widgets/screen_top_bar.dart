@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/hermes_tokens.dart';
+import '../theme/hermes_tokens.dart';
 
-/// Barra das telas de Skills: ação de saída, título, linha técnica e ações.
-class SkillTopBar extends StatelessWidget {
-  const SkillTopBar({
+/// Barra das telas inteiras empilhadas: ação de saída, título, linha técnica
+/// e ações. Usada por Skills e Agendamentos.
+class ScreenTopBar extends StatelessWidget {
+  const ScreenTopBar({
     super.key,
     required this.title,
     required this.subtitle,

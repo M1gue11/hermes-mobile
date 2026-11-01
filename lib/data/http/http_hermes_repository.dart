@@ -10,6 +10,7 @@ import '../../domain/models/capabilities.dart';
 import '../../domain/models/approval_request.dart';
 import '../../domain/models/conversation.dart';
 import '../../domain/models/conversation_page.dart';
+import '../../domain/models/cron_job.dart';
 import '../../domain/models/health_status.dart';
 import '../../domain/models/hermes_failure.dart';
 import '../../domain/models/hermes_model.dart';
@@ -73,7 +74,8 @@ class HttpHermesRepository implements HermesRepository {
       InterceptorsWrapper(
         onError: (error, handler) {
           final envelope = _map(error.response?.data);
-          final publicError = _map(envelope?['error']);
+          final rawError = envelope?['error'];
+          final publicError = _map(rawError);
           handler.reject(
             DioException(
               requestOptions: RequestOptions(
@@ -83,7 +85,11 @@ class HttpHermesRepository implements HermesRepository {
               type: error.type,
               error: HermesApiException(
                 statusCode: error.response?.statusCode,
-                message: publicError?['message']?.toString(),
+                // As rotas `/api/jobs` respondem `{"error": "texto"}`, sem o
+                // envelope OpenAI.
+                message:
+                    publicError?['message']?.toString() ??
+                    (rawError is String ? rawError : null),
                 type: publicError?['type']?.toString(),
                 code: publicError?['code']?.toString(),
               ),
@@ -405,6 +411,96 @@ class HttpHermesRepository implements HermesRepository {
         approvalFailureFrom(statusCode: falha.statusCode, code: falha.code),
       );
     }
+  }
+
+  @override
+  Future<List<CronJob>> jobs() async {
+    // Pausar grava `enabled: false`, e a listagem padrão esconde desativadas.
+    final res = await _get<Map<String, dynamic>>(
+      '/api/jobs',
+      queryParameters: const {'include_disabled': true},
+    );
+    final raw = res.data?['jobs'];
+    if (raw is! List) {
+      throw const HermesFailure(HermesFailureKind.respostaInesperada);
+    }
+    return raw
+        .whereType<Map<String, dynamic>>()
+        .where((json) => json['id'] is String)
+        .map(_jobFromJson)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<CronJob> createJob({
+    required String name,
+    required String schedule,
+    required String prompt,
+  }) => _jobFrom(
+    _post<Map<String, dynamic>>(
+      '/api/jobs',
+      data: {'name': name, 'schedule': schedule, 'prompt': prompt},
+    ),
+  );
+
+  @override
+  Future<CronJob> pauseJob(String id) =>
+      _jobFrom(_post<Map<String, dynamic>>('/api/jobs/$id/pause'));
+
+  @override
+  Future<CronJob> resumeJob(String id) =>
+      _jobFrom(_post<Map<String, dynamic>>('/api/jobs/$id/resume'));
+
+  @override
+  Future<CronJob> runJobNow(String id) =>
+      _jobFrom(_post<Map<String, dynamic>>('/api/jobs/$id/run'));
+
+  @override
+  Future<void> deleteJob(String id) async {
+    await _delete<Map<String, dynamic>>('/api/jobs/$id');
+  }
+
+  static Future<CronJob> _jobFrom(
+    Future<Response<Map<String, dynamic>>> request,
+  ) async {
+    final job = (await request).data?['job'];
+    if (job is! Map<String, dynamic> || job['id'] is! String) {
+      throw const HermesFailure(HermesFailureKind.respostaInesperada);
+    }
+    return _jobFromJson(job);
+  }
+
+  static CronJob _jobFromJson(Map<String, dynamic> json) {
+    final id = json['id'] as String;
+    final schedule = json['schedule'];
+    final repeat = json['repeat'];
+    String? text(Object? value) =>
+        value is String && value.trim().isNotEmpty ? value : null;
+    DateTime? instant(Object? value) =>
+        value is String ? DateTime.tryParse(value) : null;
+    return CronJob(
+      id: id,
+      name: text(json['name']) ?? id,
+      prompt: text(json['prompt']) ?? '',
+      schedule:
+          text(json['schedule_display']) ??
+          (schedule is Map ? text(schedule['display']) : null) ??
+          '',
+      enabled: json['enabled'] != false,
+      state: text(json['state']) ?? 'scheduled',
+      pausedReason: text(json['paused_reason']),
+      nextRunAt: instant(json['next_run_at']),
+      lastRunAt: instant(json['last_run_at']),
+      lastStatus: text(json['last_status']),
+      lastError: text(json['last_error']),
+      running: json['live_execution'] is Map,
+      repeatTimes: repeat is Map && repeat['times'] is int
+          ? repeat['times'] as int
+          : null,
+      repeatCompleted: repeat is Map && repeat['completed'] is int
+          ? repeat['completed'] as int
+          : 0,
+    );
   }
 
   @override

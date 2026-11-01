@@ -185,10 +185,19 @@ Aprovados em 2026-11-01 a partir de
 prioridade. Antes de implementar cada um, medir o contrato no `hermes-agent` e
 registrá-lo; operações destrutivas pedem confirmação explícita na interface.
 
-- [ ] **A95 Agendamentos.** Listar, pausar, retomar, disparar agora e criar
+- [~] **A95 Agendamentos.** Listar, pausar, retomar, disparar agora e criar
   rotinas por `/api/jobs*` do API Server (só a chave Bearer). Excluir com
   confirmação. Histórico de execuções e modelos prontos (`/api/cron/*`) exigem
   o Dashboard e ficam para depois.
+
+  Implementado em 2026-11-01: tela em Ajustes > Agendamentos (`/jobs`), com
+  ativas antes das pausadas, folha de detalhe com executar agora, pausar,
+  retomar e excluir, e criação em `/jobs/new` com proteção ao sair e a recusa
+  do servidor visível. "Executar agora" só aparece em rotina ativa, porque no
+  servidor ele reativa uma pausada. Servidor sem cron (`501`) mostra
+  indisponível. Contrato em
+  [05-sessions-jobs.md](../hermes-api/05-sessions-jobs.md). Falta aceite no
+  aparelho e, depois, editar rotina (`PATCH`).
 
 - [ ] **A96 Imagens geradas pelo agente.** Mostrar na conversa as imagens e
   capturas que o agente referencia (`MEDIA:`), lidas por `GET /api/media` do

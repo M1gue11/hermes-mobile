@@ -68,6 +68,15 @@ Future<void> showSettingsSheet(
           },
         ),
         _SettingsAction(
+          key: const ValueKey('settings-jobs'),
+          icon: Icons.schedule_outlined,
+          title: 'Agendamentos',
+          subtitle: 'Rotinas que o agente executa sozinho',
+          onTap: () {
+            context.push('/jobs');
+          },
+        ),
+        _SettingsAction(
           icon: Icons.palette_outlined,
           title: 'Aparência',
           subtitle: 'Tema e animação do aplicativo',
@@ -100,6 +109,7 @@ Future<void> showSettingsSheet(
 
 class _SettingsAction extends StatelessWidget {
   const _SettingsAction({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,

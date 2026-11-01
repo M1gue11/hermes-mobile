@@ -124,21 +124,32 @@ Todos usam Bearer auth com `API_SERVER_KEY`.
 | `POST` | `/api/jobs/{job_id}/resume` | Retoma job pausado. |
 | `POST` | `/api/jobs/{job_id}/run` | Executa imediatamente, fora do agendamento. |
 
-## Shape de job
+## Shape de job (medido no 0.22.5)
 
-O body de criacao aceita o mesmo formato de `hermes cron`, incluindo:
+Handlers em `gateway/platforms/api_server.py` (`_handle_*_job`) e regras em
+`cron/jobs.py` do `hermes-agent`. O Mobile usa este contrato desde o A95.
 
-- prompt
-- schedule
-- skills
-- provider override
-- delivery target
-
-A documentacao publica nao detalha todos os campos do schema. Para o front-end:
-
-- Leia jobs existentes e derive o formulario dos campos retornados no ambiente real.
-- Valide client-side apenas o essencial.
-- Mantenha um editor JSON avancado para campos ainda nao modelados.
+- Respostas: lista `{"jobs": [...]}`, uma rotina `{"job": {...}}`, exclusão
+  `{"ok": true}`. Erros vêm como `{"error": "texto"}`, sem o envelope OpenAI.
+- Sem o módulo de cron o servidor responde `501`. `jobs_admin` em
+  `/v1/capabilities` é fixo em `false` e não serve para detectar suporte.
+- `GET /api/jobs` esconde desativadas; pausar grava `enabled: false`, então o
+  cliente pede `include_disabled=true` para ver as pausadas.
+- Criação: `{name, schedule, prompt, skills?, repeat?, deliver?, paused?}`.
+  Nome até 200 caracteres, prompt até 5000 e passa por varredura de injeção;
+  recusa é `400` com a causa.
+- `schedule` aceita `every 30m`, `every monday 9am`, `every day at 9am`,
+  expressão cron de 5 campos ou data ISO (execução única). O servidor devolve
+  `schedule` como objeto e `schedule_display` como texto.
+- Campos lidos pelo app: `id` (12 hex), `name`, `prompt`, `schedule_display`,
+  `enabled`, `state` (`scheduled`, `paused`, `completed`, `error`),
+  `paused_reason`, `next_run_at`, `last_run_at`, `last_status` (`ok`, `error`,
+  `delivery_failed`, `cancelled`), `last_error`, `repeat {times, completed}` e
+  `live_execution` (presente enquanto roda).
+- `POST /api/jobs/{id}/run` agenda para o próximo tick e **reativa** uma rotina
+  pausada; rotinas terminais (`completed`, `error`) recusam com `400`.
+- `PATCH` aceita só `name`, `schedule`, `prompt`, `deliver`, `skills`,
+  `skill`, `repeat` e `enabled`. O app ainda não edita rotinas.
 
 ## UX recomendada para jobs
 

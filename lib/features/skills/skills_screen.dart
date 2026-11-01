@@ -9,7 +9,7 @@ import '../../core/widgets/paper_texture.dart';
 import '../../domain/models/hermes_failure.dart';
 import '../../domain/models/hermes_skill.dart';
 import 'skill_detail_screen.dart';
-import 'skill_top_bar.dart';
+import '../../core/widgets/screen_top_bar.dart';
 import 'skills_provider.dart';
 
 /// Catálogo móvel das Skills.
@@ -48,7 +48,7 @@ class _SkillsScreenState extends ConsumerState<SkillsScreen> {
           SafeArea(
             child: Column(
               children: [
-                SkillTopBar(
+                ScreenTopBar(
                   title: 'Skills',
                   subtitle: switch (catalog.value?.manageable) {
                     true => 'DASHBOARD · LEITURA E EDIÇÃO',

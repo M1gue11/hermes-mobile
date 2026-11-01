@@ -9,7 +9,7 @@ import '../../core/theme/hermes_tokens.dart';
 import '../../domain/models/hermes_failure.dart';
 import '../../domain/models/hermes_skill.dart';
 import '../../domain/repositories/gateway_repository.dart';
-import 'skill_top_bar.dart';
+import '../../core/widgets/screen_top_bar.dart';
 import 'skills_provider.dart';
 
 /// Localização da tela de detalhe. O nome vai na query porque pode ser um
@@ -54,7 +54,7 @@ class SkillDetailScreen extends ConsumerWidget {
           SafeArea(
             child: Column(
               children: [
-                SkillTopBar(
+                ScreenTopBar(
                   title: name,
                   subtitle: skill == null
                       ? 'SKILL'

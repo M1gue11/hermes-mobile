@@ -9,6 +9,7 @@ import '../models/model_lock.dart';
 import '../models/run.dart';
 import '../models/run_event.dart';
 import '../models/conversation.dart';
+import '../models/cron_job.dart';
 import '../models/conversation_page.dart';
 import '../models/session_message.dart';
 
@@ -112,4 +113,26 @@ abstract interface class HermesRepository {
     ApprovalRequest request,
     ApprovalChoice choice,
   );
+
+  /// Rotinas agendadas, incluindo as pausadas (`GET /api/jobs`). Um servidor
+  /// sem o módulo de cron responde `501`.
+  Future<List<CronJob>> jobs();
+
+  /// Cria uma rotina (`POST /api/jobs`). O servidor valida a agenda e o prompt
+  /// e devolve a causa em [HermesFailure.serverMessage].
+  Future<CronJob> createJob({
+    required String name,
+    required String schedule,
+    required String prompt,
+  });
+
+  Future<CronJob> pauseJob(String id);
+
+  Future<CronJob> resumeJob(String id);
+
+  /// Executa no próximo tick do agendador (`POST /api/jobs/{id}/run`).
+  Future<CronJob> runJobNow(String id);
+
+  /// Remove a rotina. A UI deve sempre pedir confirmação antes.
+  Future<void> deleteJob(String id);
 }

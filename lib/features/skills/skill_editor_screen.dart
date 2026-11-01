@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/hermes_tokens.dart';
 import '../../core/widgets/paper_texture.dart';
 import 'skill_detail_screen.dart';
-import 'skill_top_bar.dart';
+import '../../core/widgets/screen_top_bar.dart';
 import 'skills_provider.dart';
 
 /// Editor do `SKILL.md` inteiro.
@@ -143,7 +143,7 @@ class _SkillEditorScreenState extends ConsumerState<SkillEditorScreen> {
               SafeArea(
                 child: Column(
                   children: [
-                    SkillTopBar(
+                    ScreenTopBar(
                       title: widget.name,
                       subtitle: _dirty ? 'SKILL.MD · NÃO SALVO' : 'SKILL.MD',
                       leadingIcon: Icons.close_rounded,
