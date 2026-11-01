@@ -178,6 +178,50 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
 - [!] **A42 Ícone e splash.** Aguarda arte ou direção visual aprovada pelos
   mantenedores. Não gerar nem substituir a identidade sem esse insumo.
 
+## Recursos do runtime 0.22.5
+
+Aprovados em 2026-11-01 a partir de
+[oportunidades-0.22.5.md](../hermes-api/oportunidades-0.22.5.md), na ordem de
+prioridade. Antes de implementar cada um, medir o contrato no `hermes-agent` e
+registrá-lo; operações destrutivas pedem confirmação explícita na interface.
+
+- [ ] **A95 Agendamentos.** Listar, pausar, retomar, disparar agora e criar
+  rotinas por `/api/jobs*` do API Server (só a chave Bearer). Excluir com
+  confirmação. Histórico de execuções e modelos prontos (`/api/cron/*`) exigem
+  o Dashboard e ficam para depois.
+
+- [ ] **A96 Imagens geradas pelo agente.** Mostrar na conversa as imagens e
+  capturas que o agente referencia (`MEDIA:`), lidas por `GET /api/media` do
+  Dashboard, respeitando tipos e pastas que o servidor permite. Sem Dashboard,
+  mostrar a referência sem quebrar a mensagem.
+
+- [ ] **A97 Saúde, logs e restart do gateway.** Ler `/health/detailed`,
+  `/api/system/stats` e `/api/logs` (filtro por nível e busca) e reiniciar o
+  gateway com `POST /api/gateway/restart`, acompanhando o status da ação. Não
+  oferecer `stop`, que derruba o próprio acesso do app.
+
+- [ ] **A98 Custo e contexto da conversa.** Mostrar tokens, custo e uso de
+  contexto da sessão (`session.usage`, `session.context_breakdown`) e um
+  resumo de uso por período (`/api/analytics/usage`). Absorve a parte de
+  `session.usage` do B10. Billing parece específico do provider Nous: medir.
+
+- [ ] **A99 Busca no servidor, desfazer e compactar.** Busca em todas as
+  conversas por `GET /api/sessions/search`; desfazer o último turno
+  (`session.undo`, com confirmação) e compactar o contexto
+  (`session.compress`), ambos só com a sessão ociosa.
+
+- [ ] **A100 Ligar e desligar toolsets e MCP.** Alternar toolsets
+  (`PUT /api/tools/toolsets/{name}` ou `tools.configure`) e servidores MCP
+  (`PUT /api/mcp/servers/{name}/enabled`, com teste). Não expor `/env`,
+  chaves nem instalação de servidores.
+
+- [ ] **A101 Aprovar pareamento de plataformas.** Listar pedidos pendentes e
+  aprovar ou revogar acesso de Telegram, WhatsApp e afins por
+  `/api/pairing*`, com confirmação clara de que aprovar dá acesso ao agente.
+
+- [ ] **A102 Ouvir a resposta.** Tocar a resposta do agente por
+  `POST /api/audio/speak`. Streaming de voz fica fora da primeira versão.
+
 ## Notificações
 
 - [ ] **A60 Notificações do Hermes e canal arbitrário do agente.** Entregar em
