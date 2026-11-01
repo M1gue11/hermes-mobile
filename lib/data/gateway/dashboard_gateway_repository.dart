@@ -447,18 +447,36 @@ class DashboardGatewayRepository implements GatewayRepository {
       );
     }
 
-    // `session.history` aceita o id durável diretamente. Não usamos
-    // `session.resume` aqui: reidratar uma tela concluída não deve criar uma
-    // sessão live nem disputar o socket de um turno que ainda esteja rodando.
-    final client = await _openSocketClient();
-    try {
-      final result = await client.call('session.history', {
-        'session_id': stored,
-      });
-      return _historyFrom(result);
-    } finally {
-      await client.close();
+    // Leitura HTTP pelo id durável, a mesma que o Desktop usa para pré-carregar
+    // a conversa. `session.history` do TUI só aceita o id de uma sessão viva
+    // (4001 para o durável, medido no 0.22.5), e `session.resume` criaria uma
+    // sessão live só para hidratar uma tela concluída.
+    final session = await _requireSession();
+    final response = await _authorizedRequest(
+      session,
+      '/api/sessions/${Uri.encodeComponent(stored)}/messages'
+      '?inline_images=false',
+      method: 'GET',
+    );
+    final body = response.data;
+    if (body is! Map) {
+      throw const GatewayOperationException(
+        'O Dashboard não devolveu o histórico da conversa.',
+      );
     }
+    final json = body.map((key, value) => MapEntry(key.toString(), value));
+    // Sem paginação explícita o Dashboard devolve a página mais recente. Página
+    // cheia pode ter cortado o começo: aí vale o snapshot completo do API Server.
+    final pagination = json['pagination'];
+    if (pagination is Map &&
+        pagination['returned'] is int &&
+        pagination['limit'] is int &&
+        (pagination['returned'] as int) >= (pagination['limit'] as int)) {
+      throw const GatewayOperationException(
+        'O histórico do Dashboard veio paginado.',
+      );
+    }
+    return _historyFrom(json);
   }
 
   @override
@@ -581,7 +599,8 @@ class DashboardGatewayRepository implements GatewayRepository {
       await run('session.list', {'limit': 1});
       await run('session.most_recent', const {});
       if (stored.isNotEmpty) {
-        await run('session.history', {'session_id': stored});
+        // Sem `session.history` aqui: ele só aceita o id vivo e daria 4001
+        // para o durável, um falso negativo no diagnóstico.
         // Por último, e igual ao envio real, porque é o que estamos caçando.
         await run('session.resume', {
           'session_id': stored,
@@ -1776,11 +1795,15 @@ final class _GatewaySocketClient {
   }
 
   /// Espelha `WINDOW_OWNED_REQUESTS` do Desktop
-  /// (`apps/desktop/.../gateway-event/server-requests.ts`).
+  /// (`apps/desktop/.../gateway-event/server-requests.ts`), mais os cartões
+  /// que o Desktop mostra e o celular não (`theme.pick`, `setup_beat`).
   static const _windowOwnedRequests = {
     'preview.act',
     'preview.read',
     'terminal.read',
+    'theme.apply',
+    'theme.pick',
+    'setup_beat',
     'window.read',
     'tour',
   };

@@ -52,8 +52,9 @@ afetado.
 - Skills: o catálogo vem do Dashboard quando há sessão (gerenciável) e do API
   Server sem ela (somente leitura). Não oferecer edição ou chave sem o
   Dashboard, e não gravar `SKILL.md` sem reler o servidor antes.
-- Histórico concluído do Dashboard usa `session.history` com o id durável; não
-  abra sessão live apenas para hidratar a tela.
+- Histórico concluído do Dashboard usa `GET /api/sessions/{id}/messages` com o
+  id durável; não abra sessão live apenas para hidratar a tela.
+  `session.history` do TUI só aceita o id vivo (4001 para o durável).
 - O transcript pode conter user e segmentos intermediários em curso; `inflight`
   continua separado e pode reter erro com `running=false`. Não adotar a resposta
   do turno anterior como parcial do atual.

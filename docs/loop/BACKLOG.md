@@ -197,11 +197,18 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
 
 ## Gateway TUI e runtime
 
-- [ ] **B0 Validar o live chat contra o runtime publicado.** O cliente TUI e o
-  fluxo real já foram validados no aparelho; falta fechar a auditoria de contrato
-  do runtime publicado: login, ticket, close codes, `session.list`,
-  `session.history` e delta de métodos/eventos. O checkout local serve somente
-  para leitura e não deve ser alterado.
+- [~] **B0 Validar o live chat contra o runtime publicado.** Auditoria do
+  0.22.5 feita em 2026-10-31:
+  [tui-contrato-0.22.5-medido.md](../dashboard-api/tui-contrato-0.22.5-medido.md).
+  Nada quebra no deployment padrão. Corrigido: histórico concluído passou de
+  `session.history` (que dava 4001 ao id durável) para
+  `GET /api/sessions/{id}/messages` do Dashboard, e `theme.apply`,
+  `theme.pick` e `setup_beat` recebem `4404`. Falta: resposta vazia de prompt
+  encaminhado ao dono do gateway (`forwarded: true`), detectar
+  `session_authority` em `gateway.ready`, e aceite no aparelho de que uma
+  conversa concluída abre pelo histórico do Dashboard. Recursos novos não
+  usados estão em
+  [oportunidades-0.22.5.md](../hermes-api/oportunidades-0.22.5.md).
 
 - [ ] **B10 Tratar eventos novos do `0.20.1`.** Decidir a semântica de
   `sessions.changed` e `session.usage`. `tool.output_risk` foi implementado em

@@ -918,6 +918,9 @@ void main() {
         'preview.act',
         'preview.read',
         'terminal.read',
+        'theme.apply',
+        'theme.pick',
+        'setup_beat',
         'window.read',
         'tour',
       ]) {
@@ -928,7 +931,7 @@ void main() {
       }
       await Future<void>.delayed(Duration.zero);
 
-      expect(socket.responses, hasLength(5));
+      expect(socket.responses, hasLength(8));
       expect(
         socket.responses.map((response) => (response['error'] as Map)['code']),
         everyElement(4404),
@@ -1402,8 +1405,37 @@ void main() {
     },
   );
 
-  test('histórico concluído não cria nem retoma sessão live', () async {
+  test('histórico concluído vem por HTTP, sem abrir socket', () async {
     final socket = _FakeGatewaySocket();
+    final adapter = _DashboardAdapter();
+    final repository = DashboardGatewayRepository(
+      store: _MemoryDashboardSessionStore(
+        session: (
+          baseUrl: 'https://dashboard.example:8443',
+          cookies: {'session': 'opaque'},
+        ),
+      ),
+      dio: Dio()..httpClientAdapter = adapter,
+      socketConnector: (uri, {required headers}) async => socket,
+    );
+
+    final history = await repository.conversationHistory(
+      storedSessionId: 'stored-session',
+    );
+
+    expect(history.map((m) => m.content), ['Pergunta anterior', 'Resposta']);
+    expect(history.first.rowId, 7);
+    expect(
+      adapter.requests.single.uri.path,
+      '/api/sessions/stored-session/messages',
+    );
+    expect(adapter.requests.single.uri.queryParameters, {
+      'inline_images': 'false',
+    });
+    expect(socket.methods, isEmpty);
+  });
+
+  test('página cheia do histórico cede ao snapshot do API Server', () async {
     final repository = DashboardGatewayRepository(
       store: _MemoryDashboardSessionStore(
         session: (
@@ -1412,19 +1444,12 @@ void main() {
         ),
       ),
       dio: Dio()..httpClientAdapter = _DashboardAdapter(),
-      socketConnector: (uri, {required headers}) async => socket,
     );
 
-    final history = await repository.conversationHistory(
-      storedSessionId: 'stored-session',
+    await expectLater(
+      repository.conversationHistory(storedSessionId: 'long-session'),
+      throwsA(isA<GatewayOperationException>()),
     );
-
-    expect(history.single.content, 'Pergunta anterior');
-    expect(socket.methods, ['session.history']);
-    expect(socket.paramsFor('session.history'), {
-      'session_id': 'stored-session',
-    });
-    expect(socket.closed, isTrue);
   });
 
   test('live turn usa WS quando o Dashboard está em HTTP', () async {
@@ -2060,6 +2085,39 @@ final class _DashboardAdapter implements HttpClientAdapter {
     }
     if (options.uri.path == '/api/auth/ws-ticket') {
       return _json({'ticket': 'ticket-efemero'}, 200);
+    }
+    if (options.uri.path == '/api/sessions/stored-session/messages') {
+      return _json({
+        'session_id': 'stored-session',
+        'profile': 'default',
+        'messages': [
+          {
+            'id': 7,
+            'role': 'user',
+            'content': 'Pergunta anterior',
+            'row_id': 7,
+          },
+          {'id': 8, 'role': 'assistant', 'content': 'Resposta', 'row_id': 8},
+        ],
+        'pagination': {
+          'limit': 500,
+          'offset': 0,
+          'order': 'latest',
+          'returned': 2,
+        },
+      }, 200);
+    }
+    if (options.uri.path == '/api/sessions/long-session/messages') {
+      return _json({
+        'session_id': 'long-session',
+        'messages': <Object>[],
+        'pagination': {
+          'limit': 500,
+          'offset': 0,
+          'order': 'latest',
+          'returned': 500,
+        },
+      }, 200);
     }
     if (options.uri.path == '/api/skills/content') {
       if (options.method == 'GET') {

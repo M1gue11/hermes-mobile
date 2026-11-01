@@ -599,7 +599,7 @@ void main() {
     expect(runs.historicos, hasLength(1));
   });
 
-  test('reabre turno Dashboard concluído usando session.history', () async {
+  test('reabre turno Dashboard concluído usando o histórico do Dashboard', () async {
     final active = MemoryActiveRunStore();
     active.records['session-1'] = ActiveRunRecord(
       sessionId: 'session-1',
