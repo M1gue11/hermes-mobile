@@ -46,3 +46,12 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
 - O retorno ao fim, um novo envio e a troca de conversa reatam o acompanhamento
   explicitamente.
 - A interação deve permanecer estável, sem puxões ou stuttering perceptível.
+
+## [ ] A72 - persona de ponta a ponta
+
+- Em Ajustes, configure uma persona com outro nome e gênero.
+- Abra uma conversa nova: o rótulo acima de "No que estamos trabalhando?" deve
+  mostrar o nome configurado, sem `HERMES AGENT`.
+- Envie uma mensagem sem escolher modelo: cabeçalho, chip e bolha devem dizer
+  `PADRÃO` ou o modelo efetivo, nunca `HERMES` ao lado do nome da persona.
+- Repita com o campo de nome vazio: o padrão `HERMES AGENT` volta.

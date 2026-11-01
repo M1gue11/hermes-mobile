@@ -504,7 +504,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                       : state.messages.isEmpty &&
                             state.pendingApproval == null &&
                             state.pendingClarification == null
-                      ? _EmptyState(spinner: spinner)
+                      ? _EmptyState(spinner: spinner, persona: persona)
                       : ChatThreadView(
                           messageCount: state.messages.length,
                           scroll: _threadScroll,
@@ -1676,8 +1676,9 @@ class _ComposerTextAction extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.spinner});
+  const _EmptyState({required this.spinner, required this.persona});
   final String spinner;
+  final AgentPersona persona;
 
   @override
   Widget build(BuildContext context) {
@@ -1697,7 +1698,7 @@ class _EmptyState extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'HERMES AGENT',
+                      persona.emptyStateLabel,
                       style: t.mono.copyWith(
                         fontSize: 10.5,
                         letterSpacing: 2.2,

@@ -30,7 +30,8 @@ void main() {
     );
 
     expect(find.text('CLÁUDIA'), findsOneWidget);
-    expect(find.text('HERMES'), findsNothing);
+    expect(find.textContaining('HERMES'), findsNothing);
+    expect(find.text('PADRÃO · 10:30'), findsOneWidget);
   });
 
   testWidgets('streaming anuncia o nome configurado ao leitor de tela', (

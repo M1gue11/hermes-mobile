@@ -80,14 +80,17 @@ void main() {
     });
 
     test('id fora do padrão é mostrado como veio', () {
-      // O bug: `hermes-agent` virava o ilegível `H AGENT`.
-      expect(shortModelLabel('hermes-agent'), 'HERMES-AGENT');
       expect(shortModelLabel('gpt-5.6-terra'), 'GPT-5.6-TERRA');
+      expect(shortModelLabel('hermes-agentic-1'), 'HERMES-AGENTIC-1');
     });
 
-    test('sem modelo, identifica o agente genericamente', () {
-      expect(shortModelLabel(null), 'HERMES');
-      expect(shortModelLabel('  '), 'HERMES');
-    });
+    test(
+      'sem modelo ou com o alias do agente, mostra o padrão do servidor',
+      () {
+        expect(shortModelLabel(null), 'PADRÃO');
+        expect(shortModelLabel('  '), 'PADRÃO');
+        expect(shortModelLabel('hermes-agent'), 'PADRÃO');
+      },
+    );
   });
 }

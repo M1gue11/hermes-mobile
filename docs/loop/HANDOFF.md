@@ -20,8 +20,9 @@ afetado.
   somente leitura foram validados em aparelho; revalidar ao mudar o runtime.
 - As validações manuais ainda abertas são A75, A73 e A74; os roteiros vivem em
   [USER_TESTING.md](USER_TESTING.md).
-- O próximo trabalho de produto é A72, aplicar a persona configurada em toda a
-  cópia apresentada, e A65, fechar o contrato autenticado para corpo integral,
+- A72 foi implementado em 2026-10-31 (estado vazio e rótulo de modelo seguem a
+  persona; inventário no backlog) e aguarda conferência no aparelho. O próximo
+  trabalho de produto é A65, fechar o contrato autenticado para corpo integral,
   edição, exclusão e ativação persistidas de Skills.
 - A60 continua condicionado a uma decisão explícita de escopo e privacidade.
   B0, B10, B9 e B11 são a fila posterior de contrato e runtime.

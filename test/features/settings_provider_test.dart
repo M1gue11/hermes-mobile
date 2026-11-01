@@ -96,6 +96,10 @@ void main() {
       container.read(agentPersonaProvider).composerHint,
       'Fale com Hermes…',
     );
+    expect(
+      container.read(agentPersonaProvider).emptyStateLabel,
+      'HERMES AGENT',
+    );
 
     container
         .read(appSettingsProvider.notifier)
@@ -103,6 +107,7 @@ void main() {
     final feminine = container.read(agentPersonaProvider);
     expect(feminine.composerHint, 'Peça à Cláudia…');
     expect(feminine.questionLabel, 'CLÁUDIA PERGUNTA');
+    expect(feminine.emptyStateLabel, 'CLÁUDIA');
     expect(
       feminine.clarificationSemantics,
       'A Cláudia está te perguntando algo',

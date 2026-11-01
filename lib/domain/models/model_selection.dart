@@ -58,10 +58,13 @@ final _familiaHermes = RegExp(r'^hermes-(\d+)-(.+)$');
 /// A abreviação existe para `hermes-4-70b` virar `H4 70B`. Aplicá-la a qualquer
 /// id que comece com `hermes-` estragava os demais: `hermes-agent` virava
 /// `H AGENT`, que lê pior que o próprio id. Fora do padrão, mostra o id como
-/// veio, só em caixa alta.
+/// veio, só em caixa alta. Sem id, ou com o alias do agente, vale o modelo
+/// padrão do servidor; o nome do agente aqui contradiria a persona configurada.
 String shortModelLabel(String? id) {
   final valor = id?.trim();
-  if (valor == null || valor.isEmpty) return 'HERMES';
+  if (valor == null || valor.isEmpty || isCompatibilityModelAlias(valor)) {
+    return 'PADRÃO';
+  }
   final match = _familiaHermes.firstMatch(valor);
   if (match == null) return valor.toUpperCase();
   return 'H${match.group(1)} ${match.group(2)}'.toUpperCase();

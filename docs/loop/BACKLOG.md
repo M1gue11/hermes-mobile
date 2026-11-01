@@ -121,7 +121,7 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   voltar; falha de rede mostra estado recuperável; testes cobrem retorno
   com turno ativo, histórico sem mudanças e troca de conversa durante refresh.
 
-- [ ] **A72 Aplicar a persona configurada de ponta a ponta.** A configuração de
+- [~] **A72 Aplicar a persona configurada de ponta a ponta.** A configuração de
   nome/gênero foi validada, mas ainda existem fallbacks visíveis como `Hermes`
   e `Hermes Agent`. Inventariar toda cópia apresentada ao usuário — cabeçalhos,
   estados vazios, mensagens, acessibilidade, notificações, erros, diálogos e
@@ -129,6 +129,17 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   precisam permanecer estáveis. Critério de aceite: com uma persona diferente,
   nenhum texto de produto chama o agente de Hermes; ocorrências técnicas
   inevitáveis ficam justificadas em teste ou documentação.
+
+  Inventário de 2026-10-31: o estado vazio usa `AgentPersona.emptyStateLabel`
+  (`HERMES AGENT` só sem persona) e o rótulo de modelo mostra `PADRÃO` sem id
+  ou com o alias `hermes-agent`, em vez de `HERMES` ao lado do nome da persona
+  no cabeçalho, na bolha e no chip. Ainda não há notificações locais. Ficam
+  como Hermes, por nomearem o servidor, o runtime ou o app e não o agente: erros
+  de `HermesFailure`, `gateway_repository` e `http_hermes_repository`; chave da
+  API e `Hermes API Server` em Conexão; `instructions` enviado ao Hermes;
+  `Abrir fora do Hermes?`; saída sinalizada pelo Hermes (`tool.output_risk`);
+  o rótulo do app no launcher e o fallback/hint da própria tela de persona.
+  Falta conferir no aparelho com uma persona configurada.
 
 - [~] **A65 Criar gestão completa de Skills.** Substituir a ação `tune` por uma
   tela inteira e realocar o atual `Contexto` para Ajustes ou uma ação secundária

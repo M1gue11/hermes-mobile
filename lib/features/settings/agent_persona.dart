@@ -28,6 +28,9 @@ class AgentPersona {
 
   String get uppercaseName => displayName.toUpperCase();
 
+  String get emptyStateLabel =>
+      name.trim().isEmpty ? 'HERMES AGENT' : uppercaseName;
+
   String get composerHint => switch (gender) {
     AgentGender.feminine => 'Peça à $displayName…',
     AgentGender.masculine => 'Peça ao $displayName…',
