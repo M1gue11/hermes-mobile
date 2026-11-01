@@ -1083,7 +1083,10 @@ Future<void> showGatewaySheet(BuildContext context, WidgetRef _) {
         final t = HermesTokens.of(context);
         final boot = ref.watch(bootStateProvider);
         final skills = ref.watch(skillsCatalogProvider);
-        final loadedSkills = skills.value ?? const <HermesSkill>[];
+        final loadedSkills = [
+          for (final skill in skills.value?.skills ?? const <HermesSkill>[])
+            if (skill.enabled != false) skill,
+        ];
         return boot.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => FailureState(
@@ -1112,7 +1115,7 @@ Future<void> showGatewaySheet(BuildContext context, WidgetRef _) {
                 _GatewayValue(
                   label: 'Skills disponíveis',
                   value: switch (skills) {
-                    AsyncData(:final value) => '${value.length}',
+                    AsyncData() => '${loadedSkills.length}',
                     AsyncError() => 'indisponível',
                     _ => '…',
                   },

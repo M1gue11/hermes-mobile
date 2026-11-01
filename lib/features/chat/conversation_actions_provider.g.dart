@@ -37,7 +37,7 @@ final class ConversationActionsProvider
 }
 
 String _$conversationActionsHash() =>
-    r'6361f7866a75403e69440801f12952761eae9e72';
+    r'330f1a2a37434656e947c6e50b2e5db6a6f4f8c5';
 
 /// Ações mutáveis de sessão. Mantém REST fora dos widgets e atualiza a lista.
 

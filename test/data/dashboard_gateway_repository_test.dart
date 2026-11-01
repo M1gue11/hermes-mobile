@@ -322,8 +322,64 @@ void main() {
         name: 'deploy',
         description: 'Publica a build',
         category: 'ops',
+        enabled: false,
       ),
     ]);
+  });
+
+  group('gestão de skills', () {
+    late _DashboardAdapter adapter;
+    late DashboardGatewayRepository repository;
+
+    setUp(() {
+      adapter = _DashboardAdapter();
+      repository = DashboardGatewayRepository(
+        store: _MemoryDashboardSessionStore(
+          session: (
+            baseUrl: 'https://dashboard.example:8443',
+            cookies: {'session': 'opaque'},
+          ),
+        ),
+        dio: Dio()..httpClientAdapter = adapter,
+      );
+    });
+
+    test('lê o SKILL.md com o nome codificado na query', () async {
+      final content = await repository.skillContent('ops/deploy');
+
+      expect(content, '---\nname: deploy\n---\nCorpo\n');
+      expect(adapter.requests.single.uri.queryParameters, {
+        'name': 'ops/deploy',
+      });
+    });
+
+    test('grava o SKILL.md e ativa com os corpos do Dashboard', () async {
+      await repository.saveSkillContent('deploy', '---\nname: deploy\n---\n');
+      await repository.setSkillEnabled('deploy', enabled: false);
+
+      expect(adapter.requests.map((r) => (r.method, r.uri.path)), [
+        ('PUT', '/api/skills/content'),
+        ('PUT', '/api/skills/toggle'),
+      ]);
+      expect(adapter.requests.first.data, {
+        'name': 'deploy',
+        'content': '---\nname: deploy\n---\n',
+      });
+      expect(adapter.requests.last.data, {'name': 'deploy', 'enabled': false});
+    });
+
+    test('recusa de conteúdo chega com a causa do Dashboard', () async {
+      await expectLater(
+        repository.saveSkillContent('deploy', 'sem frontmatter'),
+        throwsA(
+          isA<GatewayOperationException>().having(
+            (e) => e.message,
+            'message',
+            'SKILL.md must start with YAML frontmatter (---).',
+          ),
+        ),
+      );
+    });
   });
 
   test('login Basic salva sessão e credenciais separadamente', () async {
@@ -2004,6 +2060,26 @@ final class _DashboardAdapter implements HttpClientAdapter {
     }
     if (options.uri.path == '/api/auth/ws-ticket') {
       return _json({'ticket': 'ticket-efemero'}, 200);
+    }
+    if (options.uri.path == '/api/skills/content') {
+      if (options.method == 'GET') {
+        return options.uri.queryParameters['name'] == 'ops/deploy'
+            ? _json({
+                'name': 'ops/deploy',
+                'content': '---\nname: deploy\n---\nCorpo\n',
+                'path': '/srv/skills/ops/deploy/SKILL.md',
+              }, 200)
+            : _json({'detail': "Skill 'x' not found."}, 404);
+      }
+      final content = (options.data as Map)['content'] as String;
+      return content.startsWith('---')
+          ? _json({'success': true}, 200)
+          : _json({
+              'detail': 'SKILL.md must start with YAML frontmatter (---).',
+            }, 400);
+    }
+    if (options.uri.path == '/api/skills/toggle') {
+      return _json({'ok': true, ...(options.data as Map)}, 200);
     }
     if (options.uri.path == '/api/skills' && options.method == 'GET') {
       return _json([

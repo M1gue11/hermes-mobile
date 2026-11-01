@@ -10,6 +10,7 @@ _HermesSkill _$HermesSkillFromJson(Map<String, dynamic> json) => _HermesSkill(
   name: json['name'] as String,
   description: json['description'] as String? ?? '',
   category: json['category'] as String?,
+  enabled: json['enabled'] as bool?,
 );
 
 Map<String, dynamic> _$HermesSkillToJson(_HermesSkill instance) =>
@@ -17,4 +18,5 @@ Map<String, dynamic> _$HermesSkillToJson(_HermesSkill instance) =>
       'name': instance.name,
       'description': instance.description,
       'category': instance.category,
+      'enabled': instance.enabled,
     };

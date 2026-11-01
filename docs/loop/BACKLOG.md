@@ -154,9 +154,17 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
 
   Medido no 0.22.5: o Dashboard já tem `GET/PUT /api/skills/content` (corpo
   integral e reescrita) e `PUT /api/skills/toggle`, mas nenhuma exclusão de
-  skill local. O catálogo do app já cai para `GET /api/skills` quando
-  `/v1/skills` falha. Ver
-  [contrato 0.22.5](../hermes-api/contrato-0.22.5-medido.md).
+  skill local. Ver [contrato 0.22.5](../hermes-api/contrato-0.22.5-medido.md).
+
+  Implementado em 2026-10-31: com o Dashboard logado, o catálogo vem dele
+  (inclui desativadas, marcadas na lista); o detalhe virou rota
+  `/skills/skill?name=` com `SKILL.md` integral e chave de ativação; o editor
+  `/skills/skill/edit?name=` pede confirmação ao sair com alterações, relê o
+  servidor antes de gravar (o Dashboard não tem versão; quem grava por último
+  vence) e mostra a recusa do Dashboard sem fechar. Sem Dashboard, continua
+  somente leitura pelo API Server. Falta o aceite em aparelho
+  ([USER_TESTING.md](USER_TESTING.md)). Exclusão segue fora: o servidor não
+  tem rota para skill local (só `hub/uninstall` para skills do hub).
 
 - [~] **A94 Acompanhar o contrato do Hermes 0.22.5.** Boot sem skills e com a
   causa HTTP preservada, fallback do catálogo para o Dashboard, aprovação da

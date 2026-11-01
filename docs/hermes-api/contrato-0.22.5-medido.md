@@ -36,8 +36,13 @@ Rotas em `hermes_cli/web_routers/skills.py`, todas com sessão do Dashboard e
 | `PUT` | `/api/skills/toggle` | `{name, enabled, profile?}` | `{ok, name, enabled}` |
 | `POST` | `/api/skills` | `{name, content, category?, profile?}` | criação |
 
-Não há exclusão genérica de skill local, só `hub/uninstall`. O Mobile usa
-hoje apenas `GET /api/skills`; as demais rotas são o contrato que A65 pedia.
+Não há exclusão genérica de skill local, só `hub/uninstall`. O Mobile usa as
+quatro primeiras rotas (A65). `GET /api/skills` inclui as desativadas
+(`skip_disabled=True` ignora o filtro de desativadas). A reescrita valida o
+frontmatter (`name` e `description`), o tamanho (100 mil caracteres) e passa
+pelo scan de segurança; uma recusa volta como `400` com a causa em `detail`.
+Não há versão nem ETag: a última gravação vence, por isso o app relê o
+`SKILL.md` antes de gravar.
 
 ## Aprovação da Runs API sob session authority
 

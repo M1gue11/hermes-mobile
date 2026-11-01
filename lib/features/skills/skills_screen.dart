@@ -5,17 +5,17 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/hermes_motion.dart';
 import '../../core/theme/hermes_tokens.dart';
 import '../../core/widgets/failure_state.dart';
-import '../../core/widgets/hermes_sheet.dart';
 import '../../core/widgets/paper_texture.dart';
 import '../../domain/models/hermes_failure.dart';
 import '../../domain/models/hermes_skill.dart';
+import 'skill_detail_screen.dart';
+import 'skill_top_bar.dart';
 import 'skills_provider.dart';
 
-/// Catálogo móvel das Skills efetivamente anunciadas pelo API Server.
+/// Catálogo móvel das Skills.
 ///
-/// O contrato atual de `/v1/skills` é somente leitura e entrega metadados. A
-/// tela não oferece edição nem finge conseguir abrir um SKILL.md que não veio
-/// na resposta.
+/// Com o Dashboard, lista também as desativadas e o detalhe gerencia cada uma.
+/// Só com o API Server, o catálogo é somente leitura e traz metadados.
 class SkillsScreen extends ConsumerStatefulWidget {
   const SkillsScreen({super.key});
 
@@ -48,9 +48,26 @@ class _SkillsScreenState extends ConsumerState<SkillsScreen> {
           SafeArea(
             child: Column(
               children: [
-                _SkillsBar(
-                  onBack: context.pop,
-                  onRefresh: () => ref.invalidate(skillsCatalogProvider),
+                SkillTopBar(
+                  title: 'Skills',
+                  subtitle: switch (catalog.value?.manageable) {
+                    true => 'DASHBOARD · LEITURA E EDIÇÃO',
+                    false => 'API SERVER · SOMENTE LEITURA',
+                    null => 'CATÁLOGO DO AGENTE',
+                  },
+                  onLeading: context.pop,
+                  actions: [
+                    IconButton(
+                      key: const ValueKey('skills-refresh'),
+                      tooltip: 'Atualizar Skills',
+                      onPressed: () => ref.invalidate(skillsCatalogProvider),
+                      icon: Icon(
+                        Icons.refresh_rounded,
+                        size: 21,
+                        color: HermesTokens.of(context).dim,
+                      ),
+                    ),
+                  ],
                 ),
                 _SkillSearch(
                   controller: _search,
@@ -72,7 +89,8 @@ class _SkillsScreenState extends ConsumerState<SkillsScreen> {
                         keyPrefix: 'skills',
                         onRetry: () => ref.invalidate(skillsCatalogProvider),
                       ),
-                      data: (skills) {
+                      data: (data) {
+                        final skills = data.skills;
                         final filtered = _filterSkills(skills, _query);
                         if (skills.isEmpty) {
                           return const _SkillsEmpty(
@@ -103,77 +121,6 @@ class _SkillsScreenState extends ConsumerState<SkillsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SkillsBar extends StatelessWidget {
-  const _SkillsBar({required this.onBack, required this.onRefresh});
-
-  final VoidCallback onBack;
-  final VoidCallback onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = HermesTokens.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: t.line)),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 68),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: 'Voltar',
-                onPressed: onBack,
-                icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 20,
-                  color: t.ink,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Skills',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: t
-                          .serifIn(FontWeight.w500)
-                          .copyWith(fontSize: 20, color: t.ink),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'API SERVER · SOMENTE LEITURA',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: t.mono.copyWith(
-                        fontSize: 9,
-                        letterSpacing: 1.15,
-                        color: t.dim,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                key: const ValueKey('skills-refresh'),
-                tooltip: 'Atualizar Skills',
-                onPressed: onRefresh,
-                icon: Icon(Icons.refresh_rounded, size: 21, color: t.dim),
-              ),
-              const SizedBox(width: 4),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -269,14 +216,20 @@ class _SkillRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = HermesTokens.of(context);
-    final category = _categoryOf(skill);
+    final category = skillCategoryLabel(skill);
+    final disabled = skill.enabled == false;
+    final tag = disabled
+        ? 'DESATIVADA · ${category.toUpperCase()}'
+        : category.toUpperCase();
     final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.4;
     return Semantics(
       button: true,
-      label: '${skill.name}. $category. Abrir detalhes.',
+      label: disabled
+          ? '${skill.name}. $category. Desativada. Abrir detalhes.'
+          : '${skill.name}. $category. Abrir detalhes.',
       child: InkWell(
         key: ValueKey('skill-row-${skill.name}'),
-        onTap: () => _showSkillDetails(context, skill),
+        onTap: () => context.push(skillDetailLocation(skill.name)),
         borderRadius: BorderRadius.circular(14),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 72),
@@ -290,7 +243,7 @@ class _SkillRow extends StatelessWidget {
                   child: Icon(
                     Icons.auto_stories_outlined,
                     size: 19,
-                    color: t.dim,
+                    color: disabled ? t.faint : t.dim,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -303,11 +256,14 @@ class _SkillRow extends StatelessWidget {
                           skill.name,
                           style: t
                               .monoIn(FontWeight.w500)
-                              .copyWith(fontSize: 12, color: t.ink),
+                              .copyWith(
+                                fontSize: 12,
+                                color: disabled ? t.dim : t.ink,
+                              ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          category.toUpperCase(),
+                          tag,
                           style: t.mono.copyWith(
                             fontSize: 9,
                             letterSpacing: 0.85,
@@ -323,12 +279,15 @@ class _SkillRow extends StatelessWidget {
                                 skill.name,
                                 style: t
                                     .monoIn(FontWeight.w500)
-                                    .copyWith(fontSize: 12, color: t.ink),
+                                    .copyWith(
+                                      fontSize: 12,
+                                      color: disabled ? t.dim : t.ink,
+                                    ),
                               ),
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              category.toUpperCase(),
+                              tag,
                               textAlign: TextAlign.end,
                               style: t.mono.copyWith(
                                 fontSize: 9,
@@ -505,116 +464,4 @@ String _searchKey(String value) {
     buffer.write(index < 0 ? char : plain[index]);
   }
   return buffer.toString();
-}
-
-String _categoryOf(HermesSkill skill) {
-  final category = skill.category?.trim();
-  return category == null || category.isEmpty ? 'sem categoria' : category;
-}
-
-Future<void> _showSkillDetails(BuildContext context, HermesSkill skill) {
-  return showHermesSheet(
-    context,
-    title: skill.name,
-    tag: '',
-    child: _SkillDetails(skill: skill),
-  );
-}
-
-class _SkillDetails extends StatelessWidget {
-  const _SkillDetails({required this.skill});
-
-  final HermesSkill skill;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = HermesTokens.of(context);
-    final category = _categoryOf(skill);
-    return Column(
-      key: ValueKey('skill-details-${skill.name}'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.check_circle_outline, size: 18, color: t.positive),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Text(
-                'Disponível para o agente',
-                style: t.mono.copyWith(fontSize: 11, color: t.ink),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'IDENTIFICADOR',
-          style: t.mono.copyWith(
-            fontSize: 10,
-            letterSpacing: 1.4,
-            color: t.dim,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SelectableText(
-          skill.name,
-          style: t
-              .monoIn(FontWeight.w500)
-              .copyWith(fontSize: 12, height: 1.45, color: t.ink),
-        ),
-        const SizedBox(height: 18),
-        Text(
-          'CATEGORIA',
-          style: t.mono.copyWith(
-            fontSize: 10,
-            letterSpacing: 1.4,
-            color: t.dim,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SelectableText(
-          category,
-          style: t.mono.copyWith(fontSize: 11, color: t.ink),
-        ),
-        const SizedBox(height: 22),
-        Text(
-          'DESCRIÇÃO',
-          style: t.mono.copyWith(
-            fontSize: 10,
-            letterSpacing: 1.4,
-            color: t.dim,
-          ),
-        ),
-        const SizedBox(height: 8),
-        SelectableText(
-          skill.description.trim().isEmpty
-              ? 'O gateway não anunciou uma descrição para esta Skill.'
-              : skill.description.trim(),
-          style: t.serif.copyWith(fontSize: 16, height: 1.55, color: t.ink),
-        ),
-        const SizedBox(height: 24),
-        Divider(height: 1, color: t.line),
-        const SizedBox(height: 18),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.info_outline_rounded, size: 18, color: t.accentInk),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'O API Server atual não expõe o conteúdo integral de SKILL.md. '
-                'Por isso esta visualização mostra somente os metadados reais, '
-                'sem oferecer edição ou ativação.',
-                style: t.serif.copyWith(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: t.dim,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }

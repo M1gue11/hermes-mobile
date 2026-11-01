@@ -223,4 +223,15 @@ final class _WidgetGatewayRepository implements GatewayRepository {
 
   @override
   Future<List<HermesSkill>> skills() async => const [];
+
+  @override
+  Future<String> skillContent(String name) => throw UnimplementedError();
+
+  @override
+  Future<void> saveSkillContent(String name, String content) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> setSkillEnabled(String name, {required bool enabled}) =>
+      throw UnimplementedError();
 }

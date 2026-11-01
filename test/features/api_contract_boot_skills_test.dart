@@ -8,6 +8,7 @@ import 'package:hermes_mobile/data/hermes_repository_provider.dart';
 import 'package:hermes_mobile/data/http/http_hermes_repository.dart';
 import 'package:hermes_mobile/domain/models/hermes_failure.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
+import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 import 'package:hermes_mobile/features/chat/boot_provider.dart';
 import 'package:hermes_mobile/features/skills/skills_provider.dart';
 
@@ -60,7 +61,7 @@ void main() {
     },
   );
 
-  test('skills caem para o Dashboard quando o API Server falha', () async {
+  test('com o Dashboard, o catálogo vem dele e é gerenciável', () async {
     final gateway = FakeGatewayRepository()
       ..catalogo = const [
         HermesSkill(name: 'zeta', category: 'ops'),
@@ -68,9 +69,22 @@ void main() {
       ];
     final container = _container(gateway: gateway);
 
-    final skills = await container.read(skillsCatalogProvider.future);
+    final catalog = await container.read(skillsCatalogProvider.future);
 
-    expect(skills.map((s) => s.name), ['alfa', 'zeta']);
+    expect(catalog.skills.map((s) => s.name), ['alfa', 'zeta']);
+    expect(catalog.manageable, isTrue);
+  });
+
+  test('Dashboard sem sessão cai para o API Server, só leitura', () async {
+    final container = _container(
+      status: {'/v1/skills': 200},
+      gateway: _DashboardSemSessao(),
+    );
+
+    final catalog = await container.read(skillsCatalogProvider.future);
+
+    expect(catalog.skills.single.name, 'read-file');
+    expect(catalog.manageable, isFalse);
   });
 
   test('sem Dashboard, a tela mostra a falha do API Server', () async {
@@ -83,6 +97,12 @@ void main() {
       ),
     );
   });
+}
+
+class _DashboardSemSessao extends FakeGatewayRepository {
+  @override
+  Future<List<HermesSkill>> skills() =>
+      Future.error(const GatewayAuthenticationRequired());
 }
 
 class _ApiServer022 implements HttpClientAdapter {
@@ -136,6 +156,16 @@ class _ApiServer022 implements HttpClientAdapter {
             'permission': <Object>[],
             'root': 'hermes-agent',
             'parent': null,
+          },
+        ],
+      },
+      '/v1/skills' => {
+        'object': 'list',
+        'data': [
+          {
+            'name': 'read-file',
+            'description': 'Lê arquivos.',
+            'category': null,
           },
         ],
       },

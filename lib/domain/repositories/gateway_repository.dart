@@ -108,7 +108,18 @@ abstract interface class GatewayRepository {
   Future<String> transcribeAudio(ComposerAttachment attachment);
 
   /// Catálogo de skills do perfil, por `GET /api/skills` do Dashboard.
+  /// Inclui as desativadas, com [HermesSkill.enabled] preenchido.
   Future<List<HermesSkill>> skills();
+
+  /// Texto integral do `SKILL.md`.
+  Future<String> skillContent(String name);
+
+  /// Reescreve o `SKILL.md` inteiro. Quando o Dashboard recusa o conteúdo, a
+  /// causa dele vem em [GatewayOperationException.message].
+  Future<void> saveSkillContent(String name, String content);
+
+  /// Ativa ou desativa a skill no perfil atual do Dashboard.
+  Future<void> setSkillEnabled(String name, {required bool enabled});
 
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.

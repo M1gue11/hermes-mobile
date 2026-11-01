@@ -21,9 +21,11 @@ afetado.
 - As validações manuais ainda abertas são A75, A73 e A74; os roteiros vivem em
   [USER_TESTING.md](USER_TESTING.md).
 - A72 foi implementado em 2026-10-31 (estado vazio e rótulo de modelo seguem a
-  persona; inventário no backlog) e aguarda conferência no aparelho. O próximo
-  trabalho de produto é A65, fechar o contrato autenticado para corpo integral,
-  edição, exclusão e ativação persistidas de Skills.
+  persona; inventário no backlog) e aguarda conferência no aparelho.
+- A65 foi implementado em 2026-10-31 pelo Dashboard (`SKILL.md` integral,
+  edição protegida e ativação; exclusão não existe no servidor) e aguarda
+  aceite no aparelho. A94 segue aberto (aceite e relato do `500` de
+  `/v1/skills`).
 - A60 continua condicionado a uma decisão explícita de escopo e privacidade.
   B0, B10, B9 e B11 são a fila posterior de contrato e runtime.
 
@@ -47,6 +49,9 @@ afetado.
   Skills não fazem parte do boot; um recurso opcional que falha não pode
   derrubar o seletor de modelos. No boot, `AsyncError` é o do `dart:async`,
   não o homônimo do Riverpod.
+- Skills: o catálogo vem do Dashboard quando há sessão (gerenciável) e do API
+  Server sem ela (somente leitura). Não oferecer edição ou chave sem o
+  Dashboard, e não gravar `SKILL.md` sem reler o servidor antes.
 - Histórico concluído do Dashboard usa `session.history` com o id durável; não
   abra sessão live apenas para hidratar a tela.
 - O transcript pode conter user e segmentos intermediários em curso; `inflight`

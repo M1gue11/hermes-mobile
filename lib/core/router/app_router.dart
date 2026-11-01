@@ -8,6 +8,8 @@ import '../../features/chat/deep_linked_chat_screen.dart';
 import '../../features/chat/markdown_showcase_screen.dart';
 import '../../features/debug/turn_capture_screen.dart';
 import '../../features/machine/machine_screen.dart';
+import '../../features/skills/skill_detail_screen.dart';
+import '../../features/skills/skill_editor_screen.dart';
 import '../../features/skills/skills_screen.dart';
 import '../theme/hermes_motion.dart';
 import 'hermes_route_observer.dart';
@@ -150,30 +152,54 @@ GoRouter buildAppRouter({
     ),
     GoRoute(
       path: '/skills',
-      pageBuilder: (context, state) => CustomTransitionPage<void>(
-        key: state.pageKey,
-        transitionDuration: motionOf(context, HermesMotion.revelar),
-        reverseTransitionDuration: motionOf(
-          context,
-          HermesMotion.saidaDe(HermesMotion.revelar),
-        ),
-        child: const SkillsScreen(),
-        transitionsBuilder: (context, animation, secondary, child) {
-          final slide =
-              Tween<Offset>(
-                begin: const Offset(1, 0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(
-                  parent: animation,
-                  curve: HermesMotion.curvaChegada,
+      pageBuilder: (context, state) =>
+          _slidePage(context, state, const SkillsScreen()),
+      routes: [
+        GoRoute(
+          path: 'skill',
+          pageBuilder: (context, state) => _slidePage(
+            context,
+            state,
+            SkillDetailScreen(name: state.uri.queryParameters['name'] ?? ''),
+          ),
+          routes: [
+            GoRoute(
+              path: 'edit',
+              pageBuilder: (context, state) => _slidePage(
+                context,
+                state,
+                SkillEditorScreen(
+                  name: state.uri.queryParameters['name'] ?? '',
                 ),
-              );
-          return SlideTransition(position: slide, child: child);
-        },
-      ),
+              ),
+            ),
+          ],
+        ),
+      ],
     ),
   ],
+);
+
+/// Tela inteira que entra deslizando da direita, como as Skills e o chat.
+CustomTransitionPage<void> _slidePage(
+  BuildContext context,
+  GoRouterState state,
+  Widget child,
+) => CustomTransitionPage<void>(
+  key: state.pageKey,
+  transitionDuration: motionOf(context, HermesMotion.revelar),
+  reverseTransitionDuration: motionOf(
+    context,
+    HermesMotion.saidaDe(HermesMotion.revelar),
+  ),
+  child: child,
+  transitionsBuilder: (context, animation, secondary, child) {
+    final slide = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: animation, curve: HermesMotion.curvaChegada),
+        );
+    return SlideTransition(position: slide, child: child);
+  },
 );
 
 /// Normaliza tanto a rota Flutter (`/chat/id`) quanto o esquema Android

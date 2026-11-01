@@ -390,8 +390,49 @@ class DashboardGatewayRepository implements GatewayRepository {
             name: item['name'] as String,
             description: item['description']?.toString() ?? '',
             category: item['category']?.toString(),
+            enabled: item['enabled'] is bool ? item['enabled'] as bool : null,
           ),
     ];
+  }
+
+  @override
+  Future<String> skillContent(String name) async {
+    final session = await _requireSession();
+    final response = await _authorizedRequest(
+      session,
+      '/api/skills/content?name=${Uri.encodeQueryComponent(name)}',
+      method: 'GET',
+    );
+    final body = response.data;
+    final content = body is Map ? body['content'] : null;
+    if (content is! String) {
+      throw const GatewayOperationException(
+        'O Dashboard não devolveu o conteúdo da skill.',
+      );
+    }
+    return content;
+  }
+
+  @override
+  Future<void> saveSkillContent(String name, String content) async {
+    final session = await _requireSession();
+    await _authorizedRequest(
+      session,
+      '/api/skills/content',
+      method: 'PUT',
+      data: {'name': name, 'content': content},
+    );
+  }
+
+  @override
+  Future<void> setSkillEnabled(String name, {required bool enabled}) async {
+    final session = await _requireSession();
+    await _authorizedRequest(
+      session,
+      '/api/skills/toggle',
+      method: 'PUT',
+      data: {'name': name, 'enabled': enabled},
+    );
   }
 
   @override

@@ -55,3 +55,18 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
 - Envie uma mensagem sem escolher modelo: cabeçalho, chip e bolha devem dizer
   `PADRÃO` ou o modelo efetivo, nunca `HERMES` ao lado do nome da persona.
 - Repita com o campo de nome vazio: o padrão `HERMES AGENT` volta.
+
+## [ ] A65 - gestão de Skills pelo Dashboard
+
+- Com o Dashboard logado, abra Skills: o subtítulo diz
+  `DASHBOARD · LEITURA E EDIÇÃO` e as desativadas aparecem com `DESATIVADA`.
+- Abra uma Skill: o `SKILL.md` integral aparece. Desligue a chave e confira no
+  Dashboard web que ela ficou desativada; religue.
+- Toque no lápis, altere o texto e tente voltar pelo gesto do sistema: o app
+  pede confirmação. Salve: o detalhe mostra o texto novo.
+- Apague a linha `name:` do frontmatter e salve: o editor continua aberto com a
+  causa devolvida pelo Dashboard.
+- Com o editor aberto, altere a mesma Skill pelo Dashboard web e salve no app:
+  aparece o aviso de que o `SKILL.md` mudou no servidor.
+- Saia do Dashboard (sem sessão): o catálogo volta a
+  `API SERVER · SOMENTE LEITURA`, sem lápis nem chave.

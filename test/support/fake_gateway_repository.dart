@@ -90,9 +90,39 @@ class FakeGatewayRepository implements GatewayRepository {
   Future<String> transcribeAudio(ComposerAttachment attachment) async => '';
 
   List<HermesSkill> catalogo = const [];
+  final Map<String, String> conteudos = {};
+  final List<({String name, String content})> gravacoes = [];
+  final List<({String name, bool enabled})> alternancias = [];
+  Object? falhaAoGravar;
 
   @override
   Future<List<HermesSkill>> skills() async => catalogo;
+
+  @override
+  Future<String> skillContent(String name) async {
+    final content = conteudos[name];
+    if (content == null) {
+      throw GatewayOperationException("Skill '$name' not found.");
+    }
+    return content;
+  }
+
+  @override
+  Future<void> saveSkillContent(String name, String content) async {
+    final falha = falhaAoGravar;
+    if (falha != null) throw falha;
+    gravacoes.add((name: name, content: content));
+    conteudos[name] = content;
+  }
+
+  @override
+  Future<void> setSkillEnabled(String name, {required bool enabled}) async {
+    alternancias.add((name: name, enabled: enabled));
+    catalogo = [
+      for (final skill in catalogo)
+        skill.name == name ? skill.copyWith(enabled: enabled) : skill,
+    ];
+  }
 }
 
 class FakeGatewayLiveTurn implements GatewayLiveTurn {
