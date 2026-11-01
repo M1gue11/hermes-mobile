@@ -201,12 +201,10 @@ class HttpHermesRepository implements HermesRepository {
   }) async {
     final res = await _get<Map<String, dynamic>>(
       '/api/sessions',
-      queryParameters: {
-        'limit': limit,
-        'offset': offset,
-        'source': ?source,
-        'include_children': true,
-      },
+      // Sem `include_children`: o padrão do servidor já lista raízes e
+      // branches/resets visíveis. Com ele, desde que o parâmetro passou a ser
+      // honrado, vinham também subagents e continuações de compressão.
+      queryParameters: {'limit': limit, 'offset': offset, 'source': ?source},
     );
     final body = res.data ?? const <String, dynamic>{};
     return ConversationPage(
@@ -377,17 +375,29 @@ class HttpHermesRepository implements HermesRepository {
     );
   }
 
-  /// `POST /v1/runs/{id}/approval` com `{choice}`.
+  /// `POST /v1/runs/{id}/approval`.
   ///
-  /// O servidor normaliza `approve`/`approved`/`allow` para `once`, mas mandamos
-  /// o valor canônico. Não enviamos `all`: resolver todas as pendências de uma
-  /// vez é uma concessão maior do que o gesto na tela representa.
+  /// Com session authority o corpo tem de ser **exatamente**
+  /// `{request_id, execution_generation, choice}`, ou o servidor devolve
+  /// `400 invalid_params`; o caminho legado aceita o mesmo corpo e usa o
+  /// `request_id` para resolver só este pedido. Sem a geração no evento, cai no
+  /// corpo legado. Não enviamos `all`: resolver todas as pendências de uma vez é
+  /// uma concessão maior do que o gesto na tela representa.
   @override
-  Future<void> respondToApproval(String runId, ApprovalChoice choice) async {
+  Future<void> respondToApproval(
+    ApprovalRequest request,
+    ApprovalChoice choice,
+  ) async {
+    final promptId = request.promptId;
+    final geracao = request.executionGeneration;
     try {
       await _post<Map<String, dynamic>>(
-        '/v1/runs/$runId/approval',
-        data: {'choice': choice.wireValue},
+        '/v1/runs/${request.runId}/approval',
+        data: {
+          'request_id': ?promptId,
+          'execution_generation': ?(promptId == null ? null : geracao),
+          'choice': choice.wireValue,
+        },
       );
     } on HermesFailure catch (falha) {
       // Traduzido aqui para `lib/features/` não precisar conhecer `dio`.
@@ -524,6 +534,9 @@ class HttpHermesRepository implements HermesRepository {
         return choice == null
             ? RunEvent.unknown(type, json ?? const {})
             : RunEvent.approvalResolved(choice);
+      // Session authority: o pedido fechou, por este ou por outro cliente.
+      case 'approval.settled':
+        return const RunEvent.approvalResolved();
       case 'run.completed':
         return RunEvent.completed(output: json?['output']?.toString());
       case 'run.failed':
@@ -532,6 +545,9 @@ class HttpHermesRepository implements HermesRepository {
         );
       case 'run.cancelled':
       case 'run.canceled':
+        return const RunEvent.status(RunStatus.cancelled);
+      // Terminal da session authority quando o turno é interrompido.
+      case 'run.interrupted':
         return const RunEvent.status(RunStatus.cancelled);
     }
     return RunEvent.unknown(

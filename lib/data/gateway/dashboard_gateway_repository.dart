@@ -11,6 +11,7 @@ import '../../domain/models/composer_attachment.dart';
 import '../../domain/models/gateway_rpc.dart';
 import '../../domain/models/gateway_inflight.dart';
 import '../../domain/models/gateway_completion.dart';
+import '../../domain/models/hermes_skill.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
 import '../../domain/models/session_message.dart';
@@ -367,6 +368,32 @@ class DashboardGatewayRepository implements GatewayRepository {
     return transcript;
   }
 
+  /// `GET /api/skills` devolve uma lista solta, sem envelope `data`.
+  @override
+  Future<List<HermesSkill>> skills() async {
+    final session = await _requireSession();
+    final response = await _authorizedRequest(
+      session,
+      '/api/skills',
+      method: 'GET',
+    );
+    final body = response.data;
+    if (body is! List) {
+      throw const GatewayOperationException(
+        'O Dashboard não devolveu o catálogo de skills.',
+      );
+    }
+    return [
+      for (final item in body)
+        if (item is Map && item['name'] is String)
+          HermesSkill(
+            name: item['name'] as String,
+            description: item['description']?.toString() ?? '',
+            category: item['category']?.toString(),
+          ),
+    ];
+  }
+
   @override
   Future<List<SessionMessage>> conversationHistory({
     required String storedSessionId,
@@ -659,13 +686,37 @@ class DashboardGatewayRepository implements GatewayRepository {
     String path, {
     required Map<String, dynamic> data,
     Duration? receiveTimeout,
+  }) async {
+    final response = await _authorizedRequest(
+      session,
+      path,
+      method: 'POST',
+      data: data,
+      receiveTimeout: receiveTimeout,
+    );
+    final body = response.data;
+    return Response<Map<String, dynamic>>(
+      requestOptions: response.requestOptions,
+      statusCode: response.statusCode,
+      headers: response.headers,
+      data: body is Map<String, dynamic> ? body : null,
+    );
+  }
+
+  Future<Response<Object?>> _authorizedRequest(
+    DashboardSession session,
+    String path, {
+    required String method,
+    Map<String, dynamic>? data,
+    Duration? receiveTimeout,
     bool renewSession = true,
   }) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _dio.request<Object?>(
         '${session.baseUrl}$path',
         data: data,
         options: Options(
+          method: method,
           headers: {'Cookie': _cookieHeader(session.cookies)},
           receiveTimeout: receiveTimeout,
           validateStatus: (status) => status != null && status < 500,
@@ -676,9 +727,10 @@ class DashboardGatewayRepository implements GatewayRepository {
         if (renewSession) {
           final renewed = await _renewSession();
           if (renewed != null) {
-            return _authorizedPost(
+            return _authorizedRequest(
               renewed,
               path,
+              method: method,
               data: data,
               receiveTimeout: receiveTimeout,
               renewSession: false,
@@ -690,7 +742,8 @@ class DashboardGatewayRepository implements GatewayRepository {
         );
       }
       if (response.statusCode == null || response.statusCode! >= 400) {
-        final detail = response.data?['detail']?.toString();
+        final body = response.data;
+        final detail = body is Map ? body['detail']?.toString() : null;
         throw GatewayOperationException(
           detail?.isNotEmpty == true
               ? detail!

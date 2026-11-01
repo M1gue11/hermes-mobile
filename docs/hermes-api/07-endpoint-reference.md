@@ -22,7 +22,7 @@ Authorization: Bearer <API_SERVER_KEY>
 | `DELETE` | `/v1/responses/{id}` | Sim | nenhum | Apagar response armazenada. |
 | `GET` | `/v1/models` | Sim | nenhum | Descobrir model ID anunciado. |
 | `GET` | `/v1/capabilities` | Sim | nenhum | Descobrir features e endpoints suportados. |
-| `GET` | `/v1/skills` | Sim | nenhum | Listar skills disponiveis. |
+| `GET` | `/v1/skills` | Sim | nenhum | Listar skills disponiveis. Quebrado no 0.22.5 (sempre `500`); ver [contrato 0.22.5](contrato-0.22.5-medido.md). |
 | `GET` | `/v1/toolsets` | Sim | nenhum | Listar toolsets e tools configuradas. |
 
 ## Health
@@ -41,7 +41,7 @@ Authorization: Bearer <API_SERVER_KEY>
 | `GET` | `/v1/runs/{run_id}` | Sim | nenhum | Polling de status. |
 | `GET` | `/v1/runs/{run_id}/events` | Sim | nenhum | SSE de progresso. |
 | `POST` | `/v1/runs/{run_id}/stop` | Sim | vazio | Pedir cancelamento. |
-| `POST` | `/v1/runs/{run_id}/approval` | Sim | decisao de approval | Resolver aprovacao pendente. |
+| `POST` | `/v1/runs/{run_id}/approval` | Sim | `request_id`, `execution_generation`, `choice` (exatos, sob session authority) | Resolver aprovacao pendente. |
 
 ## Sessions API
 

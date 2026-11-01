@@ -22,7 +22,7 @@ final class BootStateProvider
         $FunctionalProvider<
           AsyncValue<BootState>,
           BootState,
-          FutureOr<BootState>
+          async.FutureOr<BootState>
         >
     with $FutureModifier<BootState>, $FutureProvider<BootState> {
   /// Faz a sequência de boot recomendada pela doc: `/health` + `/v1/capabilities`
@@ -47,9 +47,9 @@ final class BootStateProvider
       $FutureProviderElement(pointer);
 
   @override
-  FutureOr<BootState> create(Ref ref) {
+  async.FutureOr<BootState> create(Ref ref) {
     return bootState(ref);
   }
 }
 
-String _$bootStateHash() => r'e6f9cc4bfa19b1907b17086d8d3469ff09f5e12f';
+String _$bootStateHash() => r'b78f1f42ba14a735692eaaa053b9324e78678fec';

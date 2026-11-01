@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_mobile/domain/models/approval_request.dart';
 import 'package:hermes_mobile/domain/models/hermes_failure.dart';
 import 'package:hermes_mobile/data/http/http_hermes_repository.dart';
 
@@ -129,6 +130,77 @@ void main() {
     // sem chave e em cleartext, e o erro era engolido, então o app dizia que o
     // gateway não anunciava providers. A rota existe no próprio API Server, ao
     // lado de `/v1/models`, e exige a mesma chave.
+    group('contrato 0.22.5', () {
+      test('aprovação da session authority manda o corpo exato', () async {
+        final adapter = _RecordingAdapter({
+          'run_id': 'run_9',
+          'status': 'resolved',
+          'prompt_id': 'prm_1',
+        });
+        final repository = HttpHermesRepository(
+          apiKey: 'test-key',
+          dio: Dio()..httpClientAdapter = adapter,
+        );
+
+        await repository.respondToApproval(
+          const ApprovalRequest(
+            runId: 'run_9',
+            promptId: 'prm_1',
+            executionGeneration: 3,
+            command: 'ls',
+          ),
+          ApprovalChoice.once,
+        );
+
+        expect(adapter.ultimo!.path, '/v1/runs/run_9/approval');
+        expect(adapter.ultimo!.data, {
+          'request_id': 'prm_1',
+          'execution_generation': 3,
+          'choice': 'once',
+        });
+      });
+
+      test('aprovação sem geração mantém o corpo legado', () async {
+        final adapter = _RecordingAdapter({'resolved': 1});
+        final repository = HttpHermesRepository(
+          apiKey: 'test-key',
+          dio: Dio()..httpClientAdapter = adapter,
+        );
+
+        await repository.respondToApproval(
+          const ApprovalRequest(runId: 'run_9', command: 'ls'),
+          ApprovalChoice.deny,
+        );
+
+        expect(adapter.ultimo!.data, {'choice': 'deny'});
+      });
+
+      test('geração recusada vira pedido já resolvido', () {
+        expect(
+          approvalFailureFrom(statusCode: 409, code: 'stale_generation'),
+          ApprovalFailure.semPendencia,
+        );
+      });
+
+      test('lista sessões sem pedir subagents nem compressões', () async {
+        final adapter = _RecordingAdapter({
+          'object': 'list',
+          'data': const [],
+          'limit': 50,
+          'offset': 0,
+          'has_more': false,
+        });
+        final repository = HttpHermesRepository(
+          apiKey: 'test-key',
+          dio: Dio()..httpClientAdapter = adapter,
+        );
+
+        await repository.conversationPage();
+
+        expect(adapter.ultimo!.queryParameters, {'limit': 50, 'offset': 0});
+      });
+    });
+
     group('inventário de providers', () {
       test(
         'vai para o API Server autenticado, e não para outro serviço',

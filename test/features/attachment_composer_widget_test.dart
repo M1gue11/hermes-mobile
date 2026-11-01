@@ -16,6 +16,7 @@ import 'package:hermes_mobile/main.dart';
 
 import '../support/fake_hermes_repository.dart';
 import '../support/memory_active_run_store.dart';
+import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/features/chat/launch_provider.dart';
 import '../support/stub_chat_launch.dart';
 
@@ -219,4 +220,7 @@ final class _WidgetGatewayRepository implements GatewayRepository {
   @override
   Future<String> transcribeAudio(ComposerAttachment attachment) async =>
       'Mensagem de voz transcrita.';
+
+  @override
+  Future<List<HermesSkill>> skills() async => const [];
 }

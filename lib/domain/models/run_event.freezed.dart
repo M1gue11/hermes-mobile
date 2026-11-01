@@ -158,7 +158,7 @@ return unknown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String text)?  activityPreview,TResult Function( String text)?  reasoningDelta,TResult Function( String text)?  thinkingState,TResult Function( String text)?  delta,TResult Function( String text,  bool alreadyStreamed)?  interim,TResult Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult Function( ToolCall tool)?  toolProgress,TResult Function( ApprovalRequest request)?  approvalRequest,TResult Function( ApprovalChoice choice)?  approvalResolved,TResult Function( ClarifyRequest request)?  clarifyRequest,TResult Function()?  clarifyResolved,TResult Function( RunStatus status)?  status,TResult Function( String? output,  GatewayCompletion? gateway)?  completed,TResult Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult Function( String type,  Map<String, dynamic> data)?  unknown,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String text)?  activityPreview,TResult Function( String text)?  reasoningDelta,TResult Function( String text)?  thinkingState,TResult Function( String text)?  delta,TResult Function( String text,  bool alreadyStreamed)?  interim,TResult Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult Function( ToolCall tool)?  toolProgress,TResult Function( ApprovalRequest request)?  approvalRequest,TResult Function( ApprovalChoice? choice)?  approvalResolved,TResult Function( ClarifyRequest request)?  clarifyRequest,TResult Function()?  clarifyResolved,TResult Function( RunStatus status)?  status,TResult Function( String? output,  GatewayCompletion? gateway)?  completed,TResult Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult Function( String type,  Map<String, dynamic> data)?  unknown,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that.text);case RunReasoningDelta() when reasoningDelta != null:
@@ -193,7 +193,7 @@ return unknown(_that.type,_that.data);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String text)  activityPreview,required TResult Function( String text)  reasoningDelta,required TResult Function( String text)  thinkingState,required TResult Function( String text)  delta,required TResult Function( String text,  bool alreadyStreamed)  interim,required TResult Function( String toolId,  String risk,  bool redacted)  toolRisk,required TResult Function( ToolCall tool)  toolProgress,required TResult Function( ApprovalRequest request)  approvalRequest,required TResult Function( ApprovalChoice choice)  approvalResolved,required TResult Function( ClarifyRequest request)  clarifyRequest,required TResult Function()  clarifyResolved,required TResult Function( RunStatus status)  status,required TResult Function( String? output,  GatewayCompletion? gateway)  completed,required TResult Function( String? error,  String? output,  GatewayCompletion? gateway)  failed,required TResult Function( String type,  Map<String, dynamic> data)  unknown,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String text)  activityPreview,required TResult Function( String text)  reasoningDelta,required TResult Function( String text)  thinkingState,required TResult Function( String text)  delta,required TResult Function( String text,  bool alreadyStreamed)  interim,required TResult Function( String toolId,  String risk,  bool redacted)  toolRisk,required TResult Function( ToolCall tool)  toolProgress,required TResult Function( ApprovalRequest request)  approvalRequest,required TResult Function( ApprovalChoice? choice)  approvalResolved,required TResult Function( ClarifyRequest request)  clarifyRequest,required TResult Function()  clarifyResolved,required TResult Function( RunStatus status)  status,required TResult Function( String? output,  GatewayCompletion? gateway)  completed,required TResult Function( String? error,  String? output,  GatewayCompletion? gateway)  failed,required TResult Function( String type,  Map<String, dynamic> data)  unknown,}) {final _that = this;
 switch (_that) {
 case RunActivityPreview():
 return activityPreview(_that.text);case RunReasoningDelta():
@@ -224,7 +224,7 @@ return unknown(_that.type,_that.data);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String text)?  activityPreview,TResult? Function( String text)?  reasoningDelta,TResult? Function( String text)?  thinkingState,TResult? Function( String text)?  delta,TResult? Function( String text,  bool alreadyStreamed)?  interim,TResult? Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult? Function( ToolCall tool)?  toolProgress,TResult? Function( ApprovalRequest request)?  approvalRequest,TResult? Function( ApprovalChoice choice)?  approvalResolved,TResult? Function( ClarifyRequest request)?  clarifyRequest,TResult? Function()?  clarifyResolved,TResult? Function( RunStatus status)?  status,TResult? Function( String? output,  GatewayCompletion? gateway)?  completed,TResult? Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult? Function( String type,  Map<String, dynamic> data)?  unknown,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String text)?  activityPreview,TResult? Function( String text)?  reasoningDelta,TResult? Function( String text)?  thinkingState,TResult? Function( String text)?  delta,TResult? Function( String text,  bool alreadyStreamed)?  interim,TResult? Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult? Function( ToolCall tool)?  toolProgress,TResult? Function( ApprovalRequest request)?  approvalRequest,TResult? Function( ApprovalChoice? choice)?  approvalResolved,TResult? Function( ClarifyRequest request)?  clarifyRequest,TResult? Function()?  clarifyResolved,TResult? Function( RunStatus status)?  status,TResult? Function( String? output,  GatewayCompletion? gateway)?  completed,TResult? Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult? Function( String type,  Map<String, dynamic> data)?  unknown,}) {final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that.text);case RunReasoningDelta() when reasoningDelta != null:
@@ -796,10 +796,10 @@ as ApprovalRequest,
 
 
 class RunApprovalResolved implements RunEvent {
-  const RunApprovalResolved(this.choice);
+  const RunApprovalResolved([this.choice]);
 
 
- final  ApprovalChoice choice;
+ final  ApprovalChoice? choice;
 
 /// Create a copy of RunEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -831,7 +831,7 @@ abstract mixin class $RunApprovalResolvedCopyWith<$Res> implements $RunEventCopy
   factory $RunApprovalResolvedCopyWith(RunApprovalResolved value, $Res Function(RunApprovalResolved) _then) = _$RunApprovalResolvedCopyWithImpl;
 @useResult
 $Res call({
- ApprovalChoice choice
+ ApprovalChoice? choice
 });
 
 
@@ -848,10 +848,10 @@ class _$RunApprovalResolvedCopyWithImpl<$Res>
 
 /// Create a copy of RunEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? choice = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? choice = freezed,}) {
   return _then(RunApprovalResolved(
-null == choice ? _self.choice : choice // ignore: cast_nullable_to_non_nullable
-as ApprovalChoice,
+freezed == choice ? _self.choice : choice // ignore: cast_nullable_to_non_nullable
+as ApprovalChoice?,
   ));
 }
 

@@ -53,6 +53,7 @@ Authorization: Bearer <API_SERVER_KEY>
 - [06-frontend-guide.md](06-frontend-guide.md): desenho pragmatico do front-end, estados, streaming e exemplos TypeScript.
 - [07-endpoint-reference.md](07-endpoint-reference.md): tabela completa de endpoints.
 - [08-operacao-integracoes.md](08-operacao-integracoes.md): front-ends compativeis, proxy mode e troubleshooting.
+- [contrato-0.22.5-medido.md](contrato-0.22.5-medido.md): delta medido no 0.22.5 (skills quebrado, aprovação com geração, `include_children`).
 
 ## Modelo mental
 

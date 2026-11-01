@@ -55,7 +55,8 @@ sealed class RunEvent with _$RunEvent {
       RunApprovalRequest;
 
   /// A aprovação foi resolvida (por este app ou por outro cliente da mesma run).
-  const factory RunEvent.approvalResolved(ApprovalChoice choice) =
+  /// `approval.settled` não diz qual escolha venceu, só que o pedido fechou.
+  const factory RunEvent.approvalResolved([ApprovalChoice? choice]) =
       RunApprovalResolved;
 
   /// O agente precisa de uma resposta explícita antes de continuar.

@@ -351,7 +351,7 @@ class TurnCapture extends ChangeNotifier {
       ),
       RunApprovalResolved(:final choice) => (
         'approvalResolved',
-        <String, Object?>{'choice': choice.name},
+        <String, Object?>{'choice': choice?.name},
       ),
       RunClarifyRequest(:final request) => (
         'clarifyRequest',

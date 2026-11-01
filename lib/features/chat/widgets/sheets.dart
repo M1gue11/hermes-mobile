@@ -12,10 +12,12 @@ import '../../../data/hermes_repository_provider.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/hermes_failure.dart';
 import '../../../domain/models/hermes_provider.dart';
+import '../../../domain/models/hermes_skill.dart';
 import '../../../domain/models/model_lock.dart';
 import '../../../domain/models/model_selection.dart';
 import '../../settings/settings_provider.dart';
 import '../../settings/agent_persona.dart';
+import '../../skills/skills_provider.dart';
 import '../boot_provider.dart';
 import '../chat_controller.dart';
 import '../inventory_provider.dart';
@@ -1080,6 +1082,8 @@ Future<void> showGatewaySheet(BuildContext context, WidgetRef _) {
       builder: (context, ref, _) {
         final t = HermesTokens.of(context);
         final boot = ref.watch(bootStateProvider);
+        final skills = ref.watch(skillsCatalogProvider);
+        final loadedSkills = skills.value ?? const <HermesSkill>[];
         return boot.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => FailureState(
@@ -1107,7 +1111,11 @@ Future<void> showGatewaySheet(BuildContext context, WidgetRef _) {
                 ),
                 _GatewayValue(
                   label: 'Skills disponíveis',
-                  value: '${state.skills.length}',
+                  value: switch (skills) {
+                    AsyncData(:final value) => '${value.length}',
+                    AsyncError() => 'indisponível',
+                    _ => '…',
+                  },
                 ),
                 const SizedBox(height: 22),
                 _sectionLabel(context, 'Toolsets ativos'),
@@ -1129,16 +1137,21 @@ Future<void> showGatewaySheet(BuildContext context, WidgetRef _) {
                 const SizedBox(height: 22),
                 _sectionLabel(context, 'Skills carregadas'),
                 const SizedBox(height: 9),
-                for (final skill in state.skills.take(10))
+                if (skills case AsyncError(:final error))
+                  Text(
+                    hermesFailureFrom(error).title,
+                    style: t.serif.copyWith(color: t.dim),
+                  ),
+                for (final skill in loadedSkills.take(10))
                   _GatewayValue(
                     label: skill.name,
                     value: skill.category ?? 'sem categoria',
                   ),
-                if (state.skills.length > 10)
+                if (loadedSkills.length > 10)
                   Padding(
                     padding: const EdgeInsets.only(top: 5),
                     child: Text(
-                      '+ ${state.skills.length - 10} skills disponíveis no gateway',
+                      '+ ${loadedSkills.length - 10} skills disponíveis no gateway',
                       style: t.mono.copyWith(fontSize: 11, color: t.faint),
                     ),
                   ),

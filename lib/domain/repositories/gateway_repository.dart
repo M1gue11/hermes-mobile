@@ -2,6 +2,7 @@ import '../models/approval_request.dart';
 import '../models/composer_attachment.dart';
 import '../models/gateway_inflight.dart';
 import '../models/gateway_recovery.dart';
+import '../models/hermes_skill.dart';
 import '../models/run_event.dart';
 import '../models/session_message.dart';
 
@@ -105,6 +106,9 @@ abstract interface class GatewayRepository {
   });
 
   Future<String> transcribeAudio(ComposerAttachment attachment);
+
+  /// Catálogo de skills do perfil, por `GET /api/skills` do Dashboard.
+  Future<List<HermesSkill>> skills();
 
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.

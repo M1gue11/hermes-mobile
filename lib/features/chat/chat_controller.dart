@@ -548,7 +548,7 @@ class ChatController extends _$ChatController {
       if (turn != null && pending.runId == turn.turnId) {
         await turn.respondToApproval(choice, requestId: pending.requestId);
       } else {
-        await _repo.respondToApproval(pending.runId, choice);
+        await _repo.respondToApproval(pending, choice);
       }
       state = state.copyWith(pendingApproval: null, approvalError: null);
       return null;

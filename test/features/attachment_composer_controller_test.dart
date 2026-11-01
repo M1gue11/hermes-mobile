@@ -6,6 +6,7 @@ import 'package:hermes_mobile/data/gateway_repository_provider.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/repositories/attachment_source.dart';
+import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 import 'package:hermes_mobile/features/chat/attachment_composer_controller.dart';
 
@@ -251,4 +252,7 @@ final class _FakeGatewayRepository implements GatewayRepository {
     transcribedNames.add(attachment.name);
     return transcript;
   }
+
+  @override
+  Future<List<HermesSkill>> skills() async => const [];
 }

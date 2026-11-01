@@ -197,7 +197,10 @@ class FakeHermesRepository implements HermesRepository {
   ApprovalFailure? recusaAprovacao;
 
   @override
-  Future<void> respondToApproval(String runId, ApprovalChoice choice) async {
+  Future<void> respondToApproval(
+    ApprovalRequest request,
+    ApprovalChoice choice,
+  ) async {
     final falha = recusaAprovacao;
     if (falha != null) {
       recusaAprovacao = null;

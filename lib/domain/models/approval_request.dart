@@ -26,6 +26,8 @@ class ApprovalRequest {
     required this.runId,
     this.requestId,
     this.gatewayRequestId,
+    this.promptId,
+    this.executionGeneration,
     required this.command,
     this.description,
     this.patternKey,
@@ -38,6 +40,12 @@ class ApprovalRequest {
   /// Nulo preserva o caminho legado do evento `approval.request`.
   final String? requestId;
   final String? gatewayRequestId;
+
+  /// `request_id` e `execution_generation` do evento da Runs API. Desde a
+  /// session authority (0.22) o servidor só aceita a resposta com os dois, e a
+  /// geração recusa resposta atrasada de uma execução anterior.
+  final String? promptId;
+  final int? executionGeneration;
 
   /// O comando que o servidor quer executar, já redigido por ele.
   final String command;
@@ -61,12 +69,14 @@ class ApprovalRequest {
               .whereType<ApprovalChoice>()
               .toList(growable: false)
         : const <ApprovalChoice>[];
+    final serverRequest = json['server_request'] == true;
+    final geracao = json['execution_generation'];
     return ApprovalRequest(
       runId: json['run_id']?.toString() ?? '',
       gatewayRequestId: _textoOuNulo(json['gateway_request_id']),
-      requestId: json['server_request'] == true
-          ? _textoOuNulo(json['request_id'])
-          : null,
+      requestId: serverRequest ? _textoOuNulo(json['request_id']) : null,
+      promptId: serverRequest ? null : _textoOuNulo(json['request_id']),
+      executionGeneration: geracao is int ? geracao : null,
       command: (json['command'] ?? json['target'] ?? '').toString(),
       description: _textoOuNulo(json['description']),
       patternKey: _textoOuNulo(json['pattern_key']),
@@ -167,6 +177,8 @@ ApprovalFailure approvalFailureFrom({int? statusCode, String? code}) {
     (_, 'invalid_approval_choice') => ApprovalFailure.escolhaInvalida,
     (_, 'approval_not_active') => ApprovalFailure.semSessao,
     (_, 'approval_not_pending') => ApprovalFailure.semPendencia,
+    (_, 'stale_generation') => ApprovalFailure.semPendencia,
+    (_, 'not_found') => ApprovalFailure.runInexistente,
     (400, _) => ApprovalFailure.escolhaInvalida,
     (404, _) => ApprovalFailure.runInexistente,
     _ => ApprovalFailure.falhaDoServidor,

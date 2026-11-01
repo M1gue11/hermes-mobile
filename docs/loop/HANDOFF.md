@@ -42,6 +42,11 @@ afetado.
 - Retomada usa sessão, epoch e sequência quando o servidor oferece replay;
   deltas já entregues não são aplicados novamente. Snapshot fallback e
   transformação terminal têm semânticas próprias: comprimento não é identidade.
+- Runtime alvo atual: Hermes 0.22.5. O delta para o cliente está em
+  [../hermes-api/contrato-0.22.5-medido.md](../hermes-api/contrato-0.22.5-medido.md).
+  Skills não fazem parte do boot; um recurso opcional que falha não pode
+  derrubar o seletor de modelos. No boot, `AsyncError` é o do `dart:async`,
+  não o homônimo do Riverpod.
 - Histórico concluído do Dashboard usa `session.history` com o id durável; não
   abra sessão live apenas para hidratar a tela.
 - O transcript pode conter user e segmentos intermediários em curso; `inflight`

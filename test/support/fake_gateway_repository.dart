@@ -4,6 +4,7 @@ import 'package:hermes_mobile/domain/models/approval_request.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
+import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 
@@ -87,6 +88,11 @@ class FakeGatewayRepository implements GatewayRepository {
 
   @override
   Future<String> transcribeAudio(ComposerAttachment attachment) async => '';
+
+  List<HermesSkill> catalogo = const [];
+
+  @override
+  Future<List<HermesSkill>> skills() async => catalogo;
 }
 
 class FakeGatewayLiveTurn implements GatewayLiveTurn {

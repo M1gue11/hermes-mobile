@@ -152,6 +152,21 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   no detalhe. Enquanto a API Server oferecer somente metadados em `/v1/skills`,
   não fingir edição, toggle ou marketplace.
 
+  Medido no 0.22.5: o Dashboard já tem `GET/PUT /api/skills/content` (corpo
+  integral e reescrita) e `PUT /api/skills/toggle`, mas nenhuma exclusão de
+  skill local. O catálogo do app já cai para `GET /api/skills` quando
+  `/v1/skills` falha. Ver
+  [contrato 0.22.5](../hermes-api/contrato-0.22.5-medido.md).
+
+- [~] **A94 Acompanhar o contrato do Hermes 0.22.5.** Boot sem skills e com a
+  causa HTTP preservada, fallback do catálogo para o Dashboard, aprovação da
+  Runs API com `request_id` + `execution_generation`, `approval.settled`,
+  `run.interrupted` e listagem sem `include_children`, implementados em
+  2026-10-31. Falta: aceite no aparelho (folha de Modelo, Contexto e Skills
+  contra o servidor real); relatar ao `hermes-agent` o `500` de `/v1/skills`
+  (chamada com `include_editorial`); e decidir se o fallback Runs deve tratar
+  `clarify.request`/`/v1/runs/{id}/clarify` e steer.
+
 - [!] **A42 Ícone e splash.** Aguarda arte ou direção visual aprovada pelos
   mantenedores. Não gerar nem substituir a identidade sem esse insumo.
 
@@ -221,8 +236,9 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   resets e compressão também são filhos); classificar pelo marcador de delegate
   e confirmar `source` no runtime. O TUI já emite `subagent.*` e oferece
   `subagent.list` para agentes em execução, mas essa lista não é histórico
-  completo. No REST atual, `GET /api/sessions` oculta subagents por padrão e
-  não aceita `include_children`; o parâmetro enviado pelo Mobile é ignorado.
+  completo. No 0.22.5, `GET /api/sessions` oculta subagents por padrão e honra
+  `include_children` (o Mobile deixou de mandá-lo); cada sessão traz
+  `is_internal_child`, o marcador seguro de subagent.
   Antes de prometer agrupamento histórico, validar endpoint autorizado de
   filhos persistidos, paginação, parentesco após compressão e reconexão.
   Primeira fase sem mudar o Gateway: filtrar somente linhas identificadas com

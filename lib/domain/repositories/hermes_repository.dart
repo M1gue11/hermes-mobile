@@ -108,5 +108,8 @@ abstract interface class HermesRepository {
   /// servidor: nada é aprovado por omissão. **Lança** `ApprovalException` quando
   /// o servidor recusa, por exemplo se o pedido já foi respondido por outro
   /// cliente da mesma run.
-  Future<void> respondToApproval(String runId, ApprovalChoice choice);
+  Future<void> respondToApproval(
+    ApprovalRequest request,
+    ApprovalChoice choice,
+  );
 }

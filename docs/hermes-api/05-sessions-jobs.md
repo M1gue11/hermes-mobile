@@ -34,7 +34,9 @@ Uso no front-end:
 - Lista lateral de conversas.
 - Paginacao/infinite scroll.
 - Separar sessoes por origem.
-- Mostrar branches/forks quando `include_children` estiver ativo.
+- Desde o 0.22.5, `include_children=true` traz também subagents e
+  continuações de compressão; o padrão já lista branches e resets visíveis.
+  Ver [contrato 0.22.5](contrato-0.22.5-medido.md).
 
 ## `POST /api/sessions`
 

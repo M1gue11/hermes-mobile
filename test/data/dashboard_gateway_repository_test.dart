@@ -13,6 +13,7 @@ import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/tool_call.dart';
 import 'package:hermes_mobile/domain/models/conversation_timeline.dart';
 import 'package:hermes_mobile/domain/models/chat_message.dart';
+import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 
 void main() {
@@ -300,6 +301,31 @@ void main() {
       await turn.close();
     },
   );
+  test('catálogo de skills lê a lista solta do Dashboard', () async {
+    final adapter = _DashboardAdapter();
+    final repository = DashboardGatewayRepository(
+      store: _MemoryDashboardSessionStore(
+        session: (
+          baseUrl: 'https://dashboard.example:8443',
+          cookies: {'session': 'opaque'},
+        ),
+      ),
+      dio: Dio()..httpClientAdapter = adapter,
+    );
+
+    final skills = await repository.skills();
+
+    expect(adapter.requests.single.uri.path, '/api/skills');
+    expect(adapter.requests.single.headers['Cookie'], 'session=opaque');
+    expect(skills, const [
+      HermesSkill(
+        name: 'deploy',
+        description: 'Publica a build',
+        category: 'ops',
+      ),
+    ]);
+  });
+
   test('login Basic salva sessão e credenciais separadamente', () async {
     final store = _MemoryDashboardSessionStore();
     final adapter = _DashboardAdapter();
@@ -1978,6 +2004,19 @@ final class _DashboardAdapter implements HttpClientAdapter {
     }
     if (options.uri.path == '/api/auth/ws-ticket') {
       return _json({'ticket': 'ticket-efemero'}, 200);
+    }
+    if (options.uri.path == '/api/skills' && options.method == 'GET') {
+      return _json([
+        {
+          'name': 'deploy',
+          'description': 'Publica a build',
+          'category': 'ops',
+          'enabled': false,
+          'usage': 3,
+          'provenance': 'agent',
+        },
+        {'description': 'sem nome'},
+      ], 200);
     }
     return _json({'detail': 'Not found'}, 404);
   }

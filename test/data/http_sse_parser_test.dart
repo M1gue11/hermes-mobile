@@ -140,6 +140,38 @@ void main() {
       expect((event! as RunApprovalResolved).choice, ApprovalChoice.deny);
     });
 
+    test('approval.request da session authority guarda prompt e geração', () {
+      final event = HttpHermesRepository.parseSse(
+        null,
+        '{"event":"approval.request","run_id":"run_9","request_id":"prm_1",'
+        '"execution_generation":3,"command":"rm -rf /tmp/x",'
+        '"choices":["once","session","deny"],"seq":4}',
+      );
+
+      final pedido = (event! as RunApprovalRequest).request;
+      expect(pedido.promptId, 'prm_1');
+      expect(pedido.executionGeneration, 3);
+      expect(pedido.requestId, isNull);
+    });
+
+    test('approval.settled fecha a pendência sem inventar escolha', () {
+      final event = HttpHermesRepository.parseSse(
+        null,
+        '{"event":"approval.settled","run_id":"run_9","prompt_id":"prm_1",'
+        '"execution_generation":3}',
+      );
+      expect(event, isA<RunApprovalResolved>());
+      expect((event! as RunApprovalResolved).choice, isNull);
+    });
+
+    test('run.interrupted encerra a run como cancelada', () {
+      final event = HttpHermesRepository.parseSse(
+        null,
+        '{"event":"run.interrupted","run_id":"run_9","error":"interrompido"}',
+      );
+      expect((event! as RunStatusEvent).status, RunStatus.cancelled);
+    });
+
     test('approval.responded com escolha ilegível não inventa decisão', () {
       final event = HttpHermesRepository.parseSse(
         null,
