@@ -564,10 +564,12 @@ class DashboardGatewayRepository implements GatewayRepository {
       ];
     }
     steps.add(
-      const GatewayProbeStep(
+      GatewayProbeStep(
         method: 'gateway.ready',
         ok: true,
-        detail: 'socket aberto e handshake concluído',
+        detail: client.sessionAuthority
+            ? 'socket aberto; session authority (modo não validado no Mobile)'
+            : 'socket aberto e handshake concluído',
       ),
     );
 
@@ -1476,6 +1478,11 @@ final class _GatewaySocketClient {
   final _queuedUnboundRequests = <GatewayServerRequestFrame>[];
   String? _sessionId;
   String? _replayEpoch;
+
+  /// `gateway.ready.session_authority`: o Dashboard é servido pelo listener do
+  /// próprio gateway, que atende `session.*` e `prompt.*` com regras próprias.
+  /// Medido no 0.22.5; o Mobile ainda não foi validado nesse modo.
+  bool sessionAuthority = false;
   int _lastSeenSeq = 0;
   bool _declinesNotShown = false;
   Future<void>? _capabilities;
@@ -1746,6 +1753,7 @@ final class _GatewaySocketClient {
           if (payload['replay_epoch'] is String) {
             _replayEpoch = payload['replay_epoch'] as String;
           }
+          sessionAuthority = payload['session_authority'] == true;
           if (!_ready.isCompleted) _ready.complete();
           if (payload['heartbeat'] == true) _startHeartbeat();
           if (!_capabilitiesAdvertised) {

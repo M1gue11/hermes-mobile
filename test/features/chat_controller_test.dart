@@ -542,6 +542,42 @@ void main() {
     expect(assistant.text, 'Resposta final.');
   });
 
+  test('conclusão vazia de prompt repassado relê o histórico salvo', () async {
+    final active = MemoryActiveRunStore();
+    final turn = FakeGatewayLiveTurn(
+      storedSessionId: 'session-2',
+      liveSessionId: 'live-1',
+    );
+    final gateway = FakeGatewayRepository(turns: [turn]);
+    final container = makeContainer(FakeHermesRepository(), active, gateway);
+    addTearDown(container.dispose);
+    final controller = container.read(chatControllerProvider.notifier);
+
+    await controller.newChat();
+    expect(await controller.send('Pergunta encaminhada.'), isTrue);
+    gateway.histories['session-2'] = const [
+      SessionMessage(id: 'u1', role: 'user', content: 'Pergunta encaminhada.'),
+      SessionMessage(id: 'a1', role: 'assistant', content: 'Resposta do dono.'),
+    ];
+
+    // O repasse perdeu o dono: só chega o `message.complete` vazio.
+    turn.add(const RunEvent.completed(output: ''));
+    await pumpUntil(
+      () =>
+          container
+              .read(chatControllerProvider)
+              .messages
+              .whereType<AssistantMessage>()
+              .lastOrNull
+              ?.text ==
+          'Resposta do dono.',
+    );
+    expect(
+      container.read(chatControllerProvider).messages.whereType<UserMessage>(),
+      hasLength(1),
+    );
+  });
+
   test('reconnect do Dashboard retoma histórico sem reenviar prompt', () async {
     final first = FakeGatewayLiveTurn(
       storedSessionId: 'session-2',
@@ -599,7 +635,7 @@ void main() {
     expect(runs.historicos, hasLength(1));
   });
 
-  test('reabre turno Dashboard concluído usando o histórico do Dashboard', () async {
+  test('reabre turno Dashboard concluído pelo histórico', () async {
     final active = MemoryActiveRunStore();
     active.records['session-1'] = ActiveRunRecord(
       sessionId: 'session-1',

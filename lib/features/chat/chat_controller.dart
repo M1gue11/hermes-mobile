@@ -1619,6 +1619,12 @@ class ChatController extends _$ChatController {
         _clearActiveRun();
         _finish(epoch);
         ref.invalidate(conversationFeedProvider);
+        if ((_assistantById(id), state.sessionId) case (
+          final settled?,
+          final sessionId?,
+        ) when _isSilent(settled)) {
+          unawaited(_rereadAfterSilentCompletion(sessionId, epoch));
+        }
       case RunFailed(:final error, :final output, :final gateway):
         if (state.sessionId case final sessionId?) {
           if (_uncertainSubmissions.remove(sessionId)) {
@@ -1967,6 +1973,40 @@ class ChatController extends _$ChatController {
           else
             message,
       ],
+    );
+  }
+
+  static bool _isSilent(AssistantMessage message) =>
+      message.text.trim().isEmpty &&
+      message.tools.isEmpty &&
+      message.activityItems.isEmpty &&
+      message.error == null;
+
+  /// Um turno repassado ao dono do gateway (`prompt.submit` com `forwarded`)
+  /// recebe só `message.start` e `message.complete`, e o complete vem vazio
+  /// quando o repasse perde o dono. A resposta está no transcript salvo, que é
+  /// o que o servidor espera que o cliente releia
+  /// (`tui_gateway/owner_forward.py`, medido no 0.22.5).
+  Future<void> _rereadAfterSilentCompletion(String sessionId, int epoch) async {
+    var history = await _dashboardConversationHistory(sessionId);
+    if (history.isEmpty) {
+      try {
+        history = await _repo.conversationMessages(sessionId);
+      } catch (_) {
+        return;
+      }
+    }
+    if (epoch != _epoch ||
+        state.streaming ||
+        state.sessionId != sessionId ||
+        history.isEmpty) {
+      return;
+    }
+    state = state.copyWith(
+      messages: conversationTimeline(
+        history,
+        model: state.modelId.isEmpty ? null : state.modelId,
+      ),
     );
   }
 

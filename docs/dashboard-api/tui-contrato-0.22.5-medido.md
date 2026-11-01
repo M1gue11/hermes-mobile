@@ -25,22 +25,28 @@ usados seguem iguais; o que mudou está nas seções seguintes.
   (`tui_gateway/server_requests.py:281-302`), então o `-32601` do celular
   tomava a vez do Desktop. Os três agora recebem `4404`.
 
-## Pendente (degrada, não quebra)
-
 - **Prompt encaminhado ao dono do gateway (RT-37).** Quando o ledger do gateway
   tem trabalho para a mesma sessão, `prompt.submit` responde
   `status: "queued"`, `forwarded: true`, e só `message.start` e
-  `message.complete` são repassados (`tui_gateway/owner_forward.py:41-44`). Se
-  o repasse perde o dono, chega `message.complete {"text": ""}`
-  (`owner_forward.py:214-218`) e o celular mostra resposta vazia. Correção
-  sugerida: com `forwarded`, reler o histórico ao concluir.
-- **Session authority.** Quando o Dashboard é servido pelo listener do próprio
-  gateway, `gateway.ready` traz `session_authority: true`
-  (`tui_gateway/ws.py:647`) e o fallback legado recusa `session.*`, `prompt.*`
-  e `message.*` (`tui_gateway/ws_legacy_fallback.py:31-58`); clarify usa
-  `clarify.respond`. Só `gateway/run_api.py:97` liga esse modo; o
-  `hermes dashboard` do Docker não. O cliente deveria detectar a flag e avisar
-  em vez de falhar no meio do turno. Não verificado ponta a ponta.
+  `message.complete` são repassados (`tui_gateway/owner_forward.py:41-44`); o
+  servidor espera que o cliente releia o transcript salvo quando nada foi
+  transmitido. Se o repasse perde o dono, chega `message.complete {"text": ""}`
+  (`owner_forward.py:214-218`). O controller agora relê a conversa quando um
+  turno conclui sem texto, ferramenta, atividade nem erro.
+- **Session authority sinalizado.** Quando o Dashboard é servido pelo listener
+  do próprio gateway, `gateway.ready` traz `session_authority: true`
+  (`tui_gateway/ws.py:647`). Nesse modo a autoridade atende `session.*`,
+  `prompt.*` e `message.*` com regras próprias, e só o caminho legado é
+  recusado (`tui_gateway/ws_legacy_fallback.py:31-58`); clarify usa
+  `clarify.respond`. O cliente registra a flag e o diagnóstico de conexão a
+  mostra. Só `gateway/run_api.py:97` liga esse modo; o `hermes dashboard` do
+  Docker não.
+
+## Pendente
+
+- **Validar o Mobile em session authority.** Turno, aprovação, clarify
+  (`clarify.respond` em vez de `clarify.lock`) e retomada nunca rodaram contra
+  esse modo. Fazer quando houver um gateway configurado assim.
 
 ## Novos e opcionais
 

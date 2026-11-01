@@ -247,10 +247,11 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   Nada quebra no deployment padrão. Corrigido: histórico concluído passou de
   `session.history` (que dava 4001 ao id durável) para
   `GET /api/sessions/{id}/messages` do Dashboard, e `theme.apply`,
-  `theme.pick` e `setup_beat` recebem `4404`. Falta: resposta vazia de prompt
-  encaminhado ao dono do gateway (`forwarded: true`), detectar
-  `session_authority` em `gateway.ready`, e aceite no aparelho de que uma
-  conversa concluída abre pelo histórico do Dashboard. Recursos novos não
+  `theme.pick` e `setup_beat` recebem `4404`; turno concluído sem nada na
+  bolha (prompt repassado ao dono do gateway) relê a conversa salva; o
+  diagnóstico mostra `session_authority`. Falta: aceite no aparelho de que uma
+  conversa concluída abre pelo histórico do Dashboard, e validar o Mobile
+  contra um gateway em session authority quando houver um. Recursos novos não
   usados estão em
   [oportunidades-0.22.5.md](../hermes-api/oportunidades-0.22.5.md).
 

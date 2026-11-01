@@ -1435,6 +1435,25 @@ void main() {
     expect(socket.methods, isEmpty);
   });
 
+  test('diagnóstico aponta session authority no gateway.ready', () async {
+    final repository = DashboardGatewayRepository(
+      store: _MemoryDashboardSessionStore(
+        session: (
+          baseUrl: 'https://dashboard.example:8443',
+          cookies: {'session': 'opaque'},
+        ),
+      ),
+      dio: Dio()..httpClientAdapter = _DashboardAdapter(),
+      socketConnector: (uri, {required headers}) async =>
+          _FakeGatewaySocket(readyPayload: const {'session_authority': true}),
+    );
+
+    final steps = await repository.probeGateway();
+
+    expect(steps.first.method, 'gateway.ready');
+    expect(steps.first.detail, contains('session authority'));
+  });
+
   test('página cheia do histórico cede ao snapshot do API Server', () async {
     final repository = DashboardGatewayRepository(
       store: _MemoryDashboardSessionStore(
