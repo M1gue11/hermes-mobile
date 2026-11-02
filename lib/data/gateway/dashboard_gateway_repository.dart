@@ -14,6 +14,7 @@ import '../../domain/models/gateway_rpc.dart';
 import '../../domain/models/gateway_inflight.dart';
 import '../../domain/models/gateway_completion.dart';
 import '../../domain/models/hermes_skill.dart';
+import '../../domain/models/platform_pairing.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
 import '../../domain/models/server_health.dart';
@@ -764,6 +765,85 @@ class DashboardGatewayRepository implements GatewayRepository {
             if (tool is Map && tool['name'] is String) tool['name'] as String,
       ],
     );
+  }
+
+  @override
+  Future<PairingState> pairing() async {
+    final json = await _getMap('/api/pairing', 'os pedidos de acesso');
+    final pending = json['pending'];
+    final approved = json['approved'];
+    String texto(Object? value) => value?.toString() ?? '';
+    return (
+      pending: [
+        if (pending is List)
+          for (final row in pending)
+            if (row is Map && row['platform'] is String)
+              PairingRequest(
+                platform: row['platform'] as String,
+                requestId: texto(row['request_id']),
+                userId: texto(row['user_id']),
+                userName: texto(row['user_name']),
+                ageMinutes: _intFrom(row['age_minutes']) ?? 0,
+              ),
+      ],
+      approved: [
+        if (approved is List)
+          for (final row in approved)
+            if (row is Map &&
+                row['platform'] is String &&
+                row['user_id'] != null)
+              PairedUser(
+                platform: row['platform'] as String,
+                userId: texto(row['user_id']),
+                userName: texto(row['user_name']),
+                approvedAt: switch (row['approved_at']) {
+                  final num seconds => DateTime.fromMillisecondsSinceEpoch(
+                    (seconds * 1000).round(),
+                  ),
+                  _ => null,
+                },
+              ),
+      ],
+    );
+  }
+
+  @override
+  Future<void> approvePairing(String platform, String requestId) =>
+      _pairingAction('/api/pairing/approve', {
+        'platform': platform,
+        'request_id': requestId,
+      });
+
+  @override
+  Future<void> revokePairing(String platform, String userId) => _pairingAction(
+    '/api/pairing/revoke',
+    {'platform': platform, 'user_id': userId},
+  );
+
+  @override
+  Future<int> clearPendingPairings() async {
+    final session = await _requireSession();
+    final response = await _authorizedRequest(
+      session,
+      '/api/pairing/clear-pending',
+      method: 'POST',
+    );
+    final body = response.data;
+    return body is Map ? _intFrom(body['cleared']) ?? 0 : 0;
+  }
+
+  Future<void> _pairingAction(String path, Map<String, dynamic> data) async {
+    final session = await _requireSession();
+    try {
+      await _authorizedRequest(session, path, method: 'POST', data: data);
+    } on GatewayOperationException catch (error) {
+      if (error.httpStatus != 404) rethrow;
+      throw GatewayOperationException(
+        'O pedido expirou ou já foi resolvido. Atualize a lista.',
+        detail: error.message,
+        httpStatus: 404,
+      );
+    }
   }
 
   Future<Map<String, dynamic>> _getMap(String path, String what) async {

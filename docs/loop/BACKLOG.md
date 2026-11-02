@@ -279,6 +279,14 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   aprovar ou revogar acesso de Telegram, WhatsApp e afins por
   `/api/pairing*`, com confirmação clara de que aprovar dá acesso ao agente.
 
+  Implementado em 2026-11-02: Ajustes > Acessos (`/pairing`) lista quem pede
+  acesso (nome, plataforma, id, há quanto tempo) e quem já tem; aprovar,
+  revogar e "Recusar todos" pedem confirmação que diz o que cada ação libera
+  ou tira. Pedidos antigos sem id avisam que a aprovação é pelo código no
+  computador. Aceite no emulador contra o 0.22.5 só do estado vazio: o
+  servidor do usuário não tinha pedidos. **Falta** aprovar um pedido real no
+  aparelho.
+
 - [ ] **A102 Ouvir a resposta.** Tocar a resposta do agente por
   `POST /api/audio/speak`. Streaming de voz fica fora da primeira versão.
 

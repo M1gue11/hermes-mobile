@@ -119,6 +119,25 @@ No Mobile (A99), a lista de conversas consulta a busca a partir de dois
 caracteres, 400 ms depois da última tecla, e mostra "No conteúdo das
 conversas" abaixo dos resultados locais, sem repetir os que já estão na lista.
 
+## Pareamento de plataformas (`/api/pairing*`)
+
+`hermes_cli/web_routers/ops.py` e `gateway/pairing.py`, com sessão do
+Dashboard e `?profile=` opcional.
+
+| Rota | Corpo | Resposta |
+| --- | --- | --- |
+| `GET /api/pairing` | - | `{pending: [{platform, request_id, user_id, user_name, age_minutes}], approved: [{platform, user_id, user_name, approved_at}]}` |
+| `POST /api/pairing/approve` | `{platform, request_id}` ou `{platform, code}` | `{ok, user}`; `404` vencido; `429` só no caminho do código, após tentativas erradas |
+| `POST /api/pairing/revoke` | `{platform, user_id}` | `{ok}`; `404` se não estava aprovado |
+| `POST /api/pairing/clear-pending` | - | `{ok, cleared}` |
+
+- O código enviado à pessoa nunca volta pela API; o app aprova pelo
+  `request_id` (16 hex). Pedidos antigos sem hash vêm com `request_id` vazio
+  e só podem ser aprovados pelo código.
+- Aprovar também espelha a pessoa na allowlist da plataforma, quando
+  configurada. `user_id` pode vir como número.
+- Não há recusa individual: só `clear-pending`, que descarta todos.
+
 ## Toolsets e servidores MCP
 
 Rotas do Dashboard em `hermes_cli/web_routers/tools.py` e `mcp.py`.

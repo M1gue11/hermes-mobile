@@ -131,3 +131,12 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
   `enabled` mudou.
 - Toque em Testar conexão num servidor parado: o erro aparece em terracota,
   sem fechar a tela.
+
+## [ ] A101 - acessos por plataforma
+
+- De uma conta de teste, mande mensagem ao bot do Telegram sem estar na
+  allowlist: o pedido aparece em Ajustes > Acessos com o nome e "há N min".
+- Aprove: o diálogo diz que a pessoa poderá conversar com o agente pelo
+  Telegram. Confirme e mande outra mensagem pela conta de teste: o agente
+  responde.
+- Revogue o acesso e confirme que a conta de teste volta a receber código.

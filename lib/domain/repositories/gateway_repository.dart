@@ -5,6 +5,7 @@ import '../models/composer_attachment.dart';
 import '../models/gateway_inflight.dart';
 import '../models/gateway_recovery.dart';
 import '../models/hermes_skill.dart';
+import '../models/platform_pairing.dart';
 import '../models/run_event.dart';
 import '../models/server_health.dart';
 import '../models/server_tools.dart';
@@ -177,6 +178,18 @@ abstract interface class GatewayRepository {
   /// Conecta, lista as ferramentas e desconecta. A falha de conexão volta
   /// como [McpProbe.ok] falso, não como exceção.
   Future<McpProbe> testMcpServer(String name);
+
+  /// Pedidos de acesso pendentes e pessoas aprovadas em plataformas de
+  /// mensagem, por `GET /api/pairing`.
+  Future<PairingState> pairing();
+
+  /// Aprova pelo id do pedido; a pessoa passa a conversar com o agente.
+  Future<void> approvePairing(String platform, String requestId);
+
+  Future<void> revokePairing(String platform, String userId);
+
+  /// Descarta todos os pedidos pendentes e devolve quantos eram.
+  Future<int> clearPendingPairings();
 
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.

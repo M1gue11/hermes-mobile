@@ -6,6 +6,7 @@ import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
+import 'package:hermes_mobile/domain/models/platform_pairing.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/models/server_tools.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
@@ -244,6 +245,49 @@ class FakeGatewayRepository implements GatewayRepository {
 
   @override
   Future<McpProbe> testMcpServer(String name) async => sondaMcp;
+
+  List<PairingRequest> pedidosDeAcesso = const [];
+  List<PairedUser> acessosAprovados = const [];
+  final List<String> acoesDeAcesso = [];
+
+  @override
+  Future<PairingState> pairing() async =>
+      (pending: pedidosDeAcesso, approved: acessosAprovados);
+
+  @override
+  Future<void> approvePairing(String platform, String requestId) async {
+    acoesDeAcesso.add('approve:$platform:$requestId');
+    final pedido = pedidosDeAcesso.firstWhere((p) => p.requestId == requestId);
+    pedidosDeAcesso = [
+      for (final p in pedidosDeAcesso)
+        if (p.requestId != requestId) p,
+    ];
+    acessosAprovados = [
+      ...acessosAprovados,
+      PairedUser(
+        platform: platform,
+        userId: pedido.userId,
+        userName: pedido.userName,
+      ),
+    ];
+  }
+
+  @override
+  Future<void> revokePairing(String platform, String userId) async {
+    acoesDeAcesso.add('revoke:$platform:$userId');
+    acessosAprovados = [
+      for (final u in acessosAprovados)
+        if (u.userId != userId) u,
+    ];
+  }
+
+  @override
+  Future<int> clearPendingPairings() async {
+    acoesDeAcesso.add('clear');
+    final total = pedidosDeAcesso.length;
+    pedidosDeAcesso = const [];
+    return total;
+  }
 }
 
 class FakeGatewayLiveTurn implements GatewayLiveTurn {

@@ -468,6 +468,33 @@ void main() {
       expect(probe.tools, ['search_notes']);
     });
 
+    test(
+      'pareamento lê pendentes e aprovados; pedido vencido explica',
+      () async {
+        final state = await repository.pairing();
+
+        expect(state.pending.single.requestId, 'abcdef0123456789');
+        expect(state.pending.single.userId, '1001');
+        expect(state.pending.single.canApprove, isTrue);
+        expect(state.approved.single.approvedAt, isNotNull);
+
+        await expectLater(
+          repository.approvePairing('telegram', 'abcdef0123456789'),
+          throwsA(
+            isA<GatewayOperationException>().having(
+              (e) => e.message,
+              'message',
+              'O pedido expirou ou já foi resolvido. Atualize a lista.',
+            ),
+          ),
+        );
+        expect(adapter.requests.last.data, {
+          'platform': 'telegram',
+          'request_id': 'abcdef0123456789',
+        });
+      },
+    );
+
     test('MCP de plugin é recusado com a causa em português', () async {
       await expectLater(
         repository.setMcpServerEnabled('cua', enabled: false),
@@ -2383,6 +2410,32 @@ final class _DashboardAdapter implements HttpClientAdapter {
         'pid': null,
         'lines': ['=== gateway-restart started 2026-11-02 10:00:00 ==='],
       }, 200);
+    }
+    if (options.uri.path == '/api/pairing') {
+      return _json({
+        'pending': [
+          {
+            'platform': 'telegram',
+            'request_id': 'abcdef0123456789',
+            'user_id': 1001,
+            'user_name': 'Ana Teste',
+            'age_minutes': 5,
+          },
+        ],
+        'approved': [
+          {
+            'platform': 'telegram',
+            'user_id': '3003',
+            'user_name': 'Bruno Teste',
+            'approved_at': 1793606400.5,
+          },
+        ],
+      }, 200);
+    }
+    if (options.uri.path == '/api/pairing/approve') {
+      return _json({
+        'detail': 'Pairing request or code not found or expired',
+      }, 404);
     }
     if (options.uri.path == '/api/tools/toolsets' && options.method == 'GET') {
       return _json([

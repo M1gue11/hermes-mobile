@@ -9,6 +9,7 @@ import '../../features/chat/markdown_showcase_screen.dart';
 import '../../features/debug/turn_capture_screen.dart';
 import '../../features/jobs/job_editor_screen.dart';
 import '../../features/jobs/jobs_screen.dart';
+import '../../features/pairing/pairing_screen.dart';
 import '../../features/server/server_logs_screen.dart';
 import '../../features/server/server_screen.dart';
 import '../../features/tools/tools_screen.dart';
@@ -194,6 +195,11 @@ GoRouter buildAppRouter({
               _slidePage(context, state, const JobEditorScreen()),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/pairing',
+      pageBuilder: (context, state) =>
+          _slidePage(context, state, const PairingScreen()),
     ),
     GoRoute(
       path: '/tools',

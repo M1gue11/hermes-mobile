@@ -77,6 +77,15 @@ Future<void> showSettingsSheet(
           },
         ),
         _SettingsAction(
+          key: const ValueKey('settings-pairing'),
+          icon: Icons.how_to_reg_outlined,
+          title: 'Acessos',
+          subtitle: 'Quem conversa com o agente por mensagem',
+          onTap: () {
+            context.push('/pairing');
+          },
+        ),
+        _SettingsAction(
           key: const ValueKey('settings-tools'),
           icon: Icons.handyman_outlined,
           title: 'Ferramentas',
