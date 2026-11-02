@@ -121,3 +121,13 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
   termo destacado, e tocar abre a conversa certa.
 - Busque o título de uma conversa já carregada: ela não aparece repetida na
   seção do servidor.
+
+## [ ] A100 - ferramentas
+
+- Em Ajustes > Ferramentas, desligue um toolset pouco usado, abra uma
+  conversa nova e confirme que o agente não oferece aquelas ferramentas;
+  religue.
+- Desligue e religue um servidor MCP; confira em `config.yaml` que só
+  `enabled` mudou.
+- Toque em Testar conexão num servidor parado: o erro aparece em terracota,
+  sem fechar a tela.

@@ -119,6 +119,25 @@ No Mobile (A99), a lista de conversas consulta a busca a partir de dois
 caracteres, 400 ms depois da última tecla, e mostra "No conteúdo das
 conversas" abaixo dos resultados locais, sem repetir os que já estão na lista.
 
+## Toolsets e servidores MCP
+
+Rotas do Dashboard em `hermes_cli/web_routers/tools.py` e `mcp.py`.
+
+| Rota | Uso no Mobile |
+| --- | --- |
+| `GET /api/tools/toolsets` | lista solta `[{name, label, description, platform, platform_label, enabled, available, configured, tools[]}]` |
+| `PUT /api/tools/toolsets/{name}` | `{enabled}`; grava `platform_toolsets` da plataforma do toolset (`cli` para quase todos); nome fora do conjunto configurável dá `400`. Ligar pode disparar instalação em segundo plano (`post_setup_started`) |
+| `GET /api/mcp/servers` | `{servers: [{name, transport, url, command, args, env (mascarado), auth, enabled, tools, source, plugin}]}` |
+| `PUT /api/mcp/servers/{name}/enabled` | `{enabled}`; `409` para servidor de plugin, `404` se não existe; vale na próxima sessão |
+| `POST /api/mcp/servers/{name}/test` | conecta, lista e desconecta; falha volta `200` com `{ok: false, error}` |
+
+- As sessões do TUI montam o agente com `platform_toolsets.cli`
+  (`tui_gateway/agent_factory.py`), então os toolsets alternados valem para as
+  conversas do app a partir da próxima sessão.
+- O app não mostra `command`, `args`, `url` nem `env` de servidor MCP e não
+  oferece instalação, edição de variáveis ou catálogo (A100).
+- `save_config` reescreve o `config.yaml` do perfil a cada alternância.
+
 ## Uso por período (`/api/analytics/usage`)
 
 `hermes_cli/web_routers/analytics.py`, com sessão do Dashboard. `days` vai de 1

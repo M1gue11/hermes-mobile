@@ -7,6 +7,7 @@ import '../models/gateway_recovery.dart';
 import '../models/hermes_skill.dart';
 import '../models/run_event.dart';
 import '../models/server_health.dart';
+import '../models/server_tools.dart';
 import '../models/session_search.dart';
 import '../models/usage_summary.dart';
 import '../models/session_message.dart';
@@ -160,6 +161,22 @@ abstract interface class GatewayRepository {
   /// `GET /api/sessions/search`. Uma conversa compactada aparece uma vez só,
   /// já apontando para a sessão mais recente da linhagem.
   Future<List<SessionSearchHit>> searchSessions(String query, {int limit = 20});
+
+  /// Toolsets configuráveis do perfil, por `GET /api/tools/toolsets`.
+  Future<List<ToolsetSetting>> toolsetSettings();
+
+  Future<void> setToolsetEnabled(String name, {required bool enabled});
+
+  /// Servidores MCP do perfil, por `GET /api/mcp/servers`.
+  Future<List<McpServerSetting>> mcpServers();
+
+  /// Grava `enabled` no `config.yaml`; vale na próxima sessão. Servidor de
+  /// plugin é recusado com a causa em português.
+  Future<void> setMcpServerEnabled(String name, {required bool enabled});
+
+  /// Conecta, lista as ferramentas e desconecta. A falha de conexão volta
+  /// como [McpProbe.ok] falso, não como exceção.
+  Future<McpProbe> testMcpServer(String name);
 
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.

@@ -10,6 +10,7 @@ import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/repositories/attachment_source.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
+import 'package:hermes_mobile/domain/models/server_tools.dart';
 import 'package:hermes_mobile/domain/models/session_search.dart';
 import 'package:hermes_mobile/domain/models/usage_summary.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
@@ -269,4 +270,21 @@ final class _WidgetGatewayRepository implements GatewayRepository {
     String query, {
     int limit = 20,
   }) => throw UnimplementedError();
+
+  @override
+  Future<List<ToolsetSetting>> toolsetSettings() => throw UnimplementedError();
+
+  @override
+  Future<void> setToolsetEnabled(String name, {required bool enabled}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<List<McpServerSetting>> mcpServers() => throw UnimplementedError();
+
+  @override
+  Future<void> setMcpServerEnabled(String name, {required bool enabled}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<McpProbe> testMcpServer(String name) => throw UnimplementedError();
 }

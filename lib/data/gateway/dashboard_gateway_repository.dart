@@ -17,6 +17,7 @@ import '../../domain/models/hermes_skill.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
 import '../../domain/models/server_health.dart';
+import '../../domain/models/server_tools.dart';
 import '../../domain/models/session_search.dart';
 import '../../domain/models/session_message.dart';
 import '../../domain/models/usage_summary.dart';
@@ -650,6 +651,119 @@ class DashboardGatewayRepository implements GatewayRepository {
               role: row['role'] as String?,
             ),
     ];
+  }
+
+  @override
+  Future<List<ToolsetSetting>> toolsetSettings() async {
+    final session = await _requireSession();
+    final response = await _authorizedRequest(
+      session,
+      '/api/tools/toolsets',
+      method: 'GET',
+    );
+    final body = response.data;
+    if (body is! List) {
+      throw const GatewayOperationException(
+        'O Dashboard não devolveu os toolsets.',
+      );
+    }
+    return [
+      for (final row in body)
+        if (row is Map && row['name'] is String)
+          ToolsetSetting(
+            name: row['name'] as String,
+            label: (row['label'] as String?)?.trim().isNotEmpty == true
+                ? row['label'] as String
+                : row['name'] as String,
+            description: row['description'] as String? ?? '',
+            enabled: row['enabled'] == true,
+            configured: row['configured'] != false,
+            toolCount: row['tools'] is List ? (row['tools'] as List).length : 0,
+            platform: row['platform'] as String? ?? 'cli',
+          ),
+    ];
+  }
+
+  @override
+  Future<void> setToolsetEnabled(String name, {required bool enabled}) async {
+    final session = await _requireSession();
+    await _authorizedRequest(
+      session,
+      '/api/tools/toolsets/${Uri.encodeComponent(name)}',
+      method: 'PUT',
+      data: {'enabled': enabled},
+    );
+  }
+
+  @override
+  Future<List<McpServerSetting>> mcpServers() async {
+    final json = await _getMap('/api/mcp/servers', 'os servidores MCP');
+    final servers = json['servers'];
+    return [
+      if (servers is List)
+        for (final row in servers)
+          if (row is Map && row['name'] is String)
+            McpServerSetting(
+              name: row['name'] as String,
+              transport: row['transport'] as String? ?? 'unknown',
+              auth: row['auth'] as String?,
+              enabled: row['enabled'] != false,
+              plugin: row['plugin'] as String?,
+            ),
+    ];
+  }
+
+  @override
+  Future<void> setMcpServerEnabled(String name, {required bool enabled}) async {
+    final session = await _requireSession();
+    try {
+      await _authorizedRequest(
+        session,
+        '/api/mcp/servers/${Uri.encodeComponent(name)}/enabled',
+        method: 'PUT',
+        data: {'enabled': enabled},
+      );
+    } on GatewayOperationException catch (error) {
+      final message = switch (error.httpStatus) {
+        409 => 'Este servidor vem de um plugin e não pode ser alterado aqui.',
+        404 => 'Este servidor não está mais na configuração.',
+        _ => null,
+      };
+      if (message == null) rethrow;
+      throw GatewayOperationException(
+        message,
+        detail: error.message,
+        httpStatus: error.httpStatus,
+      );
+    }
+  }
+
+  @override
+  Future<McpProbe> testMcpServer(String name) async {
+    final session = await _requireSession();
+    final response = await _authorizedRequest(
+      session,
+      '/api/mcp/servers/${Uri.encodeComponent(name)}/test',
+      method: 'POST',
+      // A sonda conecta de verdade; um servidor stdio pode levar para subir.
+      receiveTimeout: const Duration(seconds: 60),
+    );
+    final body = response.data;
+    if (body is! Map) {
+      throw const GatewayOperationException(
+        'O Dashboard não devolveu o resultado do teste.',
+      );
+    }
+    final tools = body['tools'];
+    return McpProbe(
+      ok: body['ok'] == true,
+      error: body['error'] as String?,
+      tools: [
+        if (tools is List)
+          for (final tool in tools)
+            if (tool is Map && tool['name'] is String) tool['name'] as String,
+      ],
+    );
   }
 
   Future<Map<String, dynamic>> _getMap(String path, String what) async {

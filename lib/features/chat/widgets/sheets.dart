@@ -77,6 +77,15 @@ Future<void> showSettingsSheet(
           },
         ),
         _SettingsAction(
+          key: const ValueKey('settings-tools'),
+          icon: Icons.handyman_outlined,
+          title: 'Ferramentas',
+          subtitle: 'Ligar toolsets e servidores MCP',
+          onTap: () {
+            context.push('/tools');
+          },
+        ),
+        _SettingsAction(
           key: const ValueKey('settings-usage'),
           icon: Icons.insights_outlined,
           title: 'Uso',

@@ -7,6 +7,7 @@ import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
+import 'package:hermes_mobile/domain/models/server_tools.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/models/session_search.dart';
 import 'package:hermes_mobile/domain/models/usage_summary.dart';
@@ -206,6 +207,43 @@ class FakeGatewayRepository implements GatewayRepository {
     buscas.add(query);
     return resultadosDeBusca;
   }
+
+  List<ToolsetSetting> toolsets = const [];
+  List<McpServerSetting> servidoresMcp = const [];
+  McpProbe sondaMcp = const McpProbe(ok: true, tools: ['buscar']);
+  final List<String> alternanciasDeFerramentas = [];
+  Object? falhaAoAlternar;
+
+  @override
+  Future<List<ToolsetSetting>> toolsetSettings() async => toolsets;
+
+  @override
+  Future<void> setToolsetEnabled(String name, {required bool enabled}) async {
+    final falha = falhaAoAlternar;
+    if (falha != null) throw falha;
+    alternanciasDeFerramentas.add('toolset:$name:$enabled');
+    toolsets = [
+      for (final t in toolsets)
+        t.name == name ? t.copyWith(enabled: enabled) : t,
+    ];
+  }
+
+  @override
+  Future<List<McpServerSetting>> mcpServers() async => servidoresMcp;
+
+  @override
+  Future<void> setMcpServerEnabled(String name, {required bool enabled}) async {
+    final falha = falhaAoAlternar;
+    if (falha != null) throw falha;
+    alternanciasDeFerramentas.add('mcp:$name:$enabled');
+    servidoresMcp = [
+      for (final s in servidoresMcp)
+        s.name == name ? s.copyWith(enabled: enabled) : s,
+    ];
+  }
+
+  @override
+  Future<McpProbe> testMcpServer(String name) async => sondaMcp;
 }
 
 class FakeGatewayLiveTurn implements GatewayLiveTurn {

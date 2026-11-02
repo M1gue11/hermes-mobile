@@ -450,6 +450,37 @@ void main() {
       expect(hits.last.snippet, isEmpty);
     });
 
+    test('toolsets e MCP: leitura, alternância e teste', () async {
+      final toolsets = await repository.toolsetSettings();
+      final servers = await repository.mcpServers();
+      await repository.setToolsetEnabled('web', enabled: false);
+      final probe = await repository.testMcpServer('obsidian');
+
+      expect(toolsets.single.name, 'web');
+      expect(toolsets.single.configured, isFalse);
+      expect(toolsets.single.toolCount, 2);
+      expect(servers.single.enabled, isFalse);
+      expect(servers.single.editable, isTrue);
+      expect(adapter.requests[2].method, 'PUT');
+      expect(adapter.requests[2].uri.path, '/api/tools/toolsets/web');
+      expect(adapter.requests[2].data, {'enabled': false});
+      expect(probe.ok, isTrue);
+      expect(probe.tools, ['search_notes']);
+    });
+
+    test('MCP de plugin é recusado com a causa em português', () async {
+      await expectLater(
+        repository.setMcpServerEnabled('cua', enabled: false),
+        throwsA(
+          isA<GatewayOperationException>().having(
+            (e) => e.message,
+            'message',
+            'Este servidor vem de um plugin e não pode ser alterado aqui.',
+          ),
+        ),
+      );
+    });
+
     test('busca vazia não consulta o servidor', () async {
       expect(await repository.searchSessions('  '), isEmpty);
       expect(adapter.requests, isEmpty);
@@ -2351,6 +2382,51 @@ final class _DashboardAdapter implements HttpClientAdapter {
         'exit_code': null,
         'pid': null,
         'lines': ['=== gateway-restart started 2026-11-02 10:00:00 ==='],
+      }, 200);
+    }
+    if (options.uri.path == '/api/tools/toolsets' && options.method == 'GET') {
+      return _json([
+        {
+          'name': 'web',
+          'label': 'Web',
+          'description': 'Busca',
+          'platform': 'cli',
+          'enabled': true,
+          'configured': false,
+          'tools': ['web_search', 'web_extract'],
+        },
+        {'label': 'sem nome'},
+      ], 200);
+    }
+    if (options.uri.path.startsWith('/api/tools/toolsets/')) {
+      return _json({'ok': true, ...(options.data as Map)}, 200);
+    }
+    if (options.uri.path == '/api/mcp/servers') {
+      return _json({
+        'servers': [
+          {
+            'name': 'obsidian',
+            'transport': 'stdio',
+            'command': 'npx',
+            'env': {'TOKEN': '***'},
+            'auth': null,
+            'enabled': false,
+            'plugin': null,
+          },
+        ],
+      }, 200);
+    }
+    if (options.uri.path == '/api/mcp/servers/cua/enabled') {
+      return _json({
+        'detail': "Server 'cua' is provided by plugin 'computer-use'",
+      }, 409);
+    }
+    if (options.uri.path == '/api/mcp/servers/obsidian/test') {
+      return _json({
+        'ok': true,
+        'tools': [
+          {'name': 'search_notes', 'description': 'x'},
+        ],
       }, 200);
     }
     if (options.uri.path == '/api/sessions/search') {

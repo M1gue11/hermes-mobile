@@ -266,6 +266,15 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   (`PUT /api/mcp/servers/{name}/enabled`, com teste). Não expor `/env`,
   chaves nem instalação de servidores.
 
+  Implementado em 2026-11-02 pelo Dashboard HTTP (sem `tools.configure`):
+  Ajustes > Ferramentas (`/tools`) lista os toolsets com chave, descrição,
+  número de ferramentas e aviso de credencial ausente, e os servidores MCP
+  com chave (travada para os de plugin) e "Testar conexão", que mostra as
+  ferramentas encontradas ou o erro. A chave muda na hora e volta se o
+  servidor recusar. Aceite no emulador contra o 0.22.5: lista real e teste
+  do MCP homeassistant (11 ferramentas). **Falta** alternar no aparelho: não
+  foi feito no servidor do usuário porque reescreve o `config.yaml`.
+
 - [ ] **A101 Aprovar pareamento de plataformas.** Listar pedidos pendentes e
   aprovar ou revogar acesso de Telegram, WhatsApp e afins por
   `/api/pairing*`, com confirmação clara de que aprovar dá acesso ao agente.
