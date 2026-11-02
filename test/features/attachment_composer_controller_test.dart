@@ -334,4 +334,7 @@ final class _FakeGatewayRepository implements GatewayRepository {
 
   @override
   Future<int> clearPendingPairings() => throw UnimplementedError();
+
+  @override
+  Future<SpokenAudio> speak(String text) => throw UnimplementedError();
 }

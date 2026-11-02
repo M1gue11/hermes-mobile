@@ -15,6 +15,9 @@ import '../models/session_message.dart';
 
 export '../models/gateway_recovery.dart';
 
+/// Áudio sintetizado pelo servidor, pronto para tocar.
+typedef SpokenAudio = ({Uint8List bytes, String mimeType});
+
 class ClarifyResponse {
   const ClarifyResponse({this.remaining, this.expired = false});
 
@@ -190,6 +193,10 @@ abstract interface class GatewayRepository {
 
   /// Descarta todos os pedidos pendentes e devolve quantos eram.
   Future<int> clearPendingPairings();
+
+  /// Sintetiza [text] com o TTS configurado no perfil, por
+  /// `POST /api/audio/speak`.
+  Future<SpokenAudio> speak(String text);
 
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.

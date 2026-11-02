@@ -288,6 +288,19 @@ class FakeGatewayRepository implements GatewayRepository {
     pedidosDeAcesso = const [];
     return total;
   }
+
+  final List<String> falas = [];
+  Object? falhaAoFalar;
+  Completer<void>? sinteseSegura;
+
+  @override
+  Future<SpokenAudio> speak(String text) async {
+    falas.add(text);
+    await sinteseSegura?.future;
+    final falha = falhaAoFalar;
+    if (falha != null) throw falha;
+    return (bytes: Uint8List.fromList([1, 2, 3]), mimeType: 'audio/mpeg');
+  }
 }
 
 class FakeGatewayLiveTurn implements GatewayLiveTurn {

@@ -57,6 +57,9 @@ dependencies:
   pinenacl: ^0.6.0
   record: ^7.1.1
   file_selector: ^1.1.0
+  # A102: tocar a resposta sintetizada por `/api/audio/speak` direto dos bytes,
+  # sem arquivo temporário. Biblioteca consolidada (bluefireteam).
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:

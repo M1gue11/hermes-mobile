@@ -495,6 +495,14 @@ void main() {
       },
     );
 
+    test('fala manda o texto e decodifica o áudio com o tipo', () async {
+      final audio = await repository.speak('Olá');
+
+      expect(adapter.requests.single.data, {'text': 'Olá'});
+      expect(audio.bytes, [7, 8, 9]);
+      expect(audio.mimeType, 'audio/ogg');
+    });
+
     test('MCP de plugin é recusado com a causa em português', () async {
       await expectLater(
         repository.setMcpServerEnabled('cua', enabled: false),
@@ -2409,6 +2417,14 @@ final class _DashboardAdapter implements HttpClientAdapter {
         'exit_code': null,
         'pid': null,
         'lines': ['=== gateway-restart started 2026-11-02 10:00:00 ==='],
+      }, 200);
+    }
+    if (options.uri.path == '/api/audio/speak') {
+      return _json({
+        'ok': true,
+        'data_url': 'data:audio/ogg;base64,${base64Encode([7, 8, 9])}',
+        'mime_type': 'audio/ogg',
+        'provider': 'edge',
       }, 200);
     }
     if (options.uri.path == '/api/pairing') {

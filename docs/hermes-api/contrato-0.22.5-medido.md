@@ -119,6 +119,16 @@ No Mobile (A99), a lista de conversas consulta a busca a partir de dois
 caracteres, 400 ms depois da última tecla, e mostra "No conteúdo das
 conversas" abaixo dos resultados locais, sem repetir os que já estão na lista.
 
+## Fala (`POST /api/audio/speak`)
+
+`hermes_cli/web_routers/audio.py`, com sessão do Dashboard. Corpo `{text}`;
+texto vazio dá `400`. Usa a cadeia de TTS de `tts.` no `config.yaml` do perfil
+e devolve `{ok, data_url, mime_type, provider}`, com o arquivo temporário
+apagado no servidor. Falha do provedor volta `400` com a causa em `detail`.
+O servidor também normaliza o texto para fala (`tools/tts_text_normalize.py`),
+mas o app já manda o texto sem markdown. No emulador, uma frase curta levou
+cerca de 6 s para sintetizar.
+
 ## Pareamento de plataformas (`/api/pairing*`)
 
 `hermes_cli/web_routers/ops.py` e `gateway/pairing.py`, com sessão do

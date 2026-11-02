@@ -234,8 +234,13 @@ class AssistantBubble extends StatelessWidget {
     this.chronologicalActivity = true,
     this.persona = const AgentPersona(),
     this.onTimelineInteraction,
+    this.responseAction,
   });
   final AssistantMessage message;
+
+  /// Ação extra no fim da resposta, ao lado das cópias. A bolha só a
+  /// posiciona; quem monta sabe se ela se aplica (ouvir exige o Dashboard).
+  final Widget Function(String markdown)? responseAction;
 
   /// Estilo da marca braille escolhido em Aparência, usado no ponto de escrita.
   final String spinner;
@@ -383,7 +388,10 @@ class AssistantBubble extends StatelessWidget {
             ),
           ),
         if (!active && copyText.trim().isNotEmpty)
-          _CopyResponse(markdown: copyText),
+          _CopyResponse(
+            markdown: copyText,
+            extra: responseAction?.call(copyText),
+          ),
       ],
     );
   }
@@ -399,9 +407,10 @@ class AssistantBubble extends StatelessWidget {
 /// Fica no fim do turno, e não no cabeçalho, porque é o lugar onde a leitura
 /// termina e onde a decisão de levar aquilo embora acontece.
 class _CopyResponse extends StatelessWidget {
-  const _CopyResponse({required this.markdown});
+  const _CopyResponse({required this.markdown, this.extra});
 
   final String markdown;
+  final Widget? extra;
 
   Future<void> _copiar(BuildContext context, String valor, String oque) async {
     await Clipboard.setData(ClipboardData(text: valor));
@@ -432,6 +441,7 @@ class _CopyResponse extends StatelessWidget {
             onTap: () =>
                 _copiar(context, markdownToPlainText(markdown), 'Texto'),
           ),
+          if (extra case final extra?) ...[const SizedBox(width: 16), extra],
         ],
       ),
     );

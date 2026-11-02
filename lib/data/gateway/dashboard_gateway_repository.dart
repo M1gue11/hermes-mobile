@@ -832,6 +832,35 @@ class DashboardGatewayRepository implements GatewayRepository {
     return body is Map ? _intFrom(body['cleared']) ?? 0 : 0;
   }
 
+  @override
+  Future<SpokenAudio> speak(String text) async {
+    final session = await _requireSession();
+    final response = await _authorizedRequest(
+      session,
+      '/api/audio/speak',
+      method: 'POST',
+      data: {'text': text},
+      // Síntese de uma resposta longa pode levar dezenas de segundos.
+      receiveTimeout: const Duration(seconds: 90),
+    );
+    final body = response.data;
+    final dataUrl = body is Map ? body['data_url'] : null;
+    UriData? data;
+    if (dataUrl is String && dataUrl.startsWith('data:')) {
+      try {
+        data = UriData.parse(dataUrl);
+      } on FormatException {
+        data = null;
+      }
+    }
+    if (data == null || !data.isBase64) {
+      throw const GatewayOperationException(
+        'O Dashboard não devolveu o áudio.',
+      );
+    }
+    return (bytes: data.contentAsBytes(), mimeType: data.mimeType);
+  }
+
   Future<void> _pairingAction(String path, Map<String, dynamic> data) async {
     final session = await _requireSession();
     try {

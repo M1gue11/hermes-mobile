@@ -32,6 +32,7 @@ import 'chat_thread_scroll_controller.dart';
 import 'widgets/chat_thread_view.dart';
 import 'widgets/message_bubbles.dart';
 import 'widgets/gateway_login_sheet.dart';
+import 'widgets/read_aloud_action.dart';
 import 'widgets/sheets.dart';
 
 /// Tela de conversa com o agente. Mostra a thread (raciocínio + tools + texto),
@@ -648,6 +649,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         chronologicalActivity: chronologicalActivity,
         persona: persona,
         onTimelineInteraction: _pauseFollowing,
+        responseAction: (markdown) =>
+            ReadAloudAction(messageId: message.id, markdown: markdown),
       ),
     };
     final entry = Padding(

@@ -23,7 +23,23 @@ versionada; o Git registra as mudanças do repositório.
 - Testes automatizados e análise estão verdes; o aceite Android de A73/A74 segue
   pendente em `USER_TESTING.md`.
 
+## 2026-11-02 - recursos do runtime 0.22.5 (A96 a A102)
+
+- Entraram imagens `MEDIA:` (A96), Servidor com saúde, logs e reinício (A97),
+  Uso por período (A98, parte HTTP), busca no servidor (A99, parte HTTP),
+  Ferramentas (A100), Acessos (A101) e ouvir a resposta (A102), todos pelo
+  Dashboard HTTP; nenhum método TUI novo.
+- Dependência nova: `audioplayers` (A102), biblioteca consolidada, para tocar
+  os bytes de `/api/audio/speak` sem arquivo temporário.
+- Validado no emulador contra o 0.22.5 com dados reais. Não foram disparadas
+  ações que mudam o servidor do usuário: reiniciar gateway, alternar toolset
+  ou MCP e aprovar pareamento ficaram para `USER_TESTING.md`.
+
 ## Estado acionável
+
+- Decisão do usuário: autorizar `session.usage`, `session.context_breakdown`
+  (contexto da sessão, A98), `session.undo` e `session.compress` (A99), hoje
+  fora da allowlist de métodos TUI.
 
 - A75: validar clarify batch real no Android, incluindo retry, reconexão e
   multi-seleção.

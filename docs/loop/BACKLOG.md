@@ -287,8 +287,17 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   servidor do usuário não tinha pedidos. **Falta** aprovar um pedido real no
   aparelho.
 
-- [ ] **A102 Ouvir a resposta.** Tocar a resposta do agente por
+- [~] **A102 Ouvir a resposta.** Tocar a resposta do agente por
   `POST /api/audio/speak`. Streaming de voz fica fora da primeira versão.
+
+  Implementado em 2026-11-02: "Ouvir" no rodapé da resposta, ao lado das
+  cópias, com o Dashboard pareado. Manda o texto de leitura (sem markdown nem
+  `MEDIA:`, até 4.000 caracteres cortados em fim de frase), mostra "gerando
+  áudio" com a marca, "parar" em âmbar enquanto toca e volta sozinho no fim.
+  Uma resposta por vez; tocar outra interrompe a atual e uma síntese atrasada
+  é descartada. Dependência nova `audioplayers`. Aceite no emulador contra o
+  0.22.5 (síntese em ~6 s, reprodução e volta ao repouso). **Falta** ouvir no
+  aparelho e decidir se vale ouvir com a tela bloqueada.
 
 ## Notificações
 

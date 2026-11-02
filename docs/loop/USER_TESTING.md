@@ -140,3 +140,11 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
   Telegram. Confirme e mande outra mensagem pela conta de teste: o agente
   responde.
 - Revogue o acesso e confirme que a conta de teste volta a receber código.
+
+## [ ] A102 - ouvir a resposta
+
+- Toque em Ouvir numa resposta curta: aparece "gerando áudio", depois "parar"
+  enquanto a voz toca, e volta para "ouvir" no fim.
+- Toque em Ouvir noutra resposta durante a reprodução: a primeira para e a
+  segunda começa.
+- Com o TTS desligado no servidor, Ouvir mostra a causa e volta ao repouso.
