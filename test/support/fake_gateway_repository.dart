@@ -6,6 +6,7 @@ import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
+import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 
@@ -140,6 +141,47 @@ class FakeGatewayRepository implements GatewayRepository {
     }
     return bytes;
   }
+
+  /// Estados devolvidos em sequência por [gatewayRuntime]; o último se repete.
+  List<GatewayRuntime> estados = const [
+    GatewayRuntime(running: true, state: 'running', activeSessions: 1),
+  ];
+  HostStats maquina = const HostStats(hostname: 'servidor', cpuPercent: 12);
+  List<String> linhasDeLog = const [];
+  final List<({GatewayLogFile file, GatewayLogLevel level, String? search})>
+  consultasDeLog = [];
+  int reinicios = 0;
+  Object? falhaEmEstado;
+
+  @override
+  Future<GatewayRuntime> gatewayRuntime() async {
+    final falha = falhaEmEstado;
+    if (falha != null) throw falha;
+    final atual = estados.first;
+    if (estados.length > 1) estados = estados.sublist(1);
+    return atual;
+  }
+
+  @override
+  Future<HostStats> hostStats() async => maquina;
+
+  @override
+  Future<List<String>> logs({
+    required GatewayLogFile file,
+    GatewayLogLevel level = GatewayLogLevel.all,
+    String? search,
+    int lines = 200,
+  }) async {
+    consultasDeLog.add((file: file, level: level, search: search));
+    return linhasDeLog;
+  }
+
+  @override
+  Future<void> restartGateway() async => reinicios++;
+
+  @override
+  Future<GatewayActionStatus> restartStatus() async =>
+      const GatewayActionStatus(exitCode: 0);
 }
 
 class FakeGatewayLiveTurn implements GatewayLiveTurn {

@@ -72,6 +72,33 @@ No Mobile (A96), `MEDIA:` com caminho absoluto vira figura lida por
 Sem Dashboard, a referência diz para conectá-lo. Na cauda do streaming o
 caminho pode estar pela metade, e nada é pedido até o bloco assentar.
 
+## Saúde, logs e reinício do gateway
+
+Usados pela tela Servidor (A97). Rotas do Dashboard em
+`hermes_cli/web_routers/status.py` e `actions.py`; a do API Server em
+`gateway/platforms/api_server.py`.
+
+| Rota | Auth | Uso no Mobile |
+| --- | --- | --- |
+| `GET /api/status` | pública | `gateway_running`, `gateway_state` (`starting`, `running`, `degraded`, `draining`, `stopping`, `stopped`, `startup_failed`), `gateway_updated_at`, `gateway_exit_reason`, `active_sessions`, `active_agents`, `gateway_busy`, `components.platforms.{configured,connected}` |
+| `GET /api/system/stats` | Dashboard | `hostname`, `hermes_version`, `cpu_percent`, `memory`, `disk` (do `HERMES_HOME`), `uptime_seconds` (da máquina); tudo opcional sem `psutil` |
+| `GET /api/logs` | Dashboard | `file` (`agent`, `errors`, `gateway`…), `lines` até 500, `level` mínimo em maiúsculas (minúscula vira sem filtro), `search` sobre as últimas 2.000 linhas; devolve `{file, lines}` cru, do mais antigo para o mais novo |
+| `POST /api/gateway/restart` | Dashboard | sem corpo; roda `hermes gateway restart --interrupt`; pedido repetido em 10 s reaproveita o anterior |
+| `GET /api/actions/gateway-restart/status` | Dashboard | `{running, exit_code, pid, lines}`; `exit_code` 0 só diz que o comando foi entregue |
+| `GET /health/detailed` | Bearer | `status`, `readiness.checks.{nome: {status, detail?}}`, `api_server.active_runs`, `metrics_today` |
+
+- O gateway não informa tempo de atividade. O app considera que voltou quando
+  `gateway_state` é `running` com `gateway_updated_at` posterior ao lido antes
+  do pedido; compara dois instantes do servidor, nunca o relógio do celular.
+- Reiniciar derruba o API Server (8642) e os WebSockets servidos pelo próprio
+  gateway. O `hermes dashboard` avulso (9119) segue de pé e mostra a
+  transição; ele pode perder o registro em memória da ação, que então volta
+  com `exit_code` nulo.
+- Os logs são redigidos na escrita pelo `RedactingFormatter`; `update`,
+  `handoff` e `mcp` podem não ser, e o app não os oferece.
+- `POST /api/gateway/stop` existe, mas o app não oferece: derrubaria o próprio
+  acesso.
+
 ## Aprovação da Runs API sob session authority
 
 Com a session authority ativa, que é o padrão do gateway, o evento

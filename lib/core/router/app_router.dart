@@ -9,6 +9,8 @@ import '../../features/chat/markdown_showcase_screen.dart';
 import '../../features/debug/turn_capture_screen.dart';
 import '../../features/jobs/job_editor_screen.dart';
 import '../../features/jobs/jobs_screen.dart';
+import '../../features/server/server_logs_screen.dart';
+import '../../features/server/server_screen.dart';
 import '../../features/machine/machine_screen.dart';
 import '../../features/skills/skill_detail_screen.dart';
 import '../../features/skills/skill_editor_screen.dart';
@@ -188,6 +190,18 @@ GoRouter buildAppRouter({
           path: 'new',
           pageBuilder: (context, state) =>
               _slidePage(context, state, const JobEditorScreen()),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/server',
+      pageBuilder: (context, state) =>
+          _slidePage(context, state, const ServerScreen()),
+      routes: [
+        GoRoute(
+          path: 'logs',
+          pageBuilder: (context, state) =>
+              _slidePage(context, state, const ServerLogsScreen()),
         ),
       ],
     ),

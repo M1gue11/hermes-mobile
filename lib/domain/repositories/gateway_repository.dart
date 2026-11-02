@@ -6,6 +6,7 @@ import '../models/gateway_inflight.dart';
 import '../models/gateway_recovery.dart';
 import '../models/hermes_skill.dart';
 import '../models/run_event.dart';
+import '../models/server_health.dart';
 import '../models/session_message.dart';
 
 export '../models/gateway_recovery.dart';
@@ -128,6 +129,27 @@ abstract interface class GatewayRepository {
   /// Hermes (`images`, `screenshots`, `cache`) e até 25 MB; a recusa vem como
   /// [GatewayOperationException] com a causa em português.
   Future<Uint8List> agentMedia(String path);
+
+  /// Estado do processo do gateway, por `GET /api/status`.
+  Future<GatewayRuntime> gatewayRuntime();
+
+  /// Medidas da máquina do servidor, por `GET /api/system/stats`.
+  Future<HostStats> hostStats();
+
+  /// Fim do arquivo de log, em ordem cronológica (a mais nova por último).
+  Future<List<String>> logs({
+    required GatewayLogFile file,
+    GatewayLogLevel level = GatewayLogLevel.all,
+    String? search,
+    int lines = 200,
+  });
+
+  /// Pede `hermes gateway restart --interrupt`: interrompe turnos em
+  /// andamento e derruba o API Server até o gateway voltar.
+  Future<void> restartGateway();
+
+  /// Andamento do último reinício pedido.
+  Future<GatewayActionStatus> restartStatus();
 
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.

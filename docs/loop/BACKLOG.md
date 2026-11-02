@@ -215,10 +215,23 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   Falta conferir no aparelho os estados sem Dashboard e de recusa, e decidir
   se vale usar `/api/media/proxy` para URLs do FAL.
 
-- [ ] **A97 Saúde, logs e restart do gateway.** Ler `/health/detailed`,
+- [~] **A97 Saúde, logs e restart do gateway.** Ler `/health/detailed`,
   `/api/system/stats` e `/api/logs` (filtro por nível e busca) e reiniciar o
   gateway com `POST /api/gateway/restart`, acompanhando o status da ação. Não
   oferecer `stop`, que derruba o próprio acesso do app.
+
+  Implementado em 2026-11-02: Ajustes > Servidor (`/server`) mostra a fase do
+  gateway com sessões, turnos e plataformas, as verificações e o uso do dia
+  do API Server e processador, memória e disco da máquina. Logs em
+  `/server/logs`, do mais novo para o mais antigo, com arquivo (agente, erros,
+  gateway), nível mínimo e busca no servidor; traceback fica colado ao
+  registro e registros longos abrem recolhidos. Reiniciar pede confirmação
+  (avisa quando há turno em andamento) e acompanha pedido, parada e subida
+  até o `/api/status` mostrar um estado novo; falha mostra o motivo. Aceite
+  no emulador contra o 0.22.5 da tela e dos logs reais. **Falta** exercitar
+  o reinício num servidor que possa cair por alguns segundos; não foi
+  disparado no servidor do usuário sem autorização. Contrato em
+  [contrato-0.22.5-medido.md](../hermes-api/contrato-0.22.5-medido.md).
 
 - [ ] **A98 Custo e contexto da conversa.** Mostrar tokens, custo e uso de
   contexto da sessão (`session.usage`, `session.context_breakdown`) e um

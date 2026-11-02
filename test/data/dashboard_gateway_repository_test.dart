@@ -10,6 +10,7 @@ import 'package:hermes_mobile/domain/models/approval_request.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
+import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/models/tool_call.dart';
 import 'package:hermes_mobile/domain/models/conversation_timeline.dart';
 import 'package:hermes_mobile/domain/models/chat_message.dart';
@@ -379,6 +380,68 @@ void main() {
           ),
         ),
       );
+    });
+  });
+
+  group('saúde do servidor', () {
+    late _DashboardAdapter adapter;
+    late DashboardGatewayRepository repository;
+
+    setUp(() {
+      adapter = _DashboardAdapter();
+      repository = DashboardGatewayRepository(
+        store: _MemoryDashboardSessionStore(
+          session: (
+            baseUrl: 'https://dashboard.example:8443',
+            cookies: {'session': 'opaque'},
+          ),
+        ),
+        dio: Dio()..httpClientAdapter = adapter,
+      );
+    });
+
+    test('lê estado do gateway e medidas da máquina', () async {
+      final runtime = await repository.gatewayRuntime();
+      final host = await repository.hostStats();
+
+      expect(runtime.phase, GatewayPhase.running);
+      expect(runtime.updatedAt, DateTime.utc(2026, 11, 2, 13).toLocal());
+      expect(runtime.activeSessions, 2);
+      expect(runtime.busy, isTrue);
+      expect(runtime.platformsConnected, 2);
+      expect(runtime.platformsConfigured, 3);
+      expect(host.cpuPercent, 12.5);
+      expect(host.memoryPercent, 61.2);
+      expect(host.diskPercent, 24);
+      expect(host.uptimeSeconds, 93784);
+    });
+
+    test('logs mandam arquivo, nível em maiúsculas e busca aparada', () async {
+      final lines = await repository.logs(
+        file: GatewayLogFile.errors,
+        level: GatewayLogLevel.warning,
+        search: '  timeout ',
+        lines: 900,
+      );
+
+      expect(lines, hasLength(1));
+      expect(adapter.requests.single.uri.queryParameters, {
+        'file': 'errors',
+        'lines': '500',
+        'level': 'WARNING',
+        'search': 'timeout',
+      });
+    });
+
+    test('reinício é POST e o andamento sem registro vem nulo', () async {
+      await repository.restartGateway();
+      final status = await repository.restartStatus();
+
+      expect(adapter.requests.first.method, 'POST');
+      expect(adapter.requests.first.uri.path, '/api/gateway/restart');
+      expect(status.running, isFalse);
+      expect(status.exitCode, isNull);
+      expect(status.lines, hasLength(1));
     });
   });
 
@@ -2209,6 +2272,49 @@ final class _DashboardAdapter implements HttpClientAdapter {
     }
     if (options.uri.path == '/api/skills/toggle') {
       return _json({'ok': true, ...(options.data as Map)}, 200);
+    }
+    if (options.uri.path == '/api/status') {
+      return _json({
+        'version': '0.22.5',
+        'gateway_running': true,
+        'gateway_state': 'running',
+        'gateway_updated_at': '2026-11-02T13:00:00+00:00',
+        'gateway_exit_reason': null,
+        'active_sessions': 2,
+        'active_agents': 1,
+        'gateway_busy': true,
+        'components': {
+          'platforms': {'status': 'ok', 'configured': 3, 'connected': 2},
+        },
+      }, 200);
+    }
+    if (options.uri.path == '/api/system/stats') {
+      return _json({
+        'hostname': 'servidor',
+        'hermes_version': '0.22.5',
+        'cpu_percent': 12.5,
+        'memory': {'total': 16000, 'used': 9800, 'percent': 61.2},
+        'disk': {'total': 500, 'used': 120, 'percent': 24},
+        'uptime_seconds': 93784,
+      }, 200);
+    }
+    if (options.uri.path == '/api/logs') {
+      return _json({
+        'file': options.uri.queryParameters['file'],
+        'lines': ['2026-11-02 10:00:00,000 INFO agent: oi\n'],
+      }, 200);
+    }
+    if (options.uri.path == '/api/gateway/restart') {
+      return _json({'ok': true, 'pid': 42, 'name': 'gateway-restart'}, 200);
+    }
+    if (options.uri.path == '/api/actions/gateway-restart/status') {
+      return _json({
+        'name': 'gateway-restart',
+        'running': false,
+        'exit_code': null,
+        'pid': null,
+        'lines': ['=== gateway-restart started 2026-11-02 10:00:00 ==='],
+      }, 200);
     }
     if (options.uri.path == '/api/media') {
       return switch (options.uri.queryParameters['path']) {

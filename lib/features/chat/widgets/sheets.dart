@@ -77,6 +77,15 @@ Future<void> showSettingsSheet(
           },
         ),
         _SettingsAction(
+          key: const ValueKey('settings-server'),
+          icon: Icons.monitor_heart_outlined,
+          title: 'Servidor',
+          subtitle: 'Saúde, logs e reinício do gateway',
+          onTap: () {
+            context.push('/server');
+          },
+        ),
+        _SettingsAction(
           icon: Icons.palette_outlined,
           title: 'Aparência',
           subtitle: 'Tema e animação do aplicativo',

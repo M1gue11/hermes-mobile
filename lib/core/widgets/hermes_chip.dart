@@ -76,7 +76,12 @@ class HermesChip extends StatelessWidget {
       semanticsLabel: label,
       child: minTapHeight == null
           ? pastilha
-          : SizedBox(height: minTapHeight, child: Center(child: pastilha)),
+          // `widthFactor` mantém a largura da pastilha: sem ele, num `Wrap` o
+          // `Center` toma a linha inteira.
+          : SizedBox(
+              height: minTapHeight,
+              child: Center(widthFactor: 1, child: pastilha),
+            ),
     );
   }
 }

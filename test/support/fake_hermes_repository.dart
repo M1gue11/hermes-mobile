@@ -14,6 +14,7 @@ import 'package:hermes_mobile/domain/models/model_lock.dart';
 import 'package:hermes_mobile/domain/models/model_options.dart';
 import 'package:hermes_mobile/domain/models/run.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
+import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/models/tool_call.dart';
 import 'package:hermes_mobile/domain/repositories/hermes_repository.dart';
@@ -166,6 +167,19 @@ class FakeHermesRepository implements HermesRepository {
 
   @override
   Future<HealthStatus> health() async => const HealthStatus(status: 'ok');
+
+  ServerReadiness prontidao = const ServerReadiness(
+    status: 'ok',
+    checks: [ReadinessCheck(name: 'model', status: 'ok')],
+  );
+  Object? falhaEmProntidao;
+
+  @override
+  Future<ServerReadiness> readiness() async {
+    final falha = falhaEmProntidao;
+    if (falha != null) throw falha;
+    return prontidao;
+  }
 
   @override
   Future<Capabilities> capabilities() async => const Capabilities(

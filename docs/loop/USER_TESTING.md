@@ -94,3 +94,15 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
   tentar de novo.
 - Saia do Dashboard e reabra a conversa: a referência pede para entrar no
   Dashboard e o resto da mensagem continua legível.
+
+## [ ] A97 - servidor e reinício
+
+- Em Ajustes > Servidor, confira que a fase, as sessões e as plataformas batem
+  com `hermes status` no servidor.
+- Com nenhum turno em andamento, toque em Reiniciar gateway e confirme: o
+  trilho passa por pedido, parada e subida e termina em "Gateway de volta em
+  N s". Volte ao chat e envie uma mensagem: ela é respondida.
+- Repita com um turno em andamento: o diálogo avisa que ele será
+  interrompido.
+- Em Logs, alterne Erros e "Só erros", busque um termo conhecido e expanda um
+  traceback longo.

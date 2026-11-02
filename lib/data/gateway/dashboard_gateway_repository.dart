@@ -15,6 +15,7 @@ import '../../domain/models/gateway_completion.dart';
 import '../../domain/models/hermes_skill.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
+import '../../domain/models/server_health.dart';
 import '../../domain/models/session_message.dart';
 import '../../domain/models/tool_call.dart';
 import '../../domain/models/tool_preview.dart';
@@ -480,6 +481,121 @@ class DashboardGatewayRepository implements GatewayRepository {
     }
     return data.contentAsBytes();
   }
+
+  @override
+  Future<GatewayRuntime> gatewayRuntime() async {
+    final json = await _getMap('/api/status', 'o estado do gateway');
+    final components = json['components'];
+    final platforms = components is Map ? components['platforms'] : null;
+    return GatewayRuntime(
+      running: json['gateway_running'] == true,
+      state: json['gateway_state'] as String?,
+      updatedAt: _dateFrom(json['gateway_updated_at']),
+      exitReason: json['gateway_exit_reason'] as String?,
+      activeSessions: _intFrom(json['active_sessions']) ?? 0,
+      activeAgents: _intFrom(json['active_agents']) ?? 0,
+      busy: json['gateway_busy'] == true,
+      version: json['version'] as String?,
+      platformsConnected: platforms is Map
+          ? _intFrom(platforms['connected'])
+          : null,
+      platformsConfigured: platforms is Map
+          ? _intFrom(platforms['configured'])
+          : null,
+    );
+  }
+
+  @override
+  Future<HostStats> hostStats() async {
+    final json = await _getMap('/api/system/stats', 'as medidas do servidor');
+    final memory = json['memory'];
+    final disk = json['disk'];
+    return HostStats(
+      hostname: json['hostname'] as String?,
+      hermesVersion: json['hermes_version'] as String?,
+      cpuPercent: _doubleFrom(json['cpu_percent']),
+      memoryPercent: memory is Map ? _doubleFrom(memory['percent']) : null,
+      memoryUsedBytes: memory is Map ? _intFrom(memory['used']) : null,
+      memoryTotalBytes: memory is Map ? _intFrom(memory['total']) : null,
+      diskPercent: disk is Map ? _doubleFrom(disk['percent']) : null,
+      diskUsedBytes: disk is Map ? _intFrom(disk['used']) : null,
+      diskTotalBytes: disk is Map ? _intFrom(disk['total']) : null,
+      uptimeSeconds: _intFrom(json['uptime_seconds']),
+    );
+  }
+
+  @override
+  Future<List<String>> logs({
+    required GatewayLogFile file,
+    GatewayLogLevel level = GatewayLogLevel.all,
+    String? search,
+    int lines = 200,
+  }) async {
+    final query = <String, String>{
+      'file': file.wire,
+      'lines': '${lines.clamp(1, 500)}',
+      'level': level.wire,
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+    };
+    final json = await _getMap(
+      '/api/logs?${Uri(queryParameters: query).query}',
+      'o log',
+    );
+    final raw = json['lines'];
+    return [
+      if (raw is List)
+        for (final line in raw)
+          if (line is String) line,
+    ];
+  }
+
+  @override
+  Future<void> restartGateway() async {
+    final session = await _requireSession();
+    await _authorizedRequest(session, '/api/gateway/restart', method: 'POST');
+  }
+
+  @override
+  Future<GatewayActionStatus> restartStatus() async {
+    final json = await _getMap(
+      '/api/actions/gateway-restart/status?lines=40',
+      'o andamento do reinício',
+    );
+    final lines = json['lines'];
+    return GatewayActionStatus(
+      running: json['running'] == true,
+      exitCode: _intFrom(json['exit_code']),
+      lines: [
+        if (lines is List)
+          for (final line in lines)
+            if (line is String) line,
+      ],
+    );
+  }
+
+  Future<Map<String, dynamic>> _getMap(String path, String what) async {
+    final session = await _requireSession();
+    final response = await _authorizedRequest(session, path, method: 'GET');
+    final body = response.data;
+    if (body is! Map) {
+      throw GatewayOperationException('O Dashboard não devolveu $what.');
+    }
+    return body.map((key, value) => MapEntry(key.toString(), value));
+  }
+
+  static int? _intFrom(Object? value) => switch (value) {
+    final int number => number,
+    final double number => number.round(),
+    _ => null,
+  };
+
+  static double? _doubleFrom(Object? value) => switch (value) {
+    final num number => number.toDouble(),
+    _ => null,
+  };
+
+  static DateTime? _dateFrom(Object? value) =>
+      value is String ? DateTime.tryParse(value)?.toLocal() : null;
 
   @override
   Future<List<SessionMessage>> conversationHistory({

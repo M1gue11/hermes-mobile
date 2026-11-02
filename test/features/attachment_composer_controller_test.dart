@@ -7,6 +7,7 @@ import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/repositories/attachment_source.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
+import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 import 'package:hermes_mobile/features/chat/attachment_composer_controller.dart';
 
@@ -269,4 +270,24 @@ final class _FakeGatewayRepository implements GatewayRepository {
 
   @override
   Future<Uint8List> agentMedia(String path) => throw UnimplementedError();
+
+  @override
+  Future<GatewayRuntime> gatewayRuntime() => throw UnimplementedError();
+
+  @override
+  Future<HostStats> hostStats() => throw UnimplementedError();
+
+  @override
+  Future<List<String>> logs({
+    required GatewayLogFile file,
+    GatewayLogLevel level = GatewayLogLevel.all,
+    String? search,
+    int lines = 200,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> restartGateway() => throw UnimplementedError();
+
+  @override
+  Future<GatewayActionStatus> restartStatus() => throw UnimplementedError();
 }

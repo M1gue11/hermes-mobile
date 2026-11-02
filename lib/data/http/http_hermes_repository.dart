@@ -20,6 +20,7 @@ import '../../domain/models/model_lock.dart';
 import '../../domain/models/model_options.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
+import '../../domain/models/server_health.dart';
 import '../../domain/models/session_message.dart';
 import '../../domain/models/tool_call.dart';
 import '../../domain/repositories/hermes_repository.dart';
@@ -139,6 +140,35 @@ class HttpHermesRepository implements HermesRepository {
   Future<HealthStatus> health() async {
     final res = await _get<Map<String, dynamic>>('/health');
     return HealthStatus.fromJson(res.data ?? const {});
+  }
+
+  @override
+  Future<ServerReadiness> readiness() async {
+    final res = await _get<Map<String, dynamic>>('/health/detailed');
+    final json = res.data ?? const <String, dynamic>{};
+    final readiness = json['readiness'];
+    final checks = readiness is Map ? readiness['checks'] : null;
+    final api = json['api_server'];
+    final today = api is Map ? api['metrics_today'] : null;
+    int? inteiro(Object? value) => value is num ? value.round() : null;
+    return ServerReadiness(
+      status: json['status'] as String? ?? 'unknown',
+      checks: [
+        if (checks is Map)
+          for (final MapEntry(:key, :value) in checks.entries)
+            if (value is Map)
+              ReadinessCheck(
+                name: key.toString(),
+                status: value['status']?.toString() ?? 'unknown',
+                detail: value['detail']?.toString(),
+              ),
+      ],
+      version: json['version'] as String?,
+      activeRuns: (api is Map ? inteiro(api['active_runs']) : null) ?? 0,
+      requestsToday: today is Map ? inteiro(today['requests']) : null,
+      tokensToday: today is Map ? inteiro(today['tokens']) : null,
+      latencyP95Ms: today is Map ? inteiro(today['latency_p95_ms']) : null,
+    );
   }
 
   @override

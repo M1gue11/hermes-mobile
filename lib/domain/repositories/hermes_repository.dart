@@ -1,6 +1,7 @@
 import '../models/approval_request.dart';
 import '../models/capabilities.dart';
 import '../models/health_status.dart';
+import '../models/server_health.dart';
 import '../models/hermes_model.dart';
 import '../models/model_options.dart';
 import '../models/hermes_skill.dart';
@@ -20,6 +21,10 @@ import '../models/session_message.dart';
 abstract interface class HermesRepository {
   /// Boot: o servidor está vivo? (`GET /health`)
   Future<HealthStatus> health();
+
+  /// Prontidão e uso do dia (`GET /health/detailed`, com Bearer). Fica fora do
+  /// ar enquanto o gateway reinicia.
+  Future<ServerReadiness> readiness();
 
   /// Boot: quais features o servidor suporta? (`GET /v1/capabilities`)
   /// Decide, por ex., se mostramos o botão cancelar.

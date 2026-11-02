@@ -202,6 +202,42 @@ void main() {
       });
     });
 
+    test('prontidão lê checks, uso do dia e execuções ativas', () async {
+      final adapter = _RecordingAdapter({
+        'status': 'degraded',
+        'version': '0.22.5',
+        'readiness': {
+          'status': 'degraded',
+          'checks': {
+            'model': {'status': 'ok'},
+            'disk': {'status': 'low', 'detail': 'pouco espaço'},
+          },
+        },
+        'api_server': {
+          'active_runs': 1,
+          'metrics_today': {
+            'requests': 142,
+            'tokens': 38200,
+            'latency_p95_ms': 1240.4,
+          },
+        },
+      });
+      final repository = HttpHermesRepository(
+        apiKey: 'test-key',
+        dio: Dio()..httpClientAdapter = adapter,
+      );
+
+      final readiness = await repository.readiness();
+
+      expect(adapter.ultimo!.path, '/health/detailed');
+      expect(readiness.ok, isFalse);
+      expect(readiness.failing.single.name, 'disk');
+      expect(readiness.failing.single.detail, 'pouco espaço');
+      expect(readiness.activeRuns, 1);
+      expect(readiness.requestsToday, 142);
+      expect(readiness.latencyP95Ms, 1240);
+    });
+
     group('agendamentos', () {
       test('lista inclui pausadas e lê o formato do servidor', () async {
         final adapter = _RecordingAdapter({
