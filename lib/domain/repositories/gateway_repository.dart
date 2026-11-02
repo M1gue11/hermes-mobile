@@ -7,6 +7,7 @@ import '../models/gateway_recovery.dart';
 import '../models/hermes_skill.dart';
 import '../models/run_event.dart';
 import '../models/server_health.dart';
+import '../models/session_search.dart';
 import '../models/usage_summary.dart';
 import '../models/session_message.dart';
 
@@ -154,6 +155,11 @@ abstract interface class GatewayRepository {
 
   /// Tokens e custo dos últimos [days] dias, por `GET /api/analytics/usage`.
   Future<UsageSummary> usage({required int days});
+
+  /// Busca no conteúdo, no título e no id de todas as conversas, por
+  /// `GET /api/sessions/search`. Uma conversa compactada aparece uma vez só,
+  /// já apontando para a sessão mais recente da linhagem.
+  Future<List<SessionSearchHit>> searchSessions(String query, {int limit = 20});
 
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.

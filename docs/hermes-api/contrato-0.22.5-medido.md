@@ -99,6 +99,26 @@ Usados pela tela Servidor (A97). Rotas do Dashboard em
 - `POST /api/gateway/stop` existe, mas o app não oferece: derrubaria o próprio
   acesso.
 
+## Busca no conteúdo (`/api/sessions/search`)
+
+`hermes_cli/web_routers/sessions.py`, com sessão do Dashboard. `q` vazio
+devolve `{"results": []}`; `limit` vai de 1 a 100 (padrão 20); aceita
+`source`, `sources` e `exclude_sources`.
+
+- Ordem: id da sessão primeiro, depois o conteúdo das mensagens (FTS5 com
+  prefixo, `nimb` acha `nimbus`), depois títulos. Cada linhagem de compressão
+  aparece uma vez, apontando para a sessão mais recente (`session_id` e `id`),
+  com `lineage_root`.
+- Cada resultado traz os campos da sessão (`title`, `source`, `model`,
+  `last_active`, `started_at`, `message_count`, `preview`…), o que permite
+  abrir a conversa direto, mais `snippet` e `role` da mensagem que casou.
+- O trecho marca o termo com `>>>` e `<<<`. Saídas de ferramenta também são
+  indexadas, então JSON de ferramenta aparece com frequência.
+
+No Mobile (A99), a lista de conversas consulta a busca a partir de dois
+caracteres, 400 ms depois da última tecla, e mostra "No conteúdo das
+conversas" abaixo dos resultados locais, sem repetir os que já estão na lista.
+
 ## Uso por período (`/api/analytics/usage`)
 
 `hermes_cli/web_routers/analytics.py`, com sessão do Dashboard. `days` vai de 1

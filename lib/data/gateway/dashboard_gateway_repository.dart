@@ -9,6 +9,7 @@ import '../../core/diagnostics/turn_capture.dart';
 import '../../domain/models/approval_request.dart';
 import '../../domain/models/clarify_request.dart';
 import '../../domain/models/composer_attachment.dart';
+import '../../domain/models/conversation.dart';
 import '../../domain/models/gateway_rpc.dart';
 import '../../domain/models/gateway_inflight.dart';
 import '../../domain/models/gateway_completion.dart';
@@ -16,6 +17,7 @@ import '../../domain/models/hermes_skill.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
 import '../../domain/models/server_health.dart';
+import '../../domain/models/session_search.dart';
 import '../../domain/models/session_message.dart';
 import '../../domain/models/usage_summary.dart';
 import '../../domain/models/tool_call.dart';
@@ -621,6 +623,33 @@ class DashboardGatewayRepository implements GatewayRepository {
               ),
       ],
     );
+  }
+
+  @override
+  Future<List<SessionSearchHit>> searchSessions(
+    String query, {
+    int limit = 20,
+  }) async {
+    final q = query.trim();
+    if (q.isEmpty) return const [];
+    final json = await _getMap(
+      '/api/sessions/search?${Uri(queryParameters: {'q': q, 'limit': '${limit.clamp(1, 100)}'}).query}',
+      'o resultado da busca',
+    );
+    final results = json['results'];
+    return [
+      if (results is List)
+        for (final row in results)
+          if (row is Map && (row['id'] ?? row['session_id']) is String)
+            (
+              conversation: Conversation.fromJson({
+                ...row.map((key, value) => MapEntry(key.toString(), value)),
+                'id': row['id'] ?? row['session_id'],
+              }),
+              snippet: row['snippet'] is String ? row['snippet'] as String : '',
+              role: row['role'] as String?,
+            ),
+    ];
   }
 
   Future<Map<String, dynamic>> _getMap(String path, String what) async {

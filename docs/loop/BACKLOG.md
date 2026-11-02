@@ -253,6 +253,14 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   (`session.undo`, com confirmação) e compactar o contexto
   (`session.compress`), ambos só com a sessão ociosa.
 
+  Busca implementada em 2026-11-02: com dois caracteres ou mais, a lista de
+  conversas mostra "No conteúdo das conversas" com os resultados do servidor
+  que a lista carregada não tem, trecho com o termo destacado, origem, autor
+  e data; tocar abre a conversa. Sem Dashboard a busca local segue sozinha.
+  Aceite no emulador contra o 0.22.5 (conversas antigas do Telegram achadas e
+  abertas). **Falta decisão:** desfazer e compactar usam `session.undo` e
+  `session.compress`, fora da allowlist de métodos TUI.
+
 - [ ] **A100 Ligar e desligar toolsets e MCP.** Alternar toolsets
   (`PUT /api/tools/toolsets/{name}` ou `tools.configure`) e servidores MCP
   (`PUT /api/mcp/servers/{name}/enabled`, com teste). Não expor `/env`,

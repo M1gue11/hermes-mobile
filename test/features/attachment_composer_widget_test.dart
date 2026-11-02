@@ -10,6 +10,7 @@ import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/repositories/attachment_source.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
+import 'package:hermes_mobile/domain/models/session_search.dart';
 import 'package:hermes_mobile/domain/models/usage_summary.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 import 'package:hermes_mobile/features/chat/chat_controller.dart';
@@ -262,4 +263,10 @@ final class _WidgetGatewayRepository implements GatewayRepository {
 
   @override
   Future<UsageSummary> usage({required int days}) => throw UnimplementedError();
+
+  @override
+  Future<List<SessionSearchHit>> searchSessions(
+    String query, {
+    int limit = 20,
+  }) => throw UnimplementedError();
 }

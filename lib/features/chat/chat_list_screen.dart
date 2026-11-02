@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/hermes_motion.dart';
+import '../../core/theme/hermes_radius.dart';
 import '../../core/theme/hermes_tokens.dart';
 import '../../core/widgets/failure_state.dart';
 import '../../core/widgets/hermes_chip.dart';
@@ -13,10 +14,12 @@ import '../../core/widgets/paper_texture.dart';
 import '../../core/widgets/tap_scale.dart';
 import '../../domain/models/conversation.dart';
 import '../../domain/models/hermes_failure.dart';
+import '../../domain/models/session_search.dart';
 import 'boot_provider.dart';
 import 'chat_controller.dart';
 import 'conversation_actions_provider.dart';
 import 'conversations_provider.dart';
+import 'server_search_provider.dart';
 import 'widgets/rename_conversation_dialog.dart';
 import 'widgets/sheets.dart';
 
@@ -330,7 +333,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                                     .read(conversationFeedProvider.notifier)
                                     .selectSource(source),
                               ),
-                              if (filtered.isEmpty)
+                              if (filtered.isEmpty && query.length < 2)
                                 _EmptyConversationList(
                                   hasSearch:
                                       query.isNotEmpty ||
@@ -352,6 +355,15 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                                     onTap: _openChat,
                                     onManage: _manage,
                                   ),
+                              // A99: o que a lista carregada não mostra pode
+                              // estar no conteúdo de conversas antigas.
+                              if (query.length >= 2)
+                                _ServerSearchSection(
+                                  query: _query.text.trim(),
+                                  shownIds: {for (final c in filtered) c.id},
+                                  localEmpty: filtered.isEmpty,
+                                  onOpen: _openChat,
+                                ),
                               if (state.loadingMore) const _LoadMoreProgress(),
                               if (state.loadMoreError != null)
                                 _LoadMoreError(
@@ -987,6 +999,183 @@ class _LoadError extends StatelessWidget {
       keyPrefix: 'lista',
     );
   }
+}
+
+/// Resultados da busca do servidor que a lista carregada não mostra.
+///
+/// Sem Dashboard a seção não aparece: a busca local nos títulos continua
+/// valendo sozinha. Se nem a lista nem o servidor acharem nada, é aqui que o
+/// vazio é dito, para não anunciar "nada encontrado" antes do servidor
+/// responder.
+class _ServerSearchSection extends ConsumerWidget {
+  const _ServerSearchSection({
+    required this.query,
+    required this.shownIds,
+    required this.localEmpty,
+    required this.onOpen,
+  });
+
+  final String query;
+  final Set<String> shownIds;
+  final bool localEmpty;
+  final ValueChanged<Conversation> onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = HermesTokens.of(context);
+    final search = ref.watch(serverSearchProvider(query));
+    final hits = [
+      for (final hit in search.value ?? const <SessionSearchHit>[])
+        if (!shownIds.contains(hit.conversation.id)) hit,
+    ];
+
+    final Widget corpo;
+    if (search.isLoading && !search.hasValue) {
+      corpo = Padding(
+        key: const ValueKey('server-search-loading'),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        child: Text(
+          'Procurando no conteúdo das conversas…',
+          style: tokens.mono.copyWith(fontSize: 10.5, color: tokens.faint),
+        ),
+      );
+    } else if (hits.isEmpty) {
+      corpo = localEmpty
+          ? const Padding(
+              padding: EdgeInsets.only(top: 40),
+              child: _EmptyConversationList(hasSearch: true),
+            )
+          : const SizedBox.shrink();
+    } else {
+      corpo = Column(
+        key: const ValueKey('server-search-results'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 5),
+            child: Text(
+              'NO CONTEÚDO DAS CONVERSAS',
+              style: tokens.mono.copyWith(
+                fontSize: 10,
+                letterSpacing: 1.8,
+                color: tokens.faint,
+              ),
+            ),
+          ),
+          for (final hit in hits)
+            _ServerSearchRow(hit: hit, onTap: () => onOpen(hit.conversation)),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(top: localEmpty ? 2 : 22),
+      child: AnimatedSwitcher(
+        duration: motionOf(context, HermesMotion.estado),
+        child: corpo,
+      ),
+    );
+  }
+}
+
+class _ServerSearchRow extends StatelessWidget {
+  const _ServerSearchRow({required this.hit, required this.onTap});
+
+  final SessionSearchHit hit;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = HermesTokens.of(context);
+    final conversation = hit.conversation;
+    final runs = snippetRuns(hit.snippet);
+    final quando = conversation.lastActive ?? conversation.startedAt;
+    final meta = [
+      ?conversation.source,
+      if (hit.role == 'user') 'você' else if (hit.role == 'assistant') 'agente',
+      if (quando != null) _dataCurta(quando.toLocal()),
+    ].join(' · ');
+    return InkWell(
+      key: ValueKey('server-search-row-${conversation.id}'),
+      onTap: onTap,
+      borderRadius: HermesRadius.todos(HermesRadius.cartao),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              conversation.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: tokens
+                  .serifIn(FontWeight.w500)
+                  .copyWith(fontSize: 17, color: tokens.ink),
+            ),
+            if (runs.isNotEmpty) ...[
+              const SizedBox(height: 3),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    for (final run in runs)
+                      TextSpan(
+                        text: run.text,
+                        style: run.match
+                            ? TextStyle(
+                                color: tokens.ink,
+                                backgroundColor: tokens.accent.withValues(
+                                  alpha: 0.18,
+                                ),
+                              )
+                            : null,
+                      ),
+                  ],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: tokens.serif.copyWith(
+                  fontSize: 14.5,
+                  height: 1.4,
+                  color: tokens.dim,
+                ),
+              ),
+            ],
+            if (meta.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                meta,
+                style: tokens.mono.copyWith(
+                  fontSize: 10.5,
+                  color: tokens.faint,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+const _mesesCurtos = [
+  'jan',
+  'fev',
+  'mar',
+  'abr',
+  'mai',
+  'jun',
+  'jul',
+  'ago',
+  'set',
+  'out',
+  'nov',
+  'dez',
+];
+
+String _dataCurta(DateTime at) {
+  final hoje = DateTime.now();
+  final mesmoAno = at.year == hoje.year;
+  return '${at.day} ${_mesesCurtos[at.month - 1]}${mesmoAno ? '' : ' ${at.year}'}';
 }
 
 class _EmptyConversationList extends StatelessWidget {

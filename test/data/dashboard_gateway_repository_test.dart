@@ -433,6 +433,28 @@ void main() {
       });
     });
 
+    test('busca manda termo e limite e monta a conversa da linhagem', () async {
+      final hits = await repository.searchSessions(' vault ', limit: 500);
+
+      expect(adapter.requests.single.uri.queryParameters, {
+        'q': 'vault',
+        'limit': '100',
+      });
+      expect(hits, hasLength(2));
+      expect(hits.first.conversation.id, 'tip-1');
+      expect(hits.first.conversation.source, 'telegram');
+      expect(hits.first.conversation.lastActive, isNotNull);
+      expect(hits.first.snippet, 'chave do >>>vault<<<');
+      expect(hits.first.role, 'assistant');
+      expect(hits.last.conversation.title, 'Nova conversa');
+      expect(hits.last.snippet, isEmpty);
+    });
+
+    test('busca vazia não consulta o servidor', () async {
+      expect(await repository.searchSessions('  '), isEmpty);
+      expect(adapter.requests, isEmpty);
+    });
+
     test('uso do período lê totais, dias e modelos', () async {
       final usage = await repository.usage(days: 400);
 
@@ -2329,6 +2351,24 @@ final class _DashboardAdapter implements HttpClientAdapter {
         'exit_code': null,
         'pid': null,
         'lines': ['=== gateway-restart started 2026-11-02 10:00:00 ==='],
+      }, 200);
+    }
+    if (options.uri.path == '/api/sessions/search') {
+      return _json({
+        'results': [
+          {
+            'session_id': 'tip-1',
+            'id': 'tip-1',
+            'lineage_root': 'raiz-1',
+            'title': 'Backup',
+            'source': 'telegram',
+            'last_active': 1793606400.0,
+            'snippet': 'chave do >>>vault<<<',
+            'role': 'assistant',
+          },
+          {'session_id': 'sem-linha', 'snippet': null, 'title': null},
+          {'snippet': 'sem id'},
+        ],
       }, 200);
     }
     if (options.uri.path == '/api/analytics/usage') {

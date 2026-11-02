@@ -8,6 +8,7 @@ import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
+import 'package:hermes_mobile/domain/models/session_search.dart';
 import 'package:hermes_mobile/domain/models/usage_summary.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 
@@ -192,6 +193,18 @@ class FakeGatewayRepository implements GatewayRepository {
   Future<UsageSummary> usage({required int days}) async {
     periodosPedidos.add(days);
     return usoPorPeriodo(days);
+  }
+
+  List<SessionSearchHit> resultadosDeBusca = const [];
+  final List<String> buscas = [];
+
+  @override
+  Future<List<SessionSearchHit>> searchSessions(
+    String query, {
+    int limit = 20,
+  }) async {
+    buscas.add(query);
+    return resultadosDeBusca;
   }
 }
 

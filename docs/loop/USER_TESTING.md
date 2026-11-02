@@ -113,3 +113,11 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
   Dashboard web.
 - Toque e arraste sobre as barras: a linha de cima acompanha o dia tocado.
 - Com leitor de tela ligado, cada barra anuncia dia e tokens.
+
+## [ ] A99 - busca no servidor
+
+- Na lista de conversas, busque um termo que só aparece dentro de uma
+  conversa antiga: a seção "No conteúdo das conversas" mostra o trecho com o
+  termo destacado, e tocar abre a conversa certa.
+- Busque o título de uma conversa já carregada: ela não aparece repetida na
+  seção do servidor.
