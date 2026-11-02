@@ -433,6 +433,21 @@ void main() {
       });
     });
 
+    test('uso do período lê totais, dias e modelos', () async {
+      final usage = await repository.usage(days: 400);
+
+      expect(adapter.requests.single.uri.queryParameters, {'days': '365'});
+      expect(usage.periodDays, 365);
+      expect(usage.tokens, 1500);
+      expect(usage.cacheReadTokens, 9000);
+      expect(usage.reasoningTokens, 0);
+      expect(usage.estimatedCost, 0.42);
+      expect(usage.apiCalls, 7);
+      expect(usage.daily.single.day, DateTime(2026, 11, 1));
+      expect(usage.daily.single.sessions, 3);
+      expect(usage.byModel.single.model, 'gpt-6.1-sol');
+    });
+
     test('reinício é POST e o andamento sem registro vem nulo', () async {
       await repository.restartGateway();
       final status = await repository.restartStatus();
@@ -2314,6 +2329,41 @@ final class _DashboardAdapter implements HttpClientAdapter {
         'exit_code': null,
         'pid': null,
         'lines': ['=== gateway-restart started 2026-11-02 10:00:00 ==='],
+      }, 200);
+    }
+    if (options.uri.path == '/api/analytics/usage') {
+      return _json({
+        'period_days': int.parse(options.uri.queryParameters['days']!),
+        'daily': [
+          {
+            'day': '2026-11-01',
+            'input_tokens': 1200,
+            'output_tokens': 300,
+            'estimated_cost': 0.42,
+            'actual_cost': 0,
+            'sessions': 3,
+          },
+          {'day': null},
+        ],
+        'by_model': [
+          {
+            'model': 'gpt-6.1-sol',
+            'input_tokens': 1200,
+            'output_tokens': 300,
+            'estimated_cost': 0.42,
+            'sessions': 3,
+          },
+        ],
+        'totals': {
+          'total_input': 1200,
+          'total_output': 300,
+          'total_cache_read': 9000,
+          'total_reasoning': null,
+          'total_estimated_cost': 0.42,
+          'total_actual_cost': 0,
+          'total_sessions': 3,
+          'total_api_calls': 7,
+        },
       }, 200);
     }
     if (options.uri.path == '/api/media') {

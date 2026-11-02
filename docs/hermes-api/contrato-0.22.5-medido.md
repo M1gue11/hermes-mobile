@@ -99,6 +99,29 @@ Usados pela tela Servidor (A97). Rotas do Dashboard em
 - `POST /api/gateway/stop` existe, mas o app não oferece: derrubaria o próprio
   acesso.
 
+## Uso por período (`/api/analytics/usage`)
+
+`hermes_cli/web_routers/analytics.py`, com sessão do Dashboard. `days` vai de 1
+a 365 (fora disso o servidor limita). Devolve `period_days`, `totals`
+(`total_input`, `total_output`, `total_cache_read`, `total_reasoning`,
+`total_estimated_cost`, `total_actual_cost`, `total_sessions`,
+`total_api_calls`), `daily` (`day` no calendário local do servidor, só os dias
+com sessão), `by_model`, `by_task`, `skills` e `tools`.
+
+- Conta sessões por `started_at`, de todas as origens (Desktop, Telegram,
+  rotinas, Mobile). Somas podem vir `null` quando não há linha.
+- `by_model` inclui chamadas auxiliares (compressão, visão) que os totais não
+  contam; a soma dos modelos passa do total. O app calcula a fatia de cada
+  modelo sobre a soma dos modelos.
+- Provedor por assinatura (`openai-codex`) não registra custo: os totais de
+  custo vêm `0`, e o app destaca tokens em vez de "US$ 0".
+- Tokens e custo de uma conversa já vêm em `GET /api/sessions` do API Server
+  (`input_tokens`, `output_tokens`, `estimated_cost_usd`, `actual_cost_usd`) e
+  aparecem na folha da conversa.
+- Uso de contexto da sessão viva (`session.usage`, `session.context_breakdown`)
+  só existe no TUI. Os dois métodos estão fora da allowlist do app e esperam
+  autorização explícita.
+
 ## Aprovação da Runs API sob session authority
 
 Com a session authority ativa, que é o padrão do gateway, o evento

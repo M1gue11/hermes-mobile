@@ -238,6 +238,16 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   resumo de uso por período (`/api/analytics/usage`). Absorve a parte de
   `session.usage` do B10. Billing parece específico do provider Nous: medir.
 
+  Parte HTTP implementada em 2026-11-02: Ajustes > Uso (`/usage`) com 7, 30 e
+  90 dias, custo (cobrado ou estimado) ou, sem custo registrado, tokens em
+  destaque; barras de tokens por dia com o dia tocado detalhado; tokens de
+  entrada, saída, cache e raciocínio; fatia por modelo. Aceite no emulador
+  contra o 0.22.5 com dados reais (provedor por assinatura, custo 0). Tokens
+  e custo por conversa já estavam na folha da conversa. **Falta decisão:** uso
+  de contexto da sessão viva exige `session.usage` e
+  `session.context_breakdown`, que estão fora da allowlist de métodos TUI.
+  Billing do Nous não foi medido.
+
 - [ ] **A99 Busca no servidor, desfazer e compactar.** Busca em todas as
   conversas por `GET /api/sessions/search`; desfazer o último turno
   (`session.undo`, com confirmação) e compactar o contexto

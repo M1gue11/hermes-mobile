@@ -11,6 +11,7 @@ import '../../core/widgets/screen_top_bar.dart';
 import '../../core/widgets/unicode_spinner.dart';
 import '../../domain/models/server_health.dart';
 import '../../domain/repositories/gateway_repository.dart';
+import '../../core/format/quantities.dart';
 import 'server_labels.dart';
 import 'server_provider.dart';
 

@@ -17,6 +17,7 @@ import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
 import '../../domain/models/server_health.dart';
 import '../../domain/models/session_message.dart';
+import '../../domain/models/usage_summary.dart';
 import '../../domain/models/tool_call.dart';
 import '../../domain/models/tool_preview.dart';
 import '../../domain/repositories/gateway_repository.dart';
@@ -569,6 +570,55 @@ class DashboardGatewayRepository implements GatewayRepository {
         if (lines is List)
           for (final line in lines)
             if (line is String) line,
+      ],
+    );
+  }
+
+  @override
+  Future<UsageSummary> usage({required int days}) async {
+    final json = await _getMap(
+      '/api/analytics/usage?days=${days.clamp(1, 365)}',
+      'o uso do período',
+    );
+    final totals = json['totals'];
+    final t = totals is Map ? totals : const <String, Object?>{};
+    final daily = json['daily'];
+    final byModel = json['by_model'];
+    return UsageSummary(
+      periodDays: _intFrom(json['period_days']) ?? days,
+      inputTokens: _intFrom(t['total_input']) ?? 0,
+      outputTokens: _intFrom(t['total_output']) ?? 0,
+      cacheReadTokens: _intFrom(t['total_cache_read']) ?? 0,
+      reasoningTokens: _intFrom(t['total_reasoning']) ?? 0,
+      estimatedCost: _doubleFrom(t['total_estimated_cost']) ?? 0,
+      actualCost: _doubleFrom(t['total_actual_cost']) ?? 0,
+      sessions: _intFrom(t['total_sessions']) ?? 0,
+      apiCalls: _intFrom(t['total_api_calls']) ?? 0,
+      daily: [
+        if (daily is List)
+          for (final row in daily)
+            if (row is Map && row['day'] is String)
+              if (DateTime.tryParse(row['day'] as String) case final day?)
+                UsageDay(
+                  day: day,
+                  inputTokens: _intFrom(row['input_tokens']) ?? 0,
+                  outputTokens: _intFrom(row['output_tokens']) ?? 0,
+                  estimatedCost: _doubleFrom(row['estimated_cost']) ?? 0,
+                  actualCost: _doubleFrom(row['actual_cost']) ?? 0,
+                  sessions: _intFrom(row['sessions']) ?? 0,
+                ),
+      ],
+      byModel: [
+        if (byModel is List)
+          for (final row in byModel)
+            if (row is Map && row['model'] is String)
+              ModelUsage(
+                model: row['model'] as String,
+                inputTokens: _intFrom(row['input_tokens']) ?? 0,
+                outputTokens: _intFrom(row['output_tokens']) ?? 0,
+                estimatedCost: _doubleFrom(row['estimated_cost']) ?? 0,
+                sessions: _intFrom(row['sessions']) ?? 0,
+              ),
       ],
     );
   }

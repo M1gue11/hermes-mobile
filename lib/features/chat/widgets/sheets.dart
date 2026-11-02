@@ -77,6 +77,15 @@ Future<void> showSettingsSheet(
           },
         ),
         _SettingsAction(
+          key: const ValueKey('settings-usage'),
+          icon: Icons.insights_outlined,
+          title: 'Uso',
+          subtitle: 'Tokens e custo por período',
+          onTap: () {
+            context.push('/usage');
+          },
+        ),
+        _SettingsAction(
           key: const ValueKey('settings-server'),
           icon: Icons.monitor_heart_outlined,
           title: 'Servidor',

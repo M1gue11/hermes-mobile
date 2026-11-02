@@ -64,15 +64,6 @@ String uptimeLabel(int seconds) {
   return '${d.inMinutes} min';
 }
 
-/// Contagem curta: 38.200 vira 38,2 mil.
-String compactCount(int value) {
-  if (value < 1000) return '$value';
-  if (value < 1000000) {
-    return '${(value / 1000).toStringAsFixed(1).replaceAll('.', ',')} mil';
-  }
-  return '${(value / 1000000).toStringAsFixed(1).replaceAll('.', ',')} mi';
-}
-
 String latencyLabel(int millis) => millis < 1000
     ? '$millis ms'
     : '${(millis / 1000).toStringAsFixed(1).replaceAll('.', ',')} s';

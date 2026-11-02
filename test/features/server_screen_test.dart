@@ -6,6 +6,7 @@ import 'package:hermes_mobile/core/theme/app_theme.dart';
 import 'package:hermes_mobile/data/gateway_repository_provider.dart';
 import 'package:hermes_mobile/data/hermes_repository_provider.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
+import 'package:hermes_mobile/core/format/quantities.dart';
 import 'package:hermes_mobile/features/server/server_labels.dart';
 import 'package:hermes_mobile/features/server/server_provider.dart';
 

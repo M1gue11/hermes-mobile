@@ -7,6 +7,7 @@ import '../models/gateway_recovery.dart';
 import '../models/hermes_skill.dart';
 import '../models/run_event.dart';
 import '../models/server_health.dart';
+import '../models/usage_summary.dart';
 import '../models/session_message.dart';
 
 export '../models/gateway_recovery.dart';
@@ -150,6 +151,9 @@ abstract interface class GatewayRepository {
 
   /// Andamento do último reinício pedido.
   Future<GatewayActionStatus> restartStatus();
+
+  /// Tokens e custo dos últimos [days] dias, por `GET /api/analytics/usage`.
+  Future<UsageSummary> usage({required int days});
 
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.

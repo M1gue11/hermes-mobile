@@ -11,6 +11,7 @@ import '../../features/jobs/job_editor_screen.dart';
 import '../../features/jobs/jobs_screen.dart';
 import '../../features/server/server_logs_screen.dart';
 import '../../features/server/server_screen.dart';
+import '../../features/usage/usage_screen.dart';
 import '../../features/machine/machine_screen.dart';
 import '../../features/skills/skill_detail_screen.dart';
 import '../../features/skills/skill_editor_screen.dart';
@@ -192,6 +193,11 @@ GoRouter buildAppRouter({
               _slidePage(context, state, const JobEditorScreen()),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/usage',
+      pageBuilder: (context, state) =>
+          _slidePage(context, state, const UsageScreen()),
     ),
     GoRoute(
       path: '/server',

@@ -106,3 +106,10 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
   interrompido.
 - Em Logs, alterne Erros e "Só erros", busque um termo conhecido e expanda um
   traceback longo.
+
+## [ ] A98 - uso por período
+
+- Em Ajustes > Uso, compare os totais de 30 dias com a página de análise do
+  Dashboard web.
+- Toque e arraste sobre as barras: a linha de cima acompanha o dia tocado.
+- Com leitor de tela ligado, cada barra anuncia dia e tokens.

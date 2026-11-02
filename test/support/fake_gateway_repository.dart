@@ -8,6 +8,7 @@ import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
+import 'package:hermes_mobile/domain/models/usage_summary.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 
 class FakeGatewayRepository implements GatewayRepository {
@@ -182,6 +183,16 @@ class FakeGatewayRepository implements GatewayRepository {
   @override
   Future<GatewayActionStatus> restartStatus() async =>
       const GatewayActionStatus(exitCode: 0);
+
+  UsageSummary Function(int days) usoPorPeriodo = (days) =>
+      UsageSummary(periodDays: days);
+  final List<int> periodosPedidos = [];
+
+  @override
+  Future<UsageSummary> usage({required int days}) async {
+    periodosPedidos.add(days);
+    return usoPorPeriodo(days);
+  }
 }
 
 class FakeGatewayLiveTurn implements GatewayLiveTurn {
