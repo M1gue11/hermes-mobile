@@ -44,6 +44,34 @@ pelo scan de segurança; uma recusa volta como `400` com a causa em `detail`.
 Não há versão nem ETag: a última gravação vence, por isso o app relê o
 `SKILL.md` antes de gravar.
 
+## Mídia entregue pelo agente (`MEDIA:`)
+
+O agente entrega um arquivo do servidor escrevendo `MEDIA:<caminho absoluto>`
+na resposta. Ferramentas que guardam imagem (MCP, capturas, cache) devolvem
+essa forma; a geração por FAL devolve uma URL remota, que o modelo escreve
+como `![alt](url)`.
+
+- `GET /api/media?path=` (`hermes_cli/web_routers/files.py`), com sessão do
+  Dashboard, devolve `{"data_url": "data:<mime>;base64,..."}`. Só serve
+  `.png .jpg .jpeg .gif .webp .svg .bmp .ico`, até 25 MB, e só dentro de
+  `HERMES_HOME/images`, `screenshots` e `cache`, com o caminho resolvido.
+  Recusas em `detail`: `415` tipo, `403` fora das pastas, `404` ausente, `413`
+  grande demais.
+- O chat do Dashboard não reescreve `MEDIA:`: o texto chega cru pelo TUI e pelo
+  histórico. Só as rotas de chat, completions e responses do API Server trocam
+  a diretiva por `![image](data:...)` (até 5 MB); a Runs API não troca nada.
+- O prompt de sistema não orienta o modelo para `source: mobile` (não há
+  `PLATFORM_HINTS["mobile"]`). Para que o agente prefira `MEDIA:` ao falar com
+  o celular, o operador pode configurar `platform_hints.mobile` no servidor.
+- `GET /api/media/proxy?url=` busca imagens de CDNs permitidos (`fal.media`,
+  `storage.googleapis.com`) para clientes sem rota até eles. O Mobile ainda não
+  usa: o aparelho costuma alcançar o CDN direto.
+
+No Mobile (A96), `MEDIA:` com caminho absoluto vira figura lida por
+`/api/media`; SVG, ICO e não imagens ficam como referência com o caminho.
+Sem Dashboard, a referência diz para conectá-lo. Na cauda do streaming o
+caminho pode estar pela metade, e nada é pedido até o bloco assentar.
+
 ## Aprovação da Runs API sob session authority
 
 Com a session authority ativa, que é o padrão do gateway, o evento

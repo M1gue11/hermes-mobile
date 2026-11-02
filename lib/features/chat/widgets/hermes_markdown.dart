@@ -12,9 +12,12 @@ import '../../../core/theme/hermes_radius.dart';
 import '../../../core/theme/hermes_tokens.dart';
 import '../../../core/widgets/code_surface.dart';
 import '../../../core/widgets/unicode_spinner.dart';
+import '../../../domain/models/agent_media.dart';
 import '../../../domain/models/inline_math.dart';
 import '../../../domain/models/markdown_stream.dart';
 import '../../settings/agent_persona.dart';
+import 'agent_media_figure.dart';
+import 'image_viewer.dart';
 
 /// Markdown de leitura confortável: tipografia editorial, blocos de código
 /// próprios com linguagem/cópia e elementos longos que não estouram no mobile.
@@ -232,6 +235,9 @@ class _HermesMarkdownState extends State<HermesMarkdown> {
             styleSheet: responsiveSheet,
             syntaxHighlighter: HermesSyntaxHighlighter(tokens),
             builders: {
+              'agent-media': _AgentMediaBuilder(
+                ready: bloco.settled || !widget.streaming,
+              ),
               'hr': _ObsidianRule(tokens, scale),
               'mark': _HighlightBuilder(tokens),
               'display-math': _DisplayMathBuilder(tokens, scale),
@@ -255,6 +261,7 @@ class _HermesMarkdownState extends State<HermesMarkdown> {
               _HtmlDefinitionListSyntax(),
             ],
             inlineSyntaxes: [
+              _AgentMediaSyntax(),
               _ObsidianEmbedSyntax(),
               _ObsidianWikiLinkSyntax(),
               _ObsidianTagSyntax(),
@@ -358,6 +365,9 @@ final _naoEhParagrafo = RegExp(
 /// Linha em branco depois de texto já significa que o parágrafo terminou e o
 /// ponto de escrita passou para um bloco novo, então nem esse caso conta.
 bool _paragrafoSimples(String source) {
+  // Uma entrega de arquivo é figura, não texto: na cauda ela passa pelo parser
+  // para aparecer como espera em vez de caminho cru crescendo.
+  if (source.contains('MEDIA:')) return false;
   var viuTexto = false;
   for (final linha in source.split('\n')) {
     if (linha.trim().isEmpty) {
@@ -960,58 +970,123 @@ void _avisar(BuildContext context, String mensagem) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
 }
 
-/// Imagem remota com espera e falha explícitas. Uma imagem que não carrega tem
-/// de dizer isso, em vez de deixar um buraco silencioso na resposta.
-class _RemoteImage extends StatelessWidget {
+/// Imagem de `![alt](url)` com espera e falha explícitas. Uma imagem que não
+/// carrega tem de dizer isso, em vez de deixar um buraco silencioso na
+/// resposta.
+///
+/// Aceita também `data:`, a forma em que o API Server devolve um `MEDIA:` já
+/// resolvido nas rotas de chat.
+class _RemoteImage extends StatefulWidget {
   const _RemoteImage({required this.uri, this.alt});
 
   final Uri uri;
   final String? alt;
 
   @override
+  State<_RemoteImage> createState() => _RemoteImageState();
+}
+
+class _RemoteImageState extends State<_RemoteImage> {
+  final _heroTag = Object();
+  late ImageProvider? _image = _providerFor(widget.uri);
+
+  @override
+  void didUpdateWidget(_RemoteImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.uri != widget.uri) _image = _providerFor(widget.uri);
+  }
+
+  static ImageProvider? _providerFor(Uri uri) {
+    if (uri.scheme != 'data') return NetworkImage(uri.toString());
+    try {
+      return MemoryImage(uri.data!.contentAsBytes());
+    } on FormatException {
+      return null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final t = HermesTokens.of(context);
-    // `.hmd img{max-width:100%;border-radius:11px;border:1px solid var(--line)}`
-    Widget moldura(Widget child) => Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        border: Border.all(color: t.line),
-        borderRadius: HermesRadius.todos(HermesRadius.bloco),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: child,
+    final alt = widget.alt?.trim();
+    final rotulo = alt?.isNotEmpty == true ? alt! : 'Imagem da resposta';
+    final falha = MediaNotice(
+      icon: Icons.broken_image_outlined,
+      text: alt?.isNotEmpty == true
+          ? 'Imagem indisponível: $alt'
+          : 'Imagem indisponível',
+      framed: true,
     );
+    final image = _image;
+    if (image == null) return falha;
 
-    Widget aviso(IconData icone, String texto) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
-      child: Row(
-        children: [
-          Icon(icone, size: 15, color: t.dim),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              texto,
-              style: t.mono.copyWith(fontSize: 11.5, color: t.dim),
-            ),
+    final caption = widget.uri.scheme == 'data'
+        ? null
+        : widget.uri.host.isEmpty
+        ? null
+        : widget.uri.host;
+    return Image(
+      image: image,
+      frameBuilder: (context, child, frame, sincrona) {
+        if (frame == null) {
+          return const MediaNotice(
+            icon: Icons.image_outlined,
+            text: 'Carregando imagem…',
+            framed: true,
+          );
+        }
+        return MediaFigure(
+          image: image,
+          heroTag: _heroTag,
+          semanticLabel: rotulo,
+          caption: caption,
+          onOpen: () => openImageViewer(
+            context,
+            image: image,
+            heroTag: _heroTag,
+            semanticLabel: rotulo,
+            caption: alt?.isNotEmpty == true ? alt : caption,
           ),
-        ],
-      ),
+        );
+      },
+      errorBuilder: (context, error, stack) => falha,
     );
+  }
+}
 
-    return moldura(
-      Image.network(
-        uri.toString(),
-        fit: BoxFit.contain,
-        loadingBuilder: (context, child, progress) => progress == null
-            ? child
-            : aviso(Icons.image_outlined, 'Carregando imagem…'),
-        errorBuilder: (context, error, stack) => aviso(
-          Icons.broken_image_outlined,
-          alt?.trim().isNotEmpty == true
-              ? 'Imagem indisponível: ${alt!.trim()}'
-              : 'Imagem indisponível',
-        ),
-      ),
+/// `MEDIA:<caminho>` vira um elemento próprio, desenhado por
+/// [_AgentMediaBuilder]. Como sintaxe inline do parser, nunca casa dentro de
+/// código: um exemplo de diretiva em bloco de código continua texto.
+class _AgentMediaSyntax extends md.InlineSyntax {
+  _AgentMediaSyntax() : super(mediaDirectivePattern, startCharacter: 77);
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(
+      md.Element.empty('agent-media')..attributes['path'] = match[1]!,
+    );
+    return true;
+  }
+}
+
+class _AgentMediaBuilder extends MarkdownElementBuilder {
+  _AgentMediaBuilder({required this.ready});
+
+  /// Falso na cauda de um turno em andamento, onde o caminho pode estar pela
+  /// metade.
+  final bool ready;
+
+  @override
+  Widget visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    final path = element.attributes['path']!;
+    return AgentMediaFigure(
+      key: ValueKey('agent-media-$path'),
+      path: path,
+      ready: ready,
     );
   }
 }

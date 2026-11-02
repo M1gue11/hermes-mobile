@@ -199,10 +199,21 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   [05-sessions-jobs.md](../hermes-api/05-sessions-jobs.md). Falta aceite no
   aparelho e, depois, editar rotina (`PATCH`).
 
-- [ ] **A96 Imagens geradas pelo agente.** Mostrar na conversa as imagens e
+- [~] **A96 Imagens geradas pelo agente.** Mostrar na conversa as imagens e
   capturas que o agente referencia (`MEDIA:`), lidas por `GET /api/media` do
   Dashboard, respeitando tipos e pastas que o servidor permite. Sem Dashboard,
   mostrar a referência sem quebrar a mensagem.
+
+  Implementado em 2026-11-02: `MEDIA:<caminho absoluto>` fora de código vira
+  figura com o nome do arquivo, revelada com a entrada de tinta; o toque abre
+  o visualizador (pinça, toque duplo, arrastar para fechar, Hero). SVG, ICO e
+  não imagens ficam como referência com o caminho selecionável; recusa do
+  servidor aparece com a causa, e só falha de rede oferece tentar de novo.
+  `![alt](data:...)` também vira figura. Aceite no emulador contra o 0.22.5:
+  PNG gerado pelo agente em `HERMES_HOME/images` apareceu, ampliou e fechou.
+  Contrato em [contrato-0.22.5-medido.md](../hermes-api/contrato-0.22.5-medido.md).
+  Falta conferir no aparelho os estados sem Dashboard e de recusa, e decidir
+  se vale usar `/api/media/proxy` para URLs do FAL.
 
 - [ ] **A97 Saúde, logs e restart do gateway.** Ler `/health/detailed`,
   `/api/system/stats` e `/api/logs` (filtro por nível e busca) e reiniciar o

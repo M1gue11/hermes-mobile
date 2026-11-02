@@ -266,4 +266,7 @@ final class _FakeGatewayRepository implements GatewayRepository {
   @override
   Future<void> setSkillEnabled(String name, {required bool enabled}) =>
       throw UnimplementedError();
+
+  @override
+  Future<Uint8List> agentMedia(String path) => throw UnimplementedError();
 }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../models/approval_request.dart';
 import '../models/composer_attachment.dart';
 import '../models/gateway_inflight.dart';
@@ -121,6 +123,12 @@ abstract interface class GatewayRepository {
   /// Ativa ou desativa a skill no perfil atual do Dashboard.
   Future<void> setSkillEnabled(String name, {required bool enabled});
 
+  /// Bytes de uma imagem que o agente entregou por `MEDIA:<caminho>`, lidos
+  /// por `GET /api/media`. O servidor só serve imagens das pastas de mídia do
+  /// Hermes (`images`, `screenshots`, `cache`) e até 25 MB; a recusa vem como
+  /// [GatewayOperationException] com a causa em português.
+  Future<Uint8List> agentMedia(String path);
+
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.
   Future<List<SessionMessage>> conversationHistory({
@@ -229,6 +237,7 @@ final class GatewayOperationException implements Exception {
     this.method,
     this.code,
     this.detail,
+    this.httpStatus,
   });
 
   /// Texto destinado à pessoa. Nunca carrega exceção de servidor.
@@ -243,11 +252,15 @@ final class GatewayOperationException implements Exception {
   /// Texto cru do gateway. Existe para diagnóstico e log, não para a interface.
   final String? detail;
 
+  /// Status da resposta HTTP do Dashboard, quando a falha veio dele.
+  final int? httpStatus;
+
   @override
   String toString() => [
     'GatewayOperationException: $message',
     if (method != null) 'method=$method',
     if (code != null) 'code=$code',
+    if (httpStatus != null) 'status=$httpStatus',
     if (detail != null) 'detail=$detail',
   ].join(' ');
 }

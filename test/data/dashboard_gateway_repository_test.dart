@@ -382,6 +382,58 @@ void main() {
     });
   });
 
+  group('mídia do agente', () {
+    late _DashboardAdapter adapter;
+    late DashboardGatewayRepository repository;
+
+    setUp(() {
+      adapter = _DashboardAdapter();
+      repository = DashboardGatewayRepository(
+        store: _MemoryDashboardSessionStore(
+          session: (
+            baseUrl: 'https://dashboard.example:8443',
+            cookies: {'session': 'opaque'},
+          ),
+        ),
+        dio: Dio()..httpClientAdapter = adapter,
+      );
+    });
+
+    test('decodifica o data URL e codifica o caminho na query', () async {
+      final bytes = await repository.agentMedia('/srv/hermes/images/a b.png');
+
+      expect(bytes, [1, 2, 3]);
+      expect(adapter.requests.single.uri.queryParameters, {
+        'path': '/srv/hermes/images/a b.png',
+      });
+    });
+
+    test('recusa por pasta e ausência viram causa em português', () async {
+      await expectLater(
+        repository.agentMedia('/etc/segredo.png'),
+        throwsA(
+          isA<GatewayOperationException>()
+              .having((e) => e.httpStatus, 'httpStatus', 403)
+              .having(
+                (e) => e.message,
+                'message',
+                'O servidor só mostra imagens das pastas de mídia do Hermes.',
+              ),
+        ),
+      );
+      await expectLater(
+        repository.agentMedia('/srv/hermes/images/sumiu.png'),
+        throwsA(
+          isA<GatewayOperationException>().having(
+            (e) => e.message,
+            'message',
+            'A imagem não está mais no servidor.',
+          ),
+        ),
+      );
+    });
+  });
+
   test('login Basic salva sessão e credenciais separadamente', () async {
     final store = _MemoryDashboardSessionStore();
     final adapter = _DashboardAdapter();
@@ -2157,6 +2209,17 @@ final class _DashboardAdapter implements HttpClientAdapter {
     }
     if (options.uri.path == '/api/skills/toggle') {
       return _json({'ok': true, ...(options.data as Map)}, 200);
+    }
+    if (options.uri.path == '/api/media') {
+      return switch (options.uri.queryParameters['path']) {
+        '/srv/hermes/images/a b.png' => _json({
+          'data_url': 'data:image/png;base64,${base64Encode([1, 2, 3])}',
+        }, 200),
+        '/etc/segredo.png' => _json({
+          'detail': 'Path outside media roots',
+        }, 403),
+        _ => _json({'detail': 'File not found'}, 404),
+      };
     }
     if (options.uri.path == '/api/skills' && options.method == 'GET') {
       return _json([

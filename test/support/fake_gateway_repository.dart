@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:hermes_mobile/domain/models/approval_request.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
@@ -122,6 +123,22 @@ class FakeGatewayRepository implements GatewayRepository {
       for (final skill in catalogo)
         skill.name == name ? skill.copyWith(enabled: enabled) : skill,
     ];
+  }
+
+  final Map<String, Uint8List> midias = {};
+  final List<String> midiasLidas = [];
+
+  @override
+  Future<Uint8List> agentMedia(String path) async {
+    midiasLidas.add(path);
+    final bytes = midias[path];
+    if (bytes == null) {
+      throw const GatewayOperationException(
+        'A imagem não está mais no servidor.',
+        httpStatus: 404,
+      );
+    }
+    return bytes;
   }
 }
 

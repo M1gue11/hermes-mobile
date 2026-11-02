@@ -82,3 +82,15 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
   "Rodando agora" e, ao terminar, a última execução.
 - Pause e retome; confira no `hermes cron list` do servidor que o estado bate.
 - Exclua a rotina de teste confirmando no diálogo.
+
+## [ ] A96 - imagens do agente
+
+- Peça ao agente uma captura ou imagem salva em `HERMES_HOME/images` e
+  entregue com `MEDIA:`: a figura aparece com o nome do arquivo, sem o caminho
+  cru no texto. Toque nela, amplie com pinça e toque duplo e feche arrastando.
+- Peça um PDF entregue com `MEDIA:`: aparece como referência com o caminho.
+- Peça `MEDIA:` de uma imagem fora das pastas de mídia (por exemplo `/tmp`): a
+  referência diz que o servidor só mostra as pastas de mídia, sem botão de
+  tentar de novo.
+- Saia do Dashboard e reabra a conversa: a referência pede para entrar no
+  Dashboard e o resto da mensagem continua legível.

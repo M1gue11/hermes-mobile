@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
@@ -436,6 +437,51 @@ class DashboardGatewayRepository implements GatewayRepository {
   }
 
   @override
+  Future<Uint8List> agentMedia(String path) async {
+    final session = await _requireSession();
+    final Response<Object?> response;
+    try {
+      response = await _authorizedRequest(
+        session,
+        '/api/media?path=${Uri.encodeQueryComponent(path)}',
+        method: 'GET',
+        // 25 MB viram ~33 MB de base64 numa resposta só.
+        receiveTimeout: const Duration(seconds: 60),
+      );
+    } on GatewayOperationException catch (error) {
+      final message = switch (error.httpStatus) {
+        403 => 'O servidor só mostra imagens das pastas de mídia do Hermes.',
+        404 => 'A imagem não está mais no servidor.',
+        413 => 'Imagem grande demais para o Dashboard enviar (máximo 25 MB).',
+        415 => 'O Dashboard não mostra este tipo de arquivo.',
+        _ => null,
+      };
+      if (message == null) rethrow;
+      throw GatewayOperationException(
+        message,
+        detail: error.message,
+        httpStatus: error.httpStatus,
+      );
+    }
+    final body = response.data;
+    final dataUrl = body is Map ? body['data_url'] : null;
+    UriData? data;
+    if (dataUrl is String && dataUrl.startsWith('data:')) {
+      try {
+        data = UriData.parse(dataUrl);
+      } on FormatException {
+        data = null;
+      }
+    }
+    if (data == null || !data.isBase64) {
+      throw const GatewayOperationException(
+        'O Dashboard não devolveu a imagem.',
+      );
+    }
+    return data.contentAsBytes();
+  }
+
+  @override
   Future<List<SessionMessage>> conversationHistory({
     required String storedSessionId,
   }) async {
@@ -810,6 +856,7 @@ class DashboardGatewayRepository implements GatewayRepository {
           detail?.isNotEmpty == true
               ? detail!
               : 'O Dashboard recusou a operação (${response.statusCode}).',
+          httpStatus: response.statusCode,
         );
       }
       final merged = {...session.cookies, ..._cookiesFrom(response.headers)};
