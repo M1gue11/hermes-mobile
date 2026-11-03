@@ -195,10 +195,12 @@ void main() {
     await tester.pumpWidget(_app(FakeHermesRepository(), location: '/chat'));
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('Skills'), findsOneWidget);
+    expect(find.text('Recursos'), findsOneWidget);
     expect(find.byTooltip('Contexto da conversa'), findsNothing);
 
-    await tester.tap(find.byTooltip('Skills'));
+    await tester.tap(find.text('Recursos'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Skills'));
     await tester.pumpAndSettle();
 
     expect(find.byType(SkillsScreen), findsOneWidget);

@@ -243,6 +243,10 @@ void main() {
     final gesture = await tester.startGesture(tester.getCenter(list));
     await gesture.moveBy(const Offset(0, 20));
     await tester.pump();
+    // Cruza o limiar do arrasto antes de medir o deslocamento curto. O primeiro
+    // evento pode ser consumido pela disputa com as ações tocáveis da resposta.
+    await gesture.moveBy(const Offset(0, 2));
+    await tester.pump();
     await gesture.up();
     await tester.pumpAndSettle();
 

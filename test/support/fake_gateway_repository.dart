@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:hermes_mobile/domain/models/approval_request.dart';
+import 'package:hermes_mobile/domain/models/gateway_command.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
@@ -304,6 +305,26 @@ class FakeGatewayRepository implements GatewayRepository {
 }
 
 class FakeGatewayLiveTurn implements GatewayLiveTurn {
+  GatewayCommandCatalog catalog = const GatewayCommandCatalog();
+  GatewaySlashCompletions completions = const GatewaySlashCompletions();
+  Future<GatewayCommandResult> Function(String)? commandHandler;
+  Future<List<SessionMessage>> Function()? commandHistoryHandler;
+  final List<String> executedCommands = [];
+  @override
+  Future<GatewayCommandCatalog> commandCatalog() async => catalog;
+  @override
+  Future<GatewaySlashCompletions> completeSlash(String text) async =>
+      completions;
+  @override
+  Future<GatewayCommandResult> executeCommand(String command) async {
+    executedCommands.add(command);
+    return await commandHandler?.call(command) ??
+        const GatewayCommandResult(
+          kind: GatewayCommandResultKind.output,
+          output: 'Comando concluído.',
+        );
+  }
+
   FakeGatewayLiveTurn({
     required this.storedSessionId,
     required this.liveSessionId,
@@ -403,7 +424,8 @@ class FakeGatewayLiveTurn implements GatewayLiveTurn {
   }
 
   @override
-  Future<List<SessionMessage>> refreshHistory() async => initialHistory;
+  Future<List<SessionMessage>> refreshHistory() async =>
+      await commandHistoryHandler?.call() ?? initialHistory;
 
   @override
   Future<void> close() async {

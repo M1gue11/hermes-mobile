@@ -68,7 +68,8 @@ class ToolsScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 44),
                       children: [
                         Text(
-                          'As mudanças valem a partir da próxima conversa. '
+                          'Estas configurações valem para novas conversas do Hermes. '
+                          'A conversa aberta mantém as ferramentas que já carregou. '
                           'Credenciais e instalação ficam no computador.',
                           style: t.serif.copyWith(
                             fontSize: 14,

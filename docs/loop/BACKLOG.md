@@ -74,6 +74,16 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
 
 ## Produto e interface
 
+- [~] **A103 Operar o Hermes a partir da conversa.** Detalhes no título;
+  Recursos no compositor (Skills, Ferramentas/MCP e instruções); menu Hermes
+  com Acessos, Uso geral, Agendamentos, Servidor e Ajustes. Telas inteiras
+  fecham o seletor e voltam direto à conversa, preservando rascunho e leitura.
+  Uso da sessão e uso geral permanecem distintos; ferramentas explicam que a
+  alteração vale para novas conversas. Copiar/ouvir têm alvo de 48 dp e
+  acomodam texto ampliado. Brief em [A103_INTERFACE_BRIEF.md](A103_INTERFACE_BRIEF.md).
+  Falta aceite em aparelho; badges atualizados e busca global dentro do chat
+  ficam para outra etapa, sem dependências nem métodos TUI novos.
+
 - [ ] **A78 Permitir arquivo e áudio no mesmo envio.** Hoje o compositor força
   escolher um ou outro. Permitir preparar anexo(s), gravar áudio e incluir texto
   no mesmo turno sem apagar a seleção anterior; oferecer revisão, remoção e
@@ -94,7 +104,7 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   rejeição e não é confundida com resposta já enviada. Cobrir toque repetido,
   rede instável, troca de conversa e retorno ao app.
 
-- [ ] **A80 Integrar comandos rápidos com paridade ao Telegram.** Inventariar
+- [~] **A80 Integrar comandos rápidos com paridade ao Telegram.** Inventariar
   os comandos realmente disponíveis no Telegram e no runtime TUI, mapear
   diferenças de permissão/efeito e implementar descoberta, sugestões ao digitar
   `/`, descrição e execução dos comandos compatíveis no Mobile. Não emular
@@ -103,6 +113,16 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   Critério de aceite: comandos suportados funcionam com confirmação para ações
   sensíveis e feedback de sucesso/erro; indisponíveis são explicados, não
   exibidos como funcionais. Cobrir argumentos, cancelamento e histórico.
+
+  Implementado em 2026-11-02, com autorização do usuário para a integração:
+  sugestões ao digitar `/`, Recursos > Comandos, execução com confirmação para
+  alterações, relatórios copiáveis, prefill, Skills e aliases. Descoberta e
+  execução usam o id vivo e o mesmo canal do turno, sem repetir mutações após
+  resposta perdida. `/stop` usa a interrupção real; desfazer relê o histórico.
+  Inventário estático de 104 comandos e diferenças de superfície em
+  [mobile-command-inventory-0.22.5.md](../dashboard-api/mobile-command-inventory-0.22.5.md).
+  Contrato e evidências em [mobile-commands-0.22.5.md](../dashboard-api/mobile-commands-0.22.5.md).
+  Sem alteração do runtime ou dependência nova. Aceite físico pendente.
 
 - [ ] **A76 Ajustar o Markdown das ações no estilo Obsidian.** Reproduzir com
   mensagens reais onde ações, tarefas ou instruções em Markdown aparecem
@@ -248,18 +268,19 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   `session.context_breakdown`, que estão fora da allowlist de métodos TUI.
   Billing do Nous não foi medido.
 
-- [ ] **A99 Busca no servidor, desfazer e compactar.** Busca em todas as
+- [~] **A99 Busca no servidor, desfazer e compactar.** Busca em todas as
   conversas por `GET /api/sessions/search`; desfazer o último turno
-  (`session.undo`, com confirmação) e compactar o contexto
-  (`session.compress`), ambos só com a sessão ociosa.
+  (`/undo`, com confirmação) e compactar o contexto
+  (`/compress`), ambos só com a sessão ociosa e pelo gateway em A80.
 
   Busca implementada em 2026-11-02: com dois caracteres ou mais, a lista de
   conversas mostra "No conteúdo das conversas" com os resultados do servidor
   que a lista carregada não tem, trecho com o termo destacado, origem, autor
   e data; tocar abre a conversa. Sem Dashboard a busca local segue sozinha.
   Aceite no emulador contra o 0.22.5 (conversas antigas do Telegram achadas e
-  abertas). **Falta decisão:** desfazer e compactar usam `session.undo` e
-  `session.compress`, fora da allowlist de métodos TUI.
+  abertas). Desfazer e compactar agora estão acessíveis por `/undo` e `/compress`
+  na integração A80, com confirmação e atualização do histórico. Os métodos
+  diretos `session.undo` e `session.compress` não foram adicionados à allowlist.
 
 - [ ] **A100 Ligar e desligar toolsets e MCP.** Alternar toolsets
   (`PUT /api/tools/toolsets/{name}` ou `tools.configure`) e servidores MCP

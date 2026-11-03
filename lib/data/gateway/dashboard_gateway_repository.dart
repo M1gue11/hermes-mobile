@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 
 import '../../core/diagnostics/turn_capture.dart';
 import '../../domain/models/approval_request.dart';
+import '../../domain/models/gateway_command.dart';
 import '../../domain/models/clarify_request.dart';
 import '../../domain/models/composer_attachment.dart';
 import '../../domain/models/conversation.dart';
@@ -1529,6 +1530,66 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
 
   @override
   String get turnId => 'gateway:$liveSessionId';
+
+  @override
+  Future<GatewayCommandCatalog> commandCatalog() async =>
+      GatewayCommandCatalog.fromJson(
+        await _client.call('commands.catalog', {'session_id': liveSessionId}),
+      );
+
+  @override
+  Future<GatewaySlashCompletions> completeSlash(String text) async =>
+      GatewaySlashCompletions.fromJson(
+        await _client.call('complete.slash', {
+          'session_id': liveSessionId,
+          'text': text,
+        }),
+      );
+
+  @override
+  Future<GatewayCommandResult> executeCommand(String command) async {
+    final invocation = parseSlashInvocation(command);
+    if (invocation == null) {
+      throw const GatewayOperationException(
+        'Digite um comando iniciado por /.',
+      );
+    }
+    Map<String, dynamic> result;
+    try {
+      result = await _client.call('slash.exec', {
+        'session_id': liveSessionId,
+        'command': command.substring(1),
+      }, timeout: const Duration(minutes: 11));
+    } on GatewayOperationException catch (error) {
+      // A routing refusal is before execution. A timeout, worker crash or lost
+      // reply is NOT permission to issue a second side effect via dispatch.
+      final routingRefusal =
+          error.code == -32601 ||
+          (error.code == 4018 &&
+              error.detail ==
+                  'skill command: use command.dispatch for /${invocation.name}') ||
+          (error.code == 4018 &&
+              invocation.name == 'snapshot' &&
+              error.detail ==
+                  'snapshot restore mutates live config/state; use command.dispatch for /snapshot restore');
+      if (!routingRefusal) {
+        rethrow;
+      }
+      result = await _client.call('command.dispatch', {
+        'session_id': liveSessionId,
+        'name': invocation.name,
+        'arg': invocation.arguments,
+      }, timeout: const Duration(minutes: 11));
+    }
+    try {
+      return GatewayCommandResult.fromJson(result);
+    } on FormatException {
+      throw const GatewayOperationException(
+        'O Hermes respondeu ao comando em um formato não reconhecido. Confira o estado antes de repetir.',
+        method: 'slash.exec',
+      );
+    }
+  }
 
   @override
   // Keep projection synchronous with seq advancement. asyncExpand would let

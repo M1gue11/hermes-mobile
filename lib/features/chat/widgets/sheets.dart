@@ -292,10 +292,11 @@ Future<void> showConversationDetailsSheet(
   WidgetRef ref, {
   required Conversation conversation,
   required List<Conversation> loadedConversations,
+  String title = 'Detalhes da sessão',
 }) {
   return showHermesSheet(
     context,
-    title: 'Detalhes da sessão',
+    title: title,
     tag: 'gateway',
     child: _ConversationDetailsBody(
       initialConversation: conversation,
@@ -320,11 +321,15 @@ class _ConversationDetailsBody extends ConsumerStatefulWidget {
 
 class _ConversationDetailsBodyState
     extends ConsumerState<_ConversationDetailsBody> {
-  late final Future<Conversation> _detail;
+  late Future<Conversation> _detail;
 
   @override
   void initState() {
     super.initState();
+    _loadDetail();
+  }
+
+  void _loadDetail() {
     _detail = ref
         .read(hermesRepositoryProvider)
         .getConversation(widget.initialConversation.id);
@@ -347,6 +352,7 @@ class _ConversationDetailsBodyState
             failure: hermesFailureFrom(snapshot.error),
             keyPrefix: 'detalhes',
             compact: true,
+            onRetry: () => setState(_loadDetail),
           );
         }
         final conversation = snapshot.data ?? widget.initialConversation;
@@ -922,7 +928,7 @@ Future<void> showActivitySheet(BuildContext context, WidgetRef _) {
           children: [
             _SettingsAction(
               icon: Icons.notes_outlined,
-              title: 'Contexto da próxima run',
+              title: 'Instruções do próximo turno',
               subtitle: 'Instruções enviadas ao iniciar o próximo turno',
               onTap: () => showContextSheet(context, ref),
             ),
@@ -978,12 +984,17 @@ Future<void> showActivitySheet(BuildContext context, WidgetRef _) {
 
 // --- CONTEXTO ---------------------------------------------------------------
 
-Future<void> showContextSheet(BuildContext context, WidgetRef _) {
+Future<void> showContextSheet(
+  BuildContext context,
+  WidgetRef _, {
+  String title = 'Contexto',
+  String backTooltip = 'Voltar para Conversa',
+}) {
   return showHermesSheet(
     context,
-    title: 'Contexto',
-    tag: 'instructions',
-    backTooltip: 'Voltar para Conversa',
+    title: title,
+    tag: '',
+    backTooltip: backTooltip,
     child: const _ContextBody(),
   );
 }
@@ -1024,7 +1035,7 @@ class _ContextBodyState extends ConsumerState<_ContextBody> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionLabel(context, 'Instruções da próxima run'),
+        _sectionLabel(context, 'Orientações para o próximo turno'),
         const SizedBox(height: 11),
         TextField(
           controller: _prompt,
@@ -1048,7 +1059,7 @@ class _ContextBodyState extends ConsumerState<_ContextBody> {
         ),
         const SizedBox(height: 10),
         Text(
-          'O texto é enviado ao Hermes no campo instructions da próxima run.',
+          'Estas orientações serão usadas a partir do próximo turno.',
           style: t.serif.copyWith(fontSize: 13, color: t.dim),
         ),
         const SizedBox(height: 22),
@@ -1109,7 +1120,12 @@ class _CapabilityRow extends StatelessWidget {
             color: enabled ? t.positive : t.faint,
           ),
           const SizedBox(width: 10),
-          Text(label, style: t.serif.copyWith(fontSize: 14, color: t.ink)),
+          Expanded(
+            child: Text(
+              label,
+              style: t.serif.copyWith(fontSize: 14, color: t.ink),
+            ),
+          ),
         ],
       ),
     );

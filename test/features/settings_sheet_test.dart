@@ -182,7 +182,7 @@ void main() {
     expect(find.text('Mostrar atividade'), findsOneWidget);
     expect(find.text('Consolidado'), findsOneWidget);
     expect(find.text('Cronológico'), findsOneWidget);
-    expect(find.text('Contexto da próxima run'), findsOneWidget);
+    expect(find.text('Instruções do próximo turno'), findsOneWidget);
   });
 
   testWidgets('Contexto empilha sobre Conversa e volta ao submenu', (
@@ -192,16 +192,16 @@ void main() {
     await tester.tap(find.text('Conversa'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Contexto da próxima run'));
+    await tester.tap(find.text('Instruções do próximo turno'));
     await tester.pumpAndSettle();
 
-    expect(find.text('INSTRUÇÕES DA PRÓXIMA RUN'), findsOneWidget);
+    expect(find.text('ORIENTAÇÕES PARA O PRÓXIMO TURNO'), findsOneWidget);
     expect(find.byTooltip('Voltar para Conversa'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Voltar para Conversa'));
     await tester.pumpAndSettle();
 
     expect(find.text('Mostrar atividade'), findsOneWidget);
-    expect(find.text('Contexto da próxima run'), findsOneWidget);
+    expect(find.text('Instruções do próximo turno'), findsOneWidget);
   });
 }

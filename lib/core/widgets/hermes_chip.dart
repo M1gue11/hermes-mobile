@@ -22,12 +22,14 @@ class HermesChip extends StatelessWidget {
     this.icon,
     this.selected = false,
     this.minTapHeight,
+    this.maxLabelWidth,
   });
 
   final String label;
   final VoidCallback onTap;
   final IconData? icon;
   final bool selected;
+  final double? maxLabelWidth;
 
   /// Altura mínima do **alvo de toque**, sem mexer no desenho da pastilha.
   ///
@@ -60,11 +62,18 @@ class HermesChip extends StatelessWidget {
             Icon(icon, size: 12, color: t.accent),
             const SizedBox(width: 6),
           ],
-          Text(
-            label,
-            style: t.mono.copyWith(
-              fontSize: 11,
-              color: selected ? t.ink : t.dim,
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: maxLabelWidth ?? double.infinity,
+            ),
+            child: Text(
+              label,
+              maxLines: maxLabelWidth == null ? null : 1,
+              overflow: maxLabelWidth == null ? null : TextOverflow.ellipsis,
+              style: t.mono.copyWith(
+                fontSize: 11,
+                color: selected ? t.ink : t.dim,
+              ),
             ),
           ),
         ],
@@ -78,8 +87,8 @@ class HermesChip extends StatelessWidget {
           ? pastilha
           // `widthFactor` mantém a largura da pastilha: sem ele, num `Wrap` o
           // `Center` toma a linha inteira.
-          : SizedBox(
-              height: minTapHeight,
+          : ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minTapHeight!),
               child: Center(widthFactor: 1, child: pastilha),
             ),
     );

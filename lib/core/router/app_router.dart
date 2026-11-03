@@ -64,7 +64,9 @@ GoRouter buildAppRouter({
               context,
               HermesMotion.saidaDe(HermesMotion.revelar),
             ),
-            child: const ChatScreen(),
+            child: ChatScreen(
+              canEditConnections: connectionSettingsBuilder != null,
+            ),
             transitionsBuilder: (context, animation, secondary, child) {
               final slide =
                   Tween<Offset>(
@@ -90,6 +92,7 @@ GoRouter buildAppRouter({
               HermesMotion.saidaDe(HermesMotion.revelar),
             ),
             child: DeepLinkedChatScreen(
+              canEditConnections: connectionSettingsBuilder != null,
               conversationId: state.pathParameters['conversationId']!,
               title: state.uri.queryParameters['title'],
               model: state.uri.queryParameters['model'],

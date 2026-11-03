@@ -52,6 +52,7 @@ enum _GatewayTurnStart { unavailable, submitted, uncertain, notSubmitted }
 class ChatController extends _$ChatController {
   StreamSubscription<RunEvent>? _sub;
   GatewayLiveTurn? _gatewayTurn;
+  Future<GatewayLiveTurn>? _openingCommandSession;
   final _gatewayCursors = <String, GatewayReplayCursor>{};
   GatewayLiveTurn? _reconcilingGatewayTurn;
   final _uncertainSubmissions = <String>{};
@@ -96,7 +97,9 @@ class ChatController extends _$ChatController {
       }
       _sub = null;
       _gatewayTurn = null;
-      await subscription?.cancel();
+      // Cancellation detaches callbacks immediately; close the transport without
+      // waiting on its asynchronous listener cleanup. The server run continues.
+      if (subscription != null) unawaited(subscription.cancel());
       await turn?.close();
       return;
     }
@@ -202,8 +205,10 @@ class ChatController extends _$ChatController {
   /// Cria uma sessão real no Hermes antes de abrir uma conversa nova.
   Future<void> newChat() async {
     final epoch = ++_epoch;
-    await _sub?.cancel();
+    final cancelling = _sub?.cancel();
+    _sub = null;
     await _closeGatewayTurn();
+    if (cancelling != null) unawaited(cancelling);
     _finishFlagsOnly();
     final modelLock = await _resolvedModelLock();
     if (epoch != _epoch) return;
@@ -310,8 +315,10 @@ class ChatController extends _$ChatController {
     bool repairAlias = false,
   }) async {
     try {
-      await _sub?.cancel();
+      final cancelling = _sub?.cancel();
+      _sub = null;
       await _closeGatewayTurn();
+      if (cancelling != null) unawaited(cancelling);
       var effective = await _resolvedModelLock(preferred: persistedLock);
       if (repairAlias && effective != null) {
         try {
@@ -375,7 +382,7 @@ class ChatController extends _$ChatController {
 
   /// Envia uma mensagem pelo gateway TUI quando ele já está pareado; Runs
   /// continua como fallback compatível até o transporte novo ser validado.
-  Future<bool> send(String raw) async {
+  Future<bool> send(String raw, {String? displayText}) async {
     final text = raw.trim();
     if (text.isEmpty ||
         state.streaming ||
@@ -390,7 +397,8 @@ class ChatController extends _$ChatController {
     final asstId = 'a${_uid()}';
     final showActivity = state.reasoning.showActivity;
     final history = _history(state.messages);
-    final title = state.messages.isEmpty ? _titleFrom(text) : state.title;
+    final visible = displayText ?? text;
+    final title = state.messages.isEmpty ? _titleFrom(visible) : state.title;
     final sessionId = state.sessionId!;
     final epoch = _epoch;
 
@@ -399,7 +407,12 @@ class ChatController extends _$ChatController {
       streaming: true,
       messages: [
         ...state.messages,
-        ChatMessage.user(id: userId, text: text, time: now),
+        ChatMessage.user(
+          id: userId,
+          text: text,
+          displayText: displayText,
+          time: now,
+        ),
         ChatMessage.assistant(
           id: asstId,
           phase: showActivity ? ChatPhase.reasoning : ChatPhase.writing,
@@ -480,9 +493,9 @@ class ChatController extends _$ChatController {
   }
 
   /// Pede cancelamento ao endpoint real da Runs API.
-  Future<void> stop() async {
+  Future<bool> stop() async {
     final id = state.runId;
-    if (id == null || !state.streaming) return;
+    if (id == null || !state.streaming) return false;
     try {
       final turn = _gatewayTurn;
       if (turn != null) {
@@ -490,8 +503,10 @@ class ChatController extends _$ChatController {
       } else {
         await _repo.stopRun(id);
       }
+      return true;
     } catch (error) {
       _failCurrentAssistant(_legivel(error));
+      return false;
     }
   }
 
@@ -780,7 +795,10 @@ class ChatController extends _$ChatController {
     final GatewayLiveTurn turn;
     try {
       _gatewayCursors.remove(sessionId);
-      turn = await gateway.openLiveTurn(storedSessionId: sessionId);
+      final prepared = _gatewayTurn;
+      turn = prepared != null && prepared.storedSessionId == sessionId
+          ? prepared
+          : await gateway.openLiveTurn(storedSessionId: sessionId);
     } catch (error) {
       // Nenhum prompt foi enviado: cair para Runs aqui não duplica o turno.
       // Mas cair calado foi o que escondeu A67 por semanas.
@@ -795,6 +813,11 @@ class ChatController extends _$ChatController {
     }
 
     turnCapture.transportHeld();
+    // Broadcast cancellation detaches the idle command listener immediately.
+    // Its cleanup future must not hold the next prompt on the same socket.
+    final previousSubscription = _sub;
+    _sub = null;
+    if (previousSubscription != null) unawaited(previousSubscription.cancel());
     _gatewayTurn = turn;
     state = state.copyWith(runId: turn.turnId);
     _patch(
@@ -851,6 +874,96 @@ class ChatController extends _$ChatController {
       return await gateway.hasSession() ? gateway : null;
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Discovery and execution share the conversation's transport. Opening a
+  /// second viewer socket mid-turn would steal its authority from streaming.
+  Future<GatewayLiveTurn> commandSession() async {
+    if (state.sessionId == null ||
+        state.openingConversation ||
+        state.conversationLoadFailure != null) {
+      throw const GatewayOperationException(
+        'Abra uma conversa antes de usar comandos.',
+      );
+    }
+    if (_gatewayTurn case final turn?) return turn;
+    if (state.streaming) {
+      throw const GatewayOperationException(
+        'Aguarde esta resposta terminar para usar os comandos do gateway.',
+      );
+    }
+    if (_openingCommandSession case final pending?) return pending;
+    final pending = _openCommandSession();
+    _openingCommandSession = pending;
+    try {
+      return await pending;
+    } finally {
+      if (identical(_openingCommandSession, pending)) {
+        _openingCommandSession = null;
+      }
+    }
+  }
+
+  Future<GatewayLiveTurn> _openCommandSession() async {
+    final sessionId = state.sessionId!;
+    final epoch = _epoch;
+    final generation = _listenerGeneration;
+    final gateway = await _pairedGateway();
+    if (gateway == null) {
+      throw const GatewayAuthenticationRequired(
+        'Conecte o Dashboard para usar os comandos do Hermes.',
+      );
+    }
+    final turn = await gateway.openLiveTurn(storedSessionId: sessionId);
+    if (!_canListen(epoch, generation) || state.sessionId != sessionId) {
+      await turn.close();
+      throw const GatewayOperationException(
+        'A conversa mudou. Abra os comandos novamente.',
+      );
+    }
+    _gatewayTurn = turn;
+    final previousSubscription = _sub;
+    _sub = null;
+    if (previousSubscription != null) unawaited(previousSubscription.cancel());
+    _sub = turn.events.listen(
+      (event) {
+        if (_canListen(epoch, generation)) {
+          _onEvent('command-$epoch', event, epoch);
+        }
+      },
+      onError: (Object _) {
+        unawaited(_closeGatewayTurn());
+      },
+    );
+    return turn;
+  }
+
+  /// A command may rename, undo, compress or change the session's model.
+  /// Read authoritative state without recreating the route or clearing drafts.
+  Future<String?> refreshAfterCommand(String sessionId) async {
+    if (state.sessionId != sessionId || state.streaming) return null;
+    final epoch = _epoch;
+    try {
+      final history =
+          await (_gatewayTurn?.refreshHistory() ??
+              _repo.conversationMessages(sessionId));
+      final detail = await _repo.getConversation(sessionId);
+      if (_epoch == epoch && state.sessionId == sessionId && !state.streaming) {
+        state = state.copyWith(
+          title: detail.title,
+          modelId: detail.model ?? state.modelId,
+          modelProvider: detail.provider ?? state.modelProvider,
+          messages: conversationTimeline(
+            history,
+            model: detail.model ?? state.modelId,
+          ),
+        );
+        ref.invalidate(conversationFeedProvider);
+      }
+      return null;
+    } catch (_) {
+      return 'O comando terminou, mas não foi possível atualizar a conversa. Reabra-a para conferir o estado.';
     }
   }
 

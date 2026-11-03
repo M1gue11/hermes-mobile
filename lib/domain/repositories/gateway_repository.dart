@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../models/approval_request.dart';
+import '../models/gateway_command.dart';
 import '../models/composer_attachment.dart';
 import '../models/gateway_inflight.dart';
 import '../models/gateway_recovery.dart';
@@ -44,6 +45,12 @@ const allowedGatewayMethods = <String>{
   'client.capabilities',
   // Autorizado explicitamente pelo usuário em 2026-08-07 para anexos móveis.
   'file.attach',
+  // A80: authorized command discovery/execution; contract verified against
+  // the user's Hermes Agent repository, tag v0.22.5.
+  'commands.catalog',
+  'complete.slash',
+  'slash.exec',
+  'command.dispatch',
 };
 
 /// Eventos conhecidos no snapshot 0.18.2 e revalidados nominalmente em 0.19.0.
@@ -259,6 +266,9 @@ abstract interface class GatewayLiveTurn {
   Stream<RunEvent> get events;
 
   Future<GatewayPromptReceipt> submit(String text);
+  Future<GatewayCommandCatalog> commandCatalog();
+  Future<GatewaySlashCompletions> completeSlash(String text);
+  Future<GatewayCommandResult> executeCommand(String command);
   Future<void> steer(String text);
   Future<void> interrupt();
   Future<void> respondToApproval(ApprovalChoice choice, {String? requestId});
@@ -355,6 +365,9 @@ GatewayOperationException gatewayRpcFailure({
       'O Hermes recusou os dados enviados para ${gatewayActionLabel(method)}.',
     -32601 => 'Este Hermes não oferece ${gatewayActionLabel(method)}.',
     5032 => 'O agente do Hermes não terminou de iniciar. Tente de novo.',
+    4009 => 'A conversa está ocupada. Aguarde a execução atual terminar.',
+    4011 || 4018 =>
+      'Este comando ou estes argumentos não estão disponíveis nesta sessão do Hermes.',
     _ => 'O Hermes não conseguiu ${gatewayActionLabel(method)}. Tente de novo.',
   },
   method: method,
@@ -364,6 +377,9 @@ GatewayOperationException gatewayRpcFailure({
 
 /// Nome da ação em português para compor a mensagem de falha.
 String gatewayActionLabel(String method) => switch (method) {
+  'commands.catalog' => 'listar os comandos',
+  'complete.slash' => 'sugerir comandos',
+  'slash.exec' || 'command.dispatch' => 'executar o comando',
   'file.attach' => 'preparar o anexo',
   'prompt.submit' => 'enviar a mensagem',
   'session.create' => 'criar a conversa',

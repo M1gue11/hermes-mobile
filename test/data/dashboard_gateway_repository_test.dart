@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_mobile/data/config/dashboard_session_store.dart';
 import 'package:hermes_mobile/data/gateway/dashboard_gateway_repository.dart';
 import 'package:hermes_mobile/domain/models/approval_request.dart';
+import 'package:hermes_mobile/domain/models/gateway_command.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
@@ -18,6 +19,129 @@ import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 
 void main() {
+  group('A80 gateway commands', () {
+    Future<(GatewayLiveTurn, _FakeGatewaySocket)> prepare({
+      Map<String, ({int code, String message})> failures = const {},
+    }) async {
+      final socket = _FakeGatewaySocket(
+        failures: failures,
+        resultFor: (method) => switch (method) {
+          'commands.catalog' => {
+            'pairs': [
+              ['/status', 'Status da sessão'],
+            ],
+          },
+          'complete.slash' => {
+            'items': [
+              {'text': 'status', 'meta': 'Status da sessão'},
+            ],
+            'replace_from': 1,
+          },
+          'slash.exec' => {'output': 'Status atual'},
+          'command.dispatch' => {
+            'type': 'skill',
+            'name': 'work',
+            'message': 'conteúdo expandido',
+            'display': '/work revisar',
+          },
+          _ => null,
+        },
+      );
+      final repository = DashboardGatewayRepository(
+        store: _MemoryDashboardSessionStore(
+          session: (
+            baseUrl: 'https://hermes.example',
+            cookies: {'session': 'opaque'},
+          ),
+        ),
+        dio: Dio()..httpClientAdapter = _DashboardAdapter(),
+        socketConnector: (uri, {required headers}) async => socket,
+      );
+      final turn = await repository.openLiveTurn(
+        storedSessionId: 'durable-session',
+      );
+      addTearDown(turn.close);
+      return (turn, socket);
+    }
+
+    test(
+      'discovery, completion and execution use the live ID, never durable ID',
+      () async {
+        final (turn, socket) = await prepare();
+        expect(
+          (await turn.commandCatalog()).find('status')!.description,
+          'Status da sessão',
+        );
+        expect((await turn.completeSlash('/sta')).items.single.text, 'status');
+        expect((await turn.executeCommand('/status')).output, 'Status atual');
+        for (final method in [
+          'commands.catalog',
+          'complete.slash',
+          'slash.exec',
+        ]) {
+          expect(socket.paramsFor(method)['session_id'], 'live-session');
+        }
+        expect(socket.paramsFor('slash.exec')['command'], 'status');
+        expect(
+          socket.requests.where((row) => row['method'] == 'prompt.submit'),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'only an explicit routing refusal dispatches a Skill once, preserving argument lines',
+      () async {
+        final (turn, socket) = await prepare(
+          failures: {
+            'slash.exec': (
+              code: 4018,
+              message: 'skill command: use command.dispatch for /work',
+            ),
+          },
+        );
+        final result = await turn.executeCommand(
+          '/work revisar\n\n  com recuo',
+        );
+        expect(result.kind, GatewayCommandResultKind.skill);
+        expect(result.display, '/work revisar');
+        expect(
+          socket.paramsFor('command.dispatch')['arg'],
+          'revisar\n\n  com recuo',
+        );
+        expect(
+          socket.requests.where((row) => row['method'] == 'command.dispatch'),
+          hasLength(1),
+        );
+      },
+    );
+
+    for (final failure in [
+      (code: 5030, message: 'worker crashed'),
+      (code: 4018, message: 'script failed: use command.dispatch'),
+    ]) {
+      test(
+        'failure ${failure.code} does not re-execute via another RPC',
+        () async {
+          final (turn, socket) = await prepare(
+            failures: {'slash.exec': failure},
+          );
+          await expectLater(
+            turn.executeCommand('/work'),
+            throwsA(isA<GatewayOperationException>()),
+          );
+          expect(
+            socket.requests.where((row) => row['method'] == 'slash.exec'),
+            hasLength(1),
+          );
+          expect(
+            socket.requests.where((row) => row['method'] == 'command.dispatch'),
+            isEmpty,
+          );
+        },
+      );
+    }
+  });
   for (final changedEpoch in [false, true]) {
     test(
       'snapshot atualiza estado depois de ${changedEpoch ? "restart" : "replay truncado"}',

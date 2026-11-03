@@ -19,6 +19,8 @@ import '../../domain/models/attachment_envelope.dart';
 import '../../domain/models/chat_message.dart';
 import '../../domain/models/clarify_request.dart';
 import '../../domain/models/composer_attachment.dart';
+import '../../domain/models/conversation.dart';
+import '../../domain/models/gateway_command.dart';
 import '../../domain/models/conversation_search.dart';
 import '../../domain/models/model_selection.dart';
 import '../../domain/repositories/gateway_repository.dart';
@@ -29,16 +31,22 @@ import 'boot_provider.dart';
 import 'chat_controller.dart';
 import 'chat_drafts_provider.dart';
 import 'chat_thread_scroll_controller.dart';
+import 'conversations_provider.dart';
+import 'gateway_commands_provider.dart';
+import 'widgets/chat_action_sheets.dart';
 import 'widgets/chat_thread_view.dart';
 import 'widgets/message_bubbles.dart';
 import 'widgets/gateway_login_sheet.dart';
+import 'widgets/gateway_commands.dart';
 import 'widgets/read_aloud_action.dart';
 import 'widgets/sheets.dart';
 
 /// Tela de conversa com o agente. Mostra a thread (raciocínio + tools + texto),
 /// o composer e a barra de streaming. Lê tudo do [ChatController].
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key});
+  const ChatScreen({super.key, this.canEditConnections = false});
+
+  final bool canEditConnections;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -49,6 +57,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   final _input = TextEditingController();
   final _search = TextEditingController();
   final _searchFocus = FocusNode();
+  final _composerFocus = FocusNode();
   final _threadScroll = ChatThreadScrollController();
   final _messageKeys = <String, GlobalKey>{};
 
@@ -66,6 +75,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   var _recordingElapsed = Duration.zero;
   String? _draftSessionId;
   var _restoringDraft = false;
+  var _commandSubmitting = false;
+  var _commandSuggestionsDismissed = false;
+  String _previousComposerText = '';
   PageRoute<dynamic>? _observedRoute;
   ChatController? _chatController;
   var _routeVisible = true;
@@ -117,6 +129,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _input.dispose();
     _search.dispose();
     _searchFocus.dispose();
+    _composerFocus.dispose();
     _threadScroll.dispose();
     super.dispose();
   }
@@ -158,6 +171,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   }
 
   void _inputChanged() {
+    if (_input.text != _previousComposerText) {
+      _previousComposerText = _input.text;
+      _commandSuggestionsDismissed = false;
+    }
     if (!_restoringDraft) {
       ref
           .read(chatDraftsProvider.notifier)
@@ -190,10 +207,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   void _pauseFollowing() => _threadScroll.pauseFollowing();
 
+  Future<void> _showDetails() async {
+    final state = ref.read(chatControllerProvider);
+    final sessionId = state.sessionId;
+    if (sessionId == null || state.openingConversation) return;
+    await showConversationDetailsSheet(
+      context,
+      ref,
+      title: 'Detalhes da conversa',
+      conversation: Conversation(
+        id: sessionId,
+        title: state.title,
+        model: state.modelId,
+        provider: state.modelProvider,
+      ),
+      loadedConversations:
+          ref.read(conversationFeedProvider).asData?.value.items ?? const [],
+    );
+  }
+
   Future<void> _send() async {
     final text = _input.text.trim();
     final chat = ref.read(chatControllerProvider);
     final attachments = ref.read(attachmentComposerControllerProvider);
+    if (parseSlashInvocation(text) != null || text == '/') {
+      if (attachments.attachments.isNotEmpty ||
+          attachments.recording ||
+          attachments.busy) {
+        _showComposerError(
+          'Envie ou remova os anexos antes de executar um comando.',
+        );
+        return;
+      }
+      if (text == '/') {
+        await _openCommands();
+        return;
+      }
+      await _runCommand(text);
+      return;
+    }
     if ((text.isEmpty && attachments.attachments.isEmpty) ||
         attachments.busy ||
         attachments.recording ||
@@ -241,6 +293,146 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   Future<String> _prepareAttachmentInput(String sessionId, String text) => ref
       .read(attachmentComposerControllerProvider.notifier)
       .prepareInput(storedSessionId: sessionId, caption: text);
+
+  Future<void> _openCommands() async {
+    final sessionId = ref.read(chatControllerProvider).sessionId;
+    if (sessionId == null) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final selected = await showGatewayCommandCatalog(context, sessionId);
+    if (!mounted ||
+        selected == null ||
+        ref.read(chatControllerProvider).sessionId != sessionId) {
+      return;
+    }
+    final current = _input.text;
+    final invocation = parseSlashInvocation(current);
+    final arguments =
+        invocation?.arguments ?? (current.trim() == '/' ? '' : current);
+    final next = '$selected ${arguments.trimLeft()}';
+    _input.value = TextEditingValue(
+      text: next,
+      selection: TextSelection.collapsed(offset: next.length),
+    );
+    _composerFocus.requestFocus();
+  }
+
+  void _acceptCommandCompletion(String completion, int replaceFrom) {
+    final cursor = _input.selection.isValid
+        ? _input.selection.extentOffset
+        : _input.text.length;
+    // Python completion columns count Unicode code points; Flutter selections
+    // use UTF-16 code units. Keep emoji before an argument intact.
+    final from = _input.text.runes
+        .take(replaceFrom < 0 ? 0 : replaceFrom)
+        .fold<int>(0, (units, rune) => units + (rune > 0xffff ? 2 : 1))
+        .clamp(0, cursor);
+    var replacement = from == 1 && completion.startsWith('/')
+        ? completion.substring(1)
+        : completion;
+    if (!replacement.endsWith(' ')) replacement = '$replacement ';
+    final next = _input.text.replaceRange(from, cursor, replacement);
+    _input.value = TextEditingValue(
+      text: next,
+      selection: TextSelection.collapsed(offset: from + replacement.length),
+    );
+    _composerFocus.requestFocus();
+  }
+
+  Future<void> _runCommand(String raw) async {
+    if (_commandSubmitting) return;
+    final sessionId = ref.read(chatControllerProvider).sessionId;
+    final typed = _input.text;
+    setState(() {
+      _commandSubmitting = true;
+      _commandSuggestionsDismissed = true;
+    });
+    try {
+      final actions = ref.read(gatewayCommandsProvider.notifier);
+      CommandOutcome outcome;
+      try {
+        outcome = await actions.execute(raw);
+      } on CommandConfirmationRequired catch (confirmation) {
+        if (!mounted) return;
+        final accepted = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            scrollable: true,
+            title: const Text('Executar comando?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SelectableText(confirmation.command),
+                const SizedBox(height: 12),
+                Text(confirmation.scope),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Executar'),
+              ),
+            ],
+          ),
+        );
+        if (!mounted ||
+            accepted != true ||
+            ref.read(chatControllerProvider).sessionId != sessionId) {
+          return;
+        }
+        outcome = await actions.execute(raw, confirmed: true);
+      }
+      if (!mounted) return;
+      final sameInput =
+          _input.text == typed &&
+          ref.read(chatControllerProvider).sessionId == sessionId;
+      if (sessionId != null &&
+          ref.read(chatDraftsProvider.notifier).draftFor(sessionId) == typed) {
+        ref.read(chatDraftsProvider.notifier).clear(sessionId);
+      }
+      if (sameInput) _input.clear();
+      final result = outcome.result;
+      if (result?.kind == GatewayCommandResultKind.prefill) {
+        if (sameInput) {
+          _input.value = TextEditingValue(
+            text: result!.message,
+            selection: TextSelection.collapsed(offset: result.message.length),
+          );
+          _composerFocus.requestFocus();
+        } else {
+          await showCommandOutput(context, raw, result!.message);
+        }
+      } else if (result?.kind == GatewayCommandResultKind.output) {
+        final record = ref.read(gatewayCommandsProvider).history.first;
+        await showCommandOutput(context, raw, record.output);
+      } else if (result?.kind == GatewayCommandResultKind.send ||
+          result?.kind == GatewayCommandResultKind.skill) {
+        _resumeFollowing();
+      }
+      if (!mounted) return;
+      switch (outcome.action) {
+        case CommandClientAction.model:
+          await showModelSheet(context, ref);
+        case CommandClientAction.sessions:
+          context.pop();
+        case CommandClientAction.catalog:
+          await _openCommands();
+        case CommandClientAction.none:
+          break;
+      }
+      if (outcome.notice.isNotEmpty && mounted) {
+        _showComposerError(outcome.notice);
+      }
+    } catch (error) {
+      if (mounted) _showComposerError(commandError(error));
+    } finally {
+      if (mounted) setState(() => _commandSubmitting = false);
+    }
+  }
 
   void _showComposerError(String message) {
     if (!mounted) return;
@@ -411,9 +603,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       appSettingsProvider.select((settings) => settings.chronologicalActivity),
     );
     final boot = ref.watch(bootStateProvider);
-    final online = boot.maybeWhen(
-      data: (value) => value.online,
-      orElse: () => false,
+    final commandState = ref.watch(gatewayCommandsProvider);
+    final commandCursor = _input.selection.isValid
+        ? _input.selection.extentOffset
+        : _input.text.length;
+    final commandPrefix = _input.text.substring(
+      0,
+      commandCursor.clamp(0, _input.text.length),
+    );
+    final connectionLabel = boot.when(
+      data: (value) => value.online ? 'API disponível' : 'API indisponível',
+      loading: () => 'Verificando API…',
+      error: (_, _) => 'Falha ao verificar API',
     );
     final canStop = boot.maybeWhen(
       data: (value) => value.capabilities.features.runStop,
@@ -455,12 +656,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               children: [
                 _TopBar(
                   title: state.title,
-                  subtitle:
-                      '${shortModelLabel(state.modelId)} · ${online ? 'online' : 'offline'}',
+                  subtitle: connectionLabel,
                   onBack: () => context.pop(),
+                  onDetails:
+                      state.sessionId != null && !state.openingConversation
+                      ? _showDetails
+                      : null,
                   searching: _searching,
                   onSearch: _toggleSearch,
-                  onSkills: () => context.push('/skills'),
+                  onOperations: () => showHermesOperationsSheet(
+                    context,
+                    ref,
+                    canEditConnections: widget.canEditConnections,
+                  ),
                 ),
                 ClipRect(
                   child: AnimatedAlign(
@@ -524,11 +732,54 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                           ),
                         ),
                 ),
+                if (!_commandSuggestionsDismissed &&
+                    !commandState.busy &&
+                    !attachmentState.recording &&
+                    state.pendingApproval == null &&
+                    state.pendingClarification == null &&
+                    state.sessionId != null &&
+                    (commandPrefix == '/' ||
+                        parseSlashInvocation(commandPrefix) != null))
+                  GatewayCommandSuggestions(
+                    sessionId: state.sessionId!,
+                    text: commandPrefix,
+                    onSelected: _acceptCommandCompletion,
+                    onOpenCatalog: _openCommands,
+                    onDismiss: () =>
+                        setState(() => _commandSuggestionsDismissed = true),
+                  ),
+                if (commandState.busy)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Row(
+                        children: [
+                          const SizedBox.square(
+                            dimension: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Executando ${commandState.command.split(RegExp(r'\s')).first}…',
+                              style: HermesTokens.of(context).serif.copyWith(
+                                color: HermesTokens.of(context).dim,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 _Composer(
                   input: _input,
+                  focusNode: _composerFocus,
                   streaming: state.streaming,
                   conversationReady:
                       !state.openingConversation &&
+                      !commandState.busy &&
+                      !_commandSubmitting &&
                       state.conversationLoadFailure == null,
                   attachments: attachmentState.attachments,
                   attachmentBusy: attachmentState.busy,
@@ -562,6 +813,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   onStop: () =>
                       ref.read(chatControllerProvider.notifier).stop(),
                   onOpenModel: () => showModelSheet(context, ref),
+                  onOpenResources: () => showChatResourcesSheet(
+                    context,
+                    ref,
+                    onCommands: _openCommands,
+                  ),
                 ),
               ],
             ),
@@ -759,7 +1015,8 @@ class _TopBar extends StatelessWidget {
     required this.onBack,
     required this.searching,
     required this.onSearch,
-    required this.onSkills,
+    required this.onOperations,
+    this.onDetails,
   });
 
   final String title;
@@ -767,7 +1024,8 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onBack;
   final bool searching;
   final VoidCallback onSearch;
-  final VoidCallback onSkills;
+  final VoidCallback onOperations;
+  final VoidCallback? onDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -794,26 +1052,59 @@ class _TopBar extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: Column(
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: t
-                            .serifIn(FontWeight.w500)
-                            .copyWith(fontSize: 16.5, color: t.ink),
+                  child: TapScale(
+                    key: const ValueKey('conversation-details-toggle'),
+                    onTap: onDetails,
+                    tooltip: onDetails == null ? null : 'Detalhes da conversa',
+                    semanticsLabel: onDetails == null
+                        ? null
+                        : 'Detalhes da conversa: $title. $subtitle',
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: t
+                                      .serifIn(FontWeight.w500)
+                                      .copyWith(fontSize: 16.5, color: t.ink),
+                                ),
+                              ),
+                              if (onDetails != null)
+                                Positioned(
+                                  right: 0,
+                                  child: Icon(
+                                    Icons.expand_more,
+                                    size: 16,
+                                    color: t.dim,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: t.mono.copyWith(
+                              fontSize: 10,
+                              color: t.dim,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 1),
-                      Text(
-                        subtitle,
-                        style: t.mono.copyWith(
-                          fontSize: 10,
-                          color: t.faint,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 SizedBox(
@@ -833,13 +1124,10 @@ class _TopBar extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        onPressed: onSkills,
-                        tooltip: 'Skills',
-                        icon: Icon(
-                          Icons.auto_stories_outlined,
-                          size: 20,
-                          color: t.ink,
-                        ),
+                        key: const ValueKey('hermes-operations-toggle'),
+                        onPressed: onOperations,
+                        tooltip: 'Operar Hermes',
+                        icon: Icon(Icons.more_vert, size: 20, color: t.ink),
                       ),
                     ],
                   ),
@@ -973,6 +1261,7 @@ class _ConversationSearchBar extends StatelessWidget {
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.input,
+    required this.focusNode,
     required this.streaming,
     required this.conversationReady,
     required this.canStop,
@@ -992,9 +1281,11 @@ class _Composer extends StatelessWidget {
     required this.onCancelRecording,
     required this.onDismissAttachmentError,
     required this.onOpenModel,
+    required this.onOpenResources,
   });
 
   final TextEditingController input;
+  final FocusNode focusNode;
   final bool streaming;
   final bool conversationReady;
   final bool canStop;
@@ -1016,16 +1307,20 @@ class _Composer extends StatelessWidget {
   final VoidCallback onCancelRecording;
   final VoidCallback onDismissAttachmentError;
   final VoidCallback onOpenModel;
+  final VoidCallback onOpenResources;
 
   @override
   Widget build(BuildContext context) {
     final t = HermesTokens.of(context);
     final hasText = input.text.trim().isNotEmpty;
     final hasAttachments = attachments.isNotEmpty;
+    final commandInput =
+        parseSlashInvocation(input.text.trim()) != null ||
+        input.text.trim() == '/';
     final canSend =
         conversationReady &&
         (hasText || hasAttachments) &&
-        !streaming &&
+        (!streaming || commandInput) &&
         !awaitingApproval &&
         !attachmentBusy &&
         !recording;
@@ -1052,18 +1347,26 @@ class _Composer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: _alvoDeToque,
-            child: Row(
+          LayoutBuilder(
+            builder: (context, constraints) => Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 HermesChip(
                   icon: Icons.smart_toy_outlined,
                   label: modelLabel,
                   selected: true,
                   minTapHeight: _alvoDeToque,
+                  maxLabelWidth: constraints.maxWidth - 48,
                   onTap: onOpenModel,
                 ),
-                const SizedBox(width: 7),
+                HermesChip(
+                  key: const ValueKey('composer-resources'),
+                  icon: Icons.tune_rounded,
+                  label: 'Recursos',
+                  minTapHeight: _alvoDeToque,
+                  onTap: onOpenResources,
+                ),
                 // A32: a máquina que roda o agente fica a um toque de onde se
                 // fala com ele, porque as duas coisas se misturam no uso.
                 HermesChip(
@@ -1124,6 +1427,7 @@ class _Composer extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: input,
+                    focusNode: focusNode,
                     minLines: 1,
                     maxLines: 5,
                     keyboardType: TextInputType.multiline,
@@ -1189,10 +1493,11 @@ class _Composer extends StatelessWidget {
                 ),
                 _SendButton(
                   key: const ValueKey('composer-send'),
-                  streaming: streaming,
+                  streaming: streaming && !commandInput,
+                  command: commandInput,
                   awaitingApproval: awaitingApproval,
-                  enabled: canSend || (streaming && canStop),
-                  onTap: streaming
+                  enabled: canSend || (streaming && !commandInput && canStop),
+                  onTap: streaming && !commandInput
                       ? (canStop ? onStop : null)
                       : (canSend ? onSend : null),
                 ),
@@ -1615,10 +1920,12 @@ class _SendButton extends StatelessWidget {
     required this.enabled,
     required this.onTap,
     this.awaitingApproval = false,
+    this.command = false,
   });
   final bool streaming;
   final bool enabled;
   final bool awaitingApproval;
+  final bool command;
   final VoidCallback? onTap;
 
   @override
@@ -1633,7 +1940,11 @@ class _SendButton extends StatelessWidget {
           : (streaming ? Icons.stop_rounded : Icons.arrow_upward_rounded),
       tooltip: awaitingApproval
           ? 'Aguardando sua decisão'
-          : (streaming ? 'Parar a resposta' : 'Enviar mensagem'),
+          : (streaming
+                ? 'Parar a resposta'
+                : command
+                ? 'Executar comando'
+                : 'Enviar mensagem'),
       background: fundo,
       foreground: (aceso || parando) ? t.bg : t.faint,
       border: (aceso || parando) ? null : t.line,

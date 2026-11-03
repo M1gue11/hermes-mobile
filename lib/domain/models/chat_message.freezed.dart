@@ -153,10 +153,10 @@ return assistant(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String text,  String time,  int? rowId,  bool scaffolding)?  user,TResult Function( String id,  ChatPhase phase,  String reasoning,  String activity,  String thinking,  String? reasonTime,  List<ToolCall> tools,  List<TurnActivity> activityItems,  String text,  String? time,  String? model,  String? runId,  String? error,  int? rowId,  String? warning,  bool recoverable)?  assistant,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String text,  String time,  String? displayText,  int? rowId,  bool scaffolding)?  user,TResult Function( String id,  ChatPhase phase,  String reasoning,  String activity,  String thinking,  String? reasonTime,  List<ToolCall> tools,  List<TurnActivity> activityItems,  String text,  String? time,  String? model,  String? runId,  String? error,  int? rowId,  String? warning,  bool recoverable)?  assistant,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case UserMessage() when user != null:
-return user(_that.id,_that.text,_that.time,_that.rowId,_that.scaffolding);case AssistantMessage() when assistant != null:
+return user(_that.id,_that.text,_that.time,_that.displayText,_that.rowId,_that.scaffolding);case AssistantMessage() when assistant != null:
 return assistant(_that.id,_that.phase,_that.reasoning,_that.activity,_that.thinking,_that.reasonTime,_that.tools,_that.activityItems,_that.text,_that.time,_that.model,_that.runId,_that.error,_that.rowId,_that.warning,_that.recoverable);case _:
   return orElse();
 
@@ -175,10 +175,10 @@ return assistant(_that.id,_that.phase,_that.reasoning,_that.activity,_that.think
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String text,  String time,  int? rowId,  bool scaffolding)  user,required TResult Function( String id,  ChatPhase phase,  String reasoning,  String activity,  String thinking,  String? reasonTime,  List<ToolCall> tools,  List<TurnActivity> activityItems,  String text,  String? time,  String? model,  String? runId,  String? error,  int? rowId,  String? warning,  bool recoverable)  assistant,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String text,  String time,  String? displayText,  int? rowId,  bool scaffolding)  user,required TResult Function( String id,  ChatPhase phase,  String reasoning,  String activity,  String thinking,  String? reasonTime,  List<ToolCall> tools,  List<TurnActivity> activityItems,  String text,  String? time,  String? model,  String? runId,  String? error,  int? rowId,  String? warning,  bool recoverable)  assistant,}) {final _that = this;
 switch (_that) {
 case UserMessage():
-return user(_that.id,_that.text,_that.time,_that.rowId,_that.scaffolding);case AssistantMessage():
+return user(_that.id,_that.text,_that.time,_that.displayText,_that.rowId,_that.scaffolding);case AssistantMessage():
 return assistant(_that.id,_that.phase,_that.reasoning,_that.activity,_that.thinking,_that.reasonTime,_that.tools,_that.activityItems,_that.text,_that.time,_that.model,_that.runId,_that.error,_that.rowId,_that.warning,_that.recoverable);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -193,10 +193,10 @@ return assistant(_that.id,_that.phase,_that.reasoning,_that.activity,_that.think
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String text,  String time,  int? rowId,  bool scaffolding)?  user,TResult? Function( String id,  ChatPhase phase,  String reasoning,  String activity,  String thinking,  String? reasonTime,  List<ToolCall> tools,  List<TurnActivity> activityItems,  String text,  String? time,  String? model,  String? runId,  String? error,  int? rowId,  String? warning,  bool recoverable)?  assistant,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String text,  String time,  String? displayText,  int? rowId,  bool scaffolding)?  user,TResult? Function( String id,  ChatPhase phase,  String reasoning,  String activity,  String thinking,  String? reasonTime,  List<ToolCall> tools,  List<TurnActivity> activityItems,  String text,  String? time,  String? model,  String? runId,  String? error,  int? rowId,  String? warning,  bool recoverable)?  assistant,}) {final _that = this;
 switch (_that) {
 case UserMessage() when user != null:
-return user(_that.id,_that.text,_that.time,_that.rowId,_that.scaffolding);case AssistantMessage() when assistant != null:
+return user(_that.id,_that.text,_that.time,_that.displayText,_that.rowId,_that.scaffolding);case AssistantMessage() when assistant != null:
 return assistant(_that.id,_that.phase,_that.reasoning,_that.activity,_that.thinking,_that.reasonTime,_that.tools,_that.activityItems,_that.text,_that.time,_that.model,_that.runId,_that.error,_that.rowId,_that.warning,_that.recoverable);case _:
   return null;
 
@@ -209,12 +209,15 @@ return assistant(_that.id,_that.phase,_that.reasoning,_that.activity,_that.think
 
 
 class UserMessage implements ChatMessage {
-  const UserMessage({required this.id, required this.text, required this.time, this.rowId, this.scaffolding = false});
-  
+  const UserMessage({required this.id, required this.text, required this.time, this.displayText, this.rowId, this.scaffolding = false});
+
 
 @override final  String id;
 @override final  String text;
 @override final  String time;
+/// Human invocation for a server-expanded command. [text] remains the
+/// model-facing content used when building conversation history.
+ final  String? displayText;
 @override final  int? rowId;
 /// Turno com papel de usuário que o runtime injetou, e não a pessoa.
 ///
@@ -232,16 +235,16 @@ $UserMessageCopyWith<UserMessage> get copyWith => _$UserMessageCopyWithImpl<User
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserMessage&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.time, time) || other.time == time)&&(identical(other.rowId, rowId) || other.rowId == rowId)&&(identical(other.scaffolding, scaffolding) || other.scaffolding == scaffolding));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserMessage&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.time, time) || other.time == time)&&(identical(other.displayText, displayText) || other.displayText == displayText)&&(identical(other.rowId, rowId) || other.rowId == rowId)&&(identical(other.scaffolding, scaffolding) || other.scaffolding == scaffolding));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,text,time,rowId,scaffolding);
+int get hashCode => Object.hash(runtimeType,id,text,time,displayText,rowId,scaffolding);
 
 @override
 String toString() {
-  return 'ChatMessage.user(id: $id, text: $text, time: $time, rowId: $rowId, scaffolding: $scaffolding)';
+  return 'ChatMessage.user(id: $id, text: $text, time: $time, displayText: $displayText, rowId: $rowId, scaffolding: $scaffolding)';
 }
 
 
@@ -252,7 +255,7 @@ abstract mixin class $UserMessageCopyWith<$Res> implements $ChatMessageCopyWith<
   factory $UserMessageCopyWith(UserMessage value, $Res Function(UserMessage) _then) = _$UserMessageCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String text, String time, int? rowId, bool scaffolding
+ String id, String text, String time, String? displayText, int? rowId, bool scaffolding
 });
 
 
@@ -269,12 +272,13 @@ class _$UserMessageCopyWithImpl<$Res>
 
 /// Create a copy of ChatMessage
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? text = null,Object? time = null,Object? rowId = freezed,Object? scaffolding = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? text = null,Object? time = null,Object? displayText = freezed,Object? rowId = freezed,Object? scaffolding = null,}) {
   return _then(UserMessage(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
 as String,time: null == time ? _self.time : time // ignore: cast_nullable_to_non_nullable
-as String,rowId: freezed == rowId ? _self.rowId : rowId // ignore: cast_nullable_to_non_nullable
+as String,displayText: freezed == displayText ? _self.displayText : displayText // ignore: cast_nullable_to_non_nullable
+as String?,rowId: freezed == rowId ? _self.rowId : rowId // ignore: cast_nullable_to_non_nullable
 as int?,scaffolding: null == scaffolding ? _self.scaffolding : scaffolding // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -288,7 +292,7 @@ as bool,
 
 class AssistantMessage implements ChatMessage {
   const AssistantMessage({required this.id, this.phase = ChatPhase.reasoning, this.reasoning = '', this.activity = '', this.thinking = '', this.reasonTime, final  List<ToolCall> tools = const <ToolCall>[], final  List<TurnActivity> activityItems = const <TurnActivity>[], this.text = '', this.time, this.model, this.runId, this.error, this.rowId, this.warning, this.recoverable = false}): _tools = tools,_activityItems = activityItems;
-  
+
 
 @override final  String id;
 @JsonKey() final  ChatPhase phase;

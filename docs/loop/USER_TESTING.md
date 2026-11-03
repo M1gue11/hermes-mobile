@@ -4,6 +4,40 @@ Este arquivo contém **somente** roteiros ainda pendentes de aceite em aparelho.
 Após validação, registrar o resultado na mudança correspondente, atualizar
 [BACKLOG.md](BACKLOG.md) e remover o roteiro daqui. O Git preserva o histórico.
 
+## [ ] A80 — comandos do gateway na conversa
+
+- Em uma conversa, digite `/sta`, selecione `/status` e envie: conferir o
+  relatório real, copiar o resultado e reabri-lo por Recursos > Comandos.
+- Consulte o catálogo, busque uma Skill e prepare argumentos multilinha; a
+  seleção deve inserir texto para revisão, sem executar nem apagar o rascunho.
+- Execute uma Skill curta numa conversa de teste: um único turno, mostrando a
+  invocação humana, sem expor o corpo expandido ou duplicá-lo no histórico.
+- Numa conversa descartável, cancele a confirmação de `/undo` e confira que
+  nada mudou; depois confirme e verifique histórico truncado e texto preparado,
+  sem reenvio automático. Validar `/compress` apenas nessa conversa de teste.
+- Durante uma resposta, `/status` deve consultar sem interromper; `/stop` deve
+  interromper essa resposta pelo canal real.
+- Simule perda de rede durante um comando: nenhuma segunda execução automática;
+  preserve a invocação e confira o estado antes de autorizar repetição.
+- Com fonte ampliada, conferir sugestões, catálogo, argumentos com emoji,
+  confirmação longa e resultados. Terminal indisponível deve estar explicado.
+- Sem Dashboard, oferecer conexão; não enviar slash administrativo como prompt.
+
+## [ ] A103 — operação a partir da conversa
+
+- Com um rascunho e a leitura acima do fim, abra Recursos > Skills ou
+  Ferramentas e volte: preservar texto e posição, sem menu aberto por baixo.
+- Abra as instruções por Recursos, salve uma orientação e volte para Recursos;
+  confira que ela é aplicada ao próximo turno sem apagar o rascunho.
+- Pelo menu do topo, abra Acessos, Uso geral, Agendamentos e Servidor. Voltar
+  deve levar diretamente à conversa; reiniciar, aprovar e revogar continuam
+  protegidos pelas confirmações das telas existentes.
+- Toque no título para consultar tokens/custos registrados da sessão. Uso geral
+  deve permanecer identificado como agregado de todas as conversas.
+- Em Ajustes do aplicativo, confirme que Conexões continua disponível.
+- Com texto do sistema ampliado e um modelo de nome longo, confira as pastilhas,
+  menus, metadados e ações de copiar/ouvir, sem transbordamentos ou alvos pequenos.
+
 ## [ ] A75 — clarify batch no Android
 
 - Abra uma conversa que peça quatro esclarecimentos; mesmo sem mensagens na

@@ -20,12 +20,14 @@ class DeepLinkedChatScreen extends ConsumerStatefulWidget {
     this.title,
     this.model,
     this.provider,
+    this.canEditConnections = false,
   });
 
   final String conversationId;
   final String? title;
   final String? model;
   final String? provider;
+  final bool canEditConnections;
 
   @override
   ConsumerState<DeepLinkedChatScreen> createState() =>
@@ -71,6 +73,7 @@ class _DeepLinkedChatScreenState extends ConsumerState<DeepLinkedChatScreen> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      _opened ? const ChatScreen() : const Scaffold(body: PaperTexture());
+  Widget build(BuildContext context) => _opened
+      ? ChatScreen(canEditConnections: widget.canEditConnections)
+      : const Scaffold(body: PaperTexture());
 }

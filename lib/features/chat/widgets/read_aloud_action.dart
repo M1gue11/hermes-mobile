@@ -52,7 +52,7 @@ class ReadAloudAction extends ConsumerWidget {
       }
     }
 
-    final cor = fase == ReadAloudPhase.playing ? t.accent : t.faint;
+    final cor = fase == ReadAloudPhase.playing ? t.accent : t.dim;
     final rotulo = switch (fase) {
       ReadAloudPhase.synthesizing => 'GERANDO ÁUDIO',
       ReadAloudPhase.playing => 'PARAR',
@@ -67,53 +67,56 @@ class ReadAloudAction extends ConsumerWidget {
         null => 'Ouvir a resposta',
       },
       excludeSemantics: true,
-      child: InkWell(
-        key: const ValueKey('ouvir-resposta'),
-        onTap: alternar,
-        borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox.square(
-                dimension: 13,
-                child: AnimatedSwitcher(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+        child: InkWell(
+          key: const ValueKey('ouvir-resposta'),
+          onTap: alternar,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox.square(
+                  dimension: 13,
+                  child: AnimatedSwitcher(
+                    duration: motionOf(context, HermesMotion.estado),
+                    child: switch (fase) {
+                      ReadAloudPhase.synthesizing => UnicodeSpinner(
+                        key: const ValueKey('sintetizando'),
+                        name: 'helix',
+                        size: 12,
+                        color: t.accentInk,
+                        glow: t.accent,
+                      ),
+                      ReadAloudPhase.playing => Icon(
+                        Icons.stop_rounded,
+                        key: const ValueKey('tocando'),
+                        size: 13,
+                        color: cor,
+                      ),
+                      null => Icon(
+                        Icons.volume_up_outlined,
+                        key: const ValueKey('parado'),
+                        size: 13,
+                        color: cor,
+                      ),
+                    },
+                  ),
+                ),
+                const SizedBox(width: 6),
+                AnimatedDefaultTextStyle(
                   duration: motionOf(context, HermesMotion.estado),
-                  child: switch (fase) {
-                    ReadAloudPhase.synthesizing => UnicodeSpinner(
-                      key: const ValueKey('sintetizando'),
-                      name: 'helix',
-                      size: 12,
-                      color: t.accentInk,
-                      glow: t.accent,
-                    ),
-                    ReadAloudPhase.playing => Icon(
-                      Icons.stop_rounded,
-                      key: const ValueKey('tocando'),
-                      size: 13,
-                      color: cor,
-                    ),
-                    null => Icon(
-                      Icons.volume_up_outlined,
-                      key: const ValueKey('parado'),
-                      size: 13,
-                      color: cor,
-                    ),
-                  },
+                  style: t.mono.copyWith(
+                    fontSize: 9.5,
+                    letterSpacing: 1.4,
+                    color: cor,
+                  ),
+                  child: Text(rotulo),
                 ),
-              ),
-              const SizedBox(width: 6),
-              AnimatedDefaultTextStyle(
-                duration: motionOf(context, HermesMotion.estado),
-                style: t.mono.copyWith(
-                  fontSize: 9.5,
-                  letterSpacing: 1.4,
-                  color: cor,
-                ),
-                child: Text(rotulo),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

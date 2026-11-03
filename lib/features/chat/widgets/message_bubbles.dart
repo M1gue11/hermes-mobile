@@ -28,6 +28,7 @@ import '../../../domain/models/gateway_scaffolding.dart';
 import '../../../domain/models/hermes_failure.dart';
 import '../../../domain/models/model_selection.dart';
 import '../../../domain/models/plain_text.dart';
+import '../../../domain/models/skill_invocation.dart';
 import '../../../domain/models/tool_call.dart';
 import '../../../domain/models/tool_card_view.dart';
 import '../../../domain/models/turn_activity.dart';
@@ -53,7 +54,14 @@ class _MetaLine extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label.toUpperCase(), style: style.copyWith(color: t.dim)),
+        Flexible(
+          child: Text(
+            label.toUpperCase(),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: style.copyWith(color: t.dim),
+          ),
+        ),
         if (right != null) ...[
           const SizedBox(width: 8),
           Container(
@@ -62,7 +70,14 @@ class _MetaLine extends StatelessWidget {
             decoration: BoxDecoration(color: t.faint, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
-          Text(right!.toUpperCase(), style: style),
+          Flexible(
+            child: Text(
+              right!.toUpperCase(),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: style,
+            ),
+          ),
         ],
       ],
     );
@@ -186,7 +201,7 @@ class _UserBubbleState extends State<UserBubble> {
               SizedBox(height: 8 * scale),
               if (envelope == null)
                 Text(
-                  message.text,
+                  message.displayText ?? skillInvocationText(message.text) ?? message.text,
                   textAlign: TextAlign.right,
                   style: t
                       .serifIn(FontWeight.w400, italic: true)
@@ -425,7 +440,9 @@ class _CopyResponse extends StatelessWidget {
     return Padding(
       key: const ValueKey('copiar-resposta'),
       padding: const EdgeInsets.only(top: 10),
-      child: Row(
+      child: Wrap(
+        spacing: 16,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           _CopyAction(
             key: const ValueKey('copiar-markdown'),
@@ -433,7 +450,6 @@ class _CopyResponse extends StatelessWidget {
             label: 'MARKDOWN',
             onTap: () => _copiar(context, markdown, 'Markdown'),
           ),
-          const SizedBox(width: 16),
           _CopyAction(
             key: const ValueKey('copiar-texto'),
             icon: Icons.notes,
@@ -441,7 +457,7 @@ class _CopyResponse extends StatelessWidget {
             onTap: () =>
                 _copiar(context, markdownToPlainText(markdown), 'Texto'),
           ),
-          if (extra case final extra?) ...[const SizedBox(width: 16), extra],
+          ?extra,
         ],
       ),
     );
@@ -466,22 +482,25 @@ class _CopyAction extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 13, color: t.faint),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: t.mono.copyWith(
-                fontSize: 9.5,
-                letterSpacing: 1.4,
-                color: t.faint,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 13, color: t.dim),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: t.mono.copyWith(
+                  fontSize: 9.5,
+                  letterSpacing: 1.4,
+                  color: t.dim,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -21,6 +21,10 @@ sealed class ChatMessage with _$ChatMessage {
     required String id,
     required String text,
     required String time,
+
+    /// Human invocation for a server-expanded command. [text] remains the
+    /// model-facing content used when building conversation history.
+    String? displayText,
     int? rowId,
 
     /// Turno com papel de usuário que o runtime injetou, e não a pessoa.

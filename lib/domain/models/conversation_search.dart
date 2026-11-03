@@ -2,6 +2,7 @@ import 'attachment_envelope.dart';
 import 'chat_message.dart';
 import 'gateway_scaffolding.dart';
 import 'plain_text.dart';
+import 'skill_invocation.dart';
 
 /// Índices das mensagens carregadas que contêm [rawQuery].
 ///
@@ -23,8 +24,10 @@ List<int> conversationSearchMatches(
 }
 
 String _searchableText(ChatMessage message) => switch (message) {
-  UserMessage(:final text, :final scaffolding) =>
-    scaffolding ? _scaffoldingPresentation(text) : _userPresentation(text),
+  UserMessage(:final text, :final scaffolding, :final displayText) =>
+    scaffolding
+        ? _scaffoldingPresentation(text)
+        : _userPresentation(displayText ?? skillInvocationText(text) ?? text),
   AssistantMessage(
     :final text,
     :final reasoning,
