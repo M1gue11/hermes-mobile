@@ -299,7 +299,7 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   na integração A80, com confirmação e atualização do histórico. Os métodos
   diretos `session.undo` e `session.compress` não foram adicionados à allowlist.
 
-- [ ] **A100 Ligar e desligar toolsets e MCP.** Alternar toolsets
+- [~] **A100 Ligar e desligar toolsets e MCP.** Alternar toolsets
   (`PUT /api/tools/toolsets/{name}` ou `tools.configure`) e servidores MCP
   (`PUT /api/mcp/servers/{name}/enabled`, com teste). Não expor `/env`,
   chaves nem instalação de servidores.
@@ -313,7 +313,7 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   do MCP homeassistant (11 ferramentas). **Falta** alternar no aparelho: não
   foi feito no servidor do usuário porque reescreve o `config.yaml`.
 
-- [ ] **A101 Aprovar pareamento de plataformas.** Listar pedidos pendentes e
+- [~] **A101 Aprovar pareamento de plataformas.** Listar pedidos pendentes e
   aprovar ou revogar acesso de Telegram, WhatsApp e afins por
   `/api/pairing*`, com confirmação clara de que aprovar dá acesso ao agente.
 

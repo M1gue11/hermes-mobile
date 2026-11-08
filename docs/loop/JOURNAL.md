@@ -145,6 +145,13 @@ versionada; o Git registra as mudanças do repositório.
   uma conversa continuada em outro lugar só aparecia ao reabri-la. Agora relê
   o histórico com guardas (ver backlog). Voltar de Skills/Ferramentas também
   relê: um GET por volta. 886 testes.
+- Triagem do que sobrou: A79 pede reproduzir o bug do Parar no aparelho (sem
+  descrição do sintoma); A76 pede mensagens reais de exemplo; A98/B10 esperam
+  liberar `session.usage` na allowlist; B11/B14 pedem medir eventos disparando
+  turnos no servidor do usuário; A90, A92 e A93 esperam decisão. A100/A101
+  estavam como abertos, mas já implementados: passaram a `[~]`. B9 é viável:
+  no 0.22.6 todo `subagent.*` traz `goal`, `task_count` e `task_index`
+  (`tui_gateway/contracts/events.py`), com `subagent_id` opcional.
 
 ## Estado acionável
 
