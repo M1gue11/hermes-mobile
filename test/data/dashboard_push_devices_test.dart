@@ -19,6 +19,12 @@ void main() {
     );
   });
 
+  test('A92: chamada com cookie da sessão não segue redirect', () async {
+    adapter.reply = (_) => _json({'devices': []});
+    await repository.pushDevices();
+    expect(adapter.requests.single.followRedirects, isFalse);
+  });
+
   test('lista aparelhos sem chaves e com a data em segundos', () async {
     adapter.reply = (_) => _json({
       'version': 1,

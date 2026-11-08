@@ -484,6 +484,18 @@ void main() {
       );
     });
 
+    test('A92: pedido autenticado não segue redirect', () async {
+      final adapter = _RecordingAdapter({'status': 'ok'});
+      final repository = HttpHermesRepository(
+        apiKey: 'test-key',
+        dio: Dio()..httpClientAdapter = adapter,
+      );
+
+      await repository.health();
+
+      expect(adapter.ultimo?.followRedirects, isFalse);
+    });
+
     test('caractere multibyte partido entre pedaços chega inteiro', () async {
       // A88: decodificar cada pedaço sozinho trocava o caractere cortado por
       // U+FFFD. Aqui cada fronteira cai no meio de um caractere.

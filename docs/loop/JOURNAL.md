@@ -133,6 +133,11 @@ versionada; o Git registra as mudanças do repositório.
   `open_requests`). Faltavam as regressões das pontas que o backlog cita:
   socket que cai logo depois do `prompt.submit`, e aprovação resolvida fora
   sumindo na retomada enquanto uma ainda aberta volta. Itens fechados.
+- A92 documentado em `docs/seguranca-transporte-tailnet.md`: a exceção é por
+  nome (inclui Funnel e tailnets alheias), o WireGuard não autentica o serviço
+  e o trecho dentro do host é em claro. Clientes HTTP sem redirect (o
+  Dashboard nunca redireciona em `/api/`, conferido no 0.22.6). Remover a
+  exceção depende de o usuário servir o Dashboard em HTTPS.
 
 ## Estado acionável
 

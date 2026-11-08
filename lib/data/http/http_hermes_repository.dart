@@ -71,6 +71,9 @@ class HttpHermesRepository implements HermesRepository {
   BaseOptions get debugOptions => _dio.options;
 
   static Dio _withSafeErrors(Dio dio) {
+    // A chave Bearer vai em todo pedido; um redirect para outro host a
+    // entregaria junto (A92). O API Server não redireciona.
+    dio.options.followRedirects = false;
     dio.interceptors.add(
       InterceptorsWrapper(
         onError: (error, handler) {

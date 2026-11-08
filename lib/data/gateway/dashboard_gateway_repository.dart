@@ -77,7 +77,9 @@ class DashboardGatewayRepository implements GatewayRepository {
     GatewaySocketConnector? socketConnector,
     Duration heartbeatInterval = gatewayHeartbeatInterval,
     Duration heartbeatDeadline = gatewayHeartbeatDeadline,
-  }) : _dio = dio ?? Dio(),
+  }) : // Toda chamada leva o cookie da sessão; um redirect para outro host
+       // o entregaria junto (A92).
+       _dio = (dio ?? Dio())..options.followRedirects = false,
        _socketConnector = socketConnector ?? _connectIoSocket,
        // ignore: prefer_initializing_formals
        _heartbeatInterval = heartbeatInterval,

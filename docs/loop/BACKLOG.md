@@ -58,9 +58,16 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   em 90 s, ou saindo da sessão, é recusa; só se fixa a chave depois do
   "confio" e da sessão de pé. Falta o aceite contra um SSH real
   ([USER_TESTING.md](USER_TESTING.md)).
-- [ ] **A92 Revisar transporte HTTP/WS em `*.ts.net`.** Documentar ameaça e
+- [!] **A92 Revisar transporte HTTP/WS em `*.ts.net`.** Documentar ameaça e
   controles para a exceção cleartext; preferir proteção autenticada do serviço
   quando aplicável, sem confundir criptografia Tailscale com TLS do servidor.
+
+  Documentado em 2026-11-08 em
+  [seguranca-transporte-tailnet.md](../seguranca-transporte-tailnet.md), e os
+  dois clientes HTTP deixaram de seguir redirects (a chave e o cookie não
+  saem para outro host). **Bloqueado em decisão do usuário:** servir o
+  Dashboard por `tailscale serve --https` e só então restringir a exceção ao
+  FQDN em debug e removê-la do release.
 - [ ] **A93 Preparar distribuição Android release.** Definir application ID,
   assinatura release sob custódia apropriada e canal de distribuição; não
   publicar APK release assinado com chave debug. O CI atual só constrói debug.
