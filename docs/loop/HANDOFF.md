@@ -6,6 +6,13 @@ afetado.
 
 ## Checkpoint
 
+- Loop de 2026-11-08 (commits locais em `dev`, sem push): A60 push com o app
+  fechado (plugin `server/mobile-push` + UnifiedPush), A81, A84, A85, A86,
+  A87, A88, A89, A91, A92 (parcial), A77, A78, B9, e regressões de A82/A83.
+  894 testes, análise limpa, APK debug no emulador sem erro na abertura a
+  frio e na volta do segundo plano. O que ficou para o usuário (decisões,
+  aceites em aparelho, plugin no servidor) está no fim de `JOURNAL.md`.
+
 - Atualização de streaming de 2026-10-11: análise limpa, 690 testes passaram,
   APK debug compilado e instalado. Rotina remota validada com 10 tools, replay
   de 13 eventos após background, um único submit e reabertura com resposta e

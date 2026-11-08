@@ -30,9 +30,10 @@ e evidências técnicas ficam em `docs/dashboard-api/` e no histórico Git.
 
 ## Próximas decisões de produto
 
-- A60 precisa de decisão sobre ambição de entrega e privacidade antes de qualquer
-  fornecedor push, serviço externo ou mudança no Gateway. A arquitetura e seus
-  limites estão em [NOTIFICATIONS_ARCHITECTURE.md](NOTIFICATIONS_ARCHITECTURE.md).
+- A60 foi decidido em 2026-11-08 (UnifiedPush + ntfy self-hosted + plugin
+  `server/mobile-push`, payload mínimo) e implementado; falta instalar o plugin
+  no servidor e o aceite no aparelho. Arquitetura e limites em
+  [NOTIFICATIONS_ARCHITECTURE.md](NOTIFICATIONS_ARCHITECTURE.md).
 - A42 precisa de direção visual aprovada; não gerar identidade por conta própria.
 
 ## Fora da frente de produto

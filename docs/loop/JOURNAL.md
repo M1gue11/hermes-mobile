@@ -176,6 +176,15 @@ versionada; o Git registra as mudanças do repositório.
   exclusão e ativação/desativação persistidas de Skills.
 - A60: instalar `server/mobile-push` no servidor (decisão do usuário) e
   seguir o roteiro de aparelho em `USER_TESTING.md`.
+- Decisões pendentes abertas pelo loop de 2026-11-08: A90 (imagens remotas no
+  Markdown: carregar sozinhas ou só com toque), A92 (servir o Dashboard em
+  HTTPS para remover a exceção de `*.ts.net`), A93 (application ID e
+  assinatura release), A78 (gravar voz com texto já digitado mudaria o canto
+  do composer), A98/B10 (liberar `session.usage` na allowlist TUI).
+- Precisam do usuário ou do aparelho: A79 (sintoma do bug do Parar), A76
+  (mensagens reais com Markdown errado), B11/B14 (medir eventos disparando
+  turnos no servidor), A104 (adiado a pedido).
+- Aceites em aparelho novos: A60, A77, A78, A89, A91, B9.
 - Decisão pendente: subir o AGP para 9.1 (destrava
   `flutter_local_notifications` 23 e `compileSdk` 37).
 - B0, B10, B9 e B11 permanecem posteriores conforme `BACKLOG.md`.
