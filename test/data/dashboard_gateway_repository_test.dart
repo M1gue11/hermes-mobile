@@ -1874,6 +1874,14 @@ void main() {
       'session.history',
       'prompt.submit',
     ]);
+    // A86: com os bytes no `data_url`, o caminho do telefone não sai do
+    // aparelho. O gateway prefere `path` quando ele existe no host, então um
+    // homônimo lá trocaria o anexo sem aviso.
+    final attach = sockets.single.paramsFor('file.attach');
+    expect(attach.keys, unorderedEquals(['session_id', 'name', 'data_url']));
+    expect(attach['name'], 'nota.txt');
+    expect(attach['data_url'], 'data:text/plain;base64,AQID');
+    expect(attach.toString(), isNot(contains('/storage/emulated')));
     // A retomada do anexo é a mesma do turno: `eager_build` impede que o build
     // disparado pelo attach fique sem transporte ao fechar o socket.
     expect(sockets.single.paramsFor('session.resume'), {

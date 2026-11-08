@@ -94,6 +94,11 @@ versionada; o Git registra as mudanças do repositório.
 - A88 concluído: o SSE da Runs API e a saída do terminal SSH decodificam UTF-8
   por stream, não por pedaço. Antes, um caractere partido entre dois pacotes
   virava `�` (reproduzido em teste antes da correção).
+- A86 concluído: `file.attach` não manda mais `path`. Conferido no
+  `tui_gateway/prompt_attachments.py` do 0.22.6: um `path` que existe no host
+  ganha dos bytes do `data_url`, então o nome sozinho (fallback sem
+  `localPath`) podia anexar um homônimo do servidor no lugar do arquivo do
+  telefone.
 
 ## Estado acionável
 

@@ -236,9 +236,12 @@ class DashboardGatewayRepository implements GatewayRepository {
     ComposerAttachment attachment,
   ) async {
     final staged = await _stageSession(storedSessionId);
+    // Sem `path` (A86): o gateway prefere um caminho que exista no host aos
+    // bytes do `data_url`, então mandar o caminho do telefone, ou só o nome,
+    // deixava um homônimo no servidor substituir o anexo, além de expor a
+    // estrutura de pastas do aparelho.
     return staged.client.call('file.attach', {
       'session_id': staged.liveSessionId,
-      'path': attachment.localPath ?? attachment.name,
       'name': attachment.name,
       'data_url': _dataUrl(attachment),
     });

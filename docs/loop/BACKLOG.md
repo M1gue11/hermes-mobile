@@ -52,9 +52,6 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
 - [ ] **A85 Não mandar `@file:` como texto no fallback Runs.** Quando o anexo
   foi preparado no TUI mas o turno não abre, bloquear fallback e preservar o
   rascunho até existir contrato Runs explícito para anexos.
-- [ ] **A86 Omitir caminho absoluto do telefone no `file.attach` remoto.** Com
-  `data_url`, não preencher o campo opcional `path`; testar que o payload não
-  revela caminho local nem colide com arquivos do host.
 - [ ] **A87 Limitar quantidade/tamanho total dos anexos.** Além do limite por
   arquivo, impedir acúmulo excessivo de bytes e Base64 em memória; medir uso.
 - [ ] **A89 Encerrar gravação de áudio no lifecycle.** Cancelar recorder e
