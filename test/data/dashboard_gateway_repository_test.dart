@@ -1837,6 +1837,36 @@ void main() {
     await turn.close();
   });
 
+  test(
+    'A82: socket que cai depois do prompt.submit é envio incerto, não recusa',
+    () async {
+      final repository = DashboardGatewayRepository(
+        store: _MemoryDashboardSessionStore(
+          session: (
+            baseUrl: 'https://dashboard.example:8443',
+            cookies: {'session': 'opaque'},
+          ),
+        ),
+        dio: Dio()..httpClientAdapter = _DashboardAdapter(),
+        socketConnector: (uri, {required headers}) async => _FakeGatewaySocket(
+          // O servidor recebe o frame e a conexão cai antes da resposta.
+          onCall: (method, socket) {
+            if (method == 'prompt.submit') unawaited(socket.close());
+          },
+        ),
+      );
+
+      final turn = await repository.openLiveTurn(
+        storedSessionId: 'stored-session',
+      );
+
+      await expectLater(
+        turn.submit('Pergunta'),
+        throwsA(isA<GatewaySubmissionUncertain>()),
+      );
+    },
+  );
+
   test('anexo e envio usam uma conexão e uma retomada só', () async {
     final sockets = <_FakeGatewaySocket>[];
     final adapter = _DashboardAdapter();

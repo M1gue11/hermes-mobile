@@ -578,6 +578,65 @@ void main() {
     );
   });
 
+  test('A83: aprovação resolvida fora some ao retomar; aberta volta', () async {
+    final first = FakeGatewayLiveTurn(
+      storedSessionId: 'session-2',
+      liveSessionId: 'live-1',
+    );
+    final second = FakeGatewayLiveTurn(
+      storedSessionId: 'session-2',
+      liveSessionId: 'live-2',
+    );
+    final gateway = FakeGatewayRepository(turns: [first, second]);
+    final container = makeContainer(
+      FakeHermesRepository(),
+      MemoryActiveRunStore(),
+      gateway,
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(chatControllerProvider.notifier);
+    await controller.newChat();
+    await controller.send('Rode os testes');
+
+    first.add(
+      RunEvent.approvalRequest(
+        ApprovalRequest(
+          runId: first.turnId,
+          requestId: 'srq-1',
+          command: 'flutter test',
+        ),
+      ),
+    );
+    await pumpUntil(
+      () => container.read(chatControllerProvider).pendingApproval != null,
+    );
+
+    // Respondido no desktop enquanto o app estava sem conexão: a retomada
+    // não traz o pedido, e o cartão local não pode continuar esperando.
+    first.addError(const GatewayOperationException('socket caiu'));
+    await pumpUntil(() => gateway.openedSessionIds.length == 2);
+    await pumpUntil(
+      () => container.read(chatControllerProvider).pendingApproval == null,
+    );
+    expect(first.approvals, isEmpty);
+
+    // Pedido ainda aberto no servidor chega de novo pela conexão nova.
+    second.add(
+      RunEvent.approvalRequest(
+        ApprovalRequest(
+          runId: second.turnId,
+          requestId: 'srq-2',
+          command: 'flutter analyze',
+        ),
+      ),
+    );
+    await pumpUntil(
+      () =>
+          container.read(chatControllerProvider).pendingApproval?.requestId ==
+          'srq-2',
+    );
+  });
+
   test('reconnect do Dashboard retoma histórico sem reenviar prompt', () async {
     final first = FakeGatewayLiveTurn(
       storedSessionId: 'session-2',

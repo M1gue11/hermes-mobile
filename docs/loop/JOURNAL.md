@@ -127,6 +127,12 @@ versionada; o Git registra as mudanças do repositório.
   `onVerifyHostKey` do dartssh2 aceita `Future`, então o handshake fica parado
   na pergunta). Teste de widget cobre a tela e as decisões; o handshake real
   depende de servidor SSH e foi para `USER_TESTING.md`. 878 testes.
+- A82 e A83 já estavam resolvidos no código (pendentes completam ao fechar;
+  `prompt.submit` sem resposta vira `GatewaySubmissionUncertain` e reconcilia
+  sem reenviar; a retomada limpa aprovação e clarify locais e reentrega os
+  `open_requests`). Faltavam as regressões das pontas que o backlog cita:
+  socket que cai logo depois do `prompt.submit`, e aprovação resolvida fora
+  sumindo na retomada enquanto uma ainda aberta volta. Itens fechados.
 
 ## Estado acionável
 

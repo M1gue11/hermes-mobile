@@ -38,12 +38,6 @@ pré-requisitos para tornar público o código-fonte**; avaliar separadamente a
 segurança e os requisitos antes de distribuir APKs a terceiros. Adicionar
 regressões automatizadas e aceite no aparelho conforme cada correção.
 
-- [ ] **A82 Reconciliar `prompt.submit` após queda do WebSocket.** Concluir RPCs
-  pendentes ao fechar, mas não declarar um prompt não enviado sem consultar o
-  estado remoto; cobrir aceite no servidor seguido de perda de resposta.
-- [ ] **A83 Reconstruir approval/clarify na retomada.** Reconciliar cards locais
-  com `open_requests` e remover pedidos já resolvidos enquanto o app estava em
-  background, sem perder respostas ainda válidas.
 - [~] **A89 Encerrar gravação de áudio no lifecycle.** Cancelar recorder e
   descartar temporários ao sair da tela ou colocar o app em background.
 
