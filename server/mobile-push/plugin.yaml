@@ -1,0 +1,18 @@
+name: mobile-push
+version: 0.1.0
+description: "Push para o Hermes Mobile quando um turno termina, falha ou para, e quando o agente espera aprovação, pergunta ou sudo. Entrega WebPush cifrada no endpoint UnifiedPush do aparelho (ntfy)."
+author: Hermes Mobile
+kind: standalone
+manifest_version: 2
+api_version: 1
+requires_hermes: ">=0.22.5"
+license: MIT
+tags: [notifications, push, unifiedpush, ntfy, mobile]
+config_schema:
+  notify_completed: {type: bool, default: true, label: "Turno concluído", description: "Avisa quando o agente termina e espera a próxima mensagem."}
+  notify_failed: {type: bool, default: true, label: "Turno com erro", description: "Avisa quando o turno termina em erro."}
+  notify_interrupted: {type: bool, default: false, label: "Turno interrompido", description: "Avisa quando o turno é interrompido. Desligado porque quase sempre foi você quem parou."}
+  notify_input: {type: bool, default: true, label: "Esperando você", description: "Avisa quando o agente pede aprovação, faz uma pergunta ou pede sudo."}
+  include_title: {type: bool, default: true, label: "Título da conversa", description: "Inclui o título da conversa no aviso. Desligado, o aviso diz só o tipo de evento."}
+  skip_platforms: {type: list, default: [cron, subagent], label: "Plataformas ignoradas", description: "Turnos destas plataformas nunca geram push."}
+provides_hooks: [on_session_end, on_human_input_request, on_human_input_resolved]

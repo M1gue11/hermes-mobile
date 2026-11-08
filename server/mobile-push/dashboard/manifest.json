@@ -1,0 +1,10 @@
+{
+  "name": "mobile-push",
+  "label": "Mobile push",
+  "description": "Registro de aparelhos do Hermes Mobile para notificações push.",
+  "icon": "Bell",
+  "version": "0.1.0",
+  "tab": { "path": "/mobile-push", "hidden": true },
+  "entry": "dist/index.js",
+  "api": "plugin_api.py"
+}
