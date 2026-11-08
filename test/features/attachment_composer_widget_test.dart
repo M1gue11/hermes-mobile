@@ -20,6 +20,7 @@ import 'package:hermes_mobile/features/chat/chat_controller.dart';
 import 'package:hermes_mobile/features/chat/chat_screen.dart';
 import 'package:hermes_mobile/main.dart';
 
+import '../support/fake_gateway_repository.dart';
 import '../support/fake_hermes_repository.dart';
 import '../support/memory_active_run_store.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
@@ -66,6 +67,10 @@ void main() {
     expect(find.text('relatorio.pdf'), findsOneWidget);
     expect(find.textContaining('@file:'), findsNothing);
     expect(gateway.attachedSessionIds, ['session-1']);
+    expect(
+      gateway.turns.single.submitted.single,
+      startsWith('@file:.hermes/desktop-attachments/relatorio.pdf'),
+    );
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 1));
@@ -266,7 +271,17 @@ final class _WidgetGatewayRepository implements GatewayRepository {
     required String storedSessionId,
     GatewayReplayCursor? after,
     bool recover = false,
-  }) => throw UnimplementedError();
+  }) async {
+    final turn = FakeGatewayLiveTurn(
+      storedSessionId: storedSessionId,
+      liveSessionId: 'live-$storedSessionId',
+    );
+    turns.add(turn);
+    return turn;
+  }
+
+  /// Anexo só segue pelo gateway (A85); estes são os turnos que ele abriu.
+  final List<FakeGatewayLiveTurn> turns = [];
 
   @override
   Future<List<GatewayProbeStep>> probeGateway({

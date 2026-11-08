@@ -382,7 +382,15 @@ class ChatController extends _$ChatController {
 
   /// Envia uma mensagem pelo gateway TUI quando ele já está pareado; Runs
   /// continua como fallback compatível até o transporte novo ser validado.
-  Future<bool> send(String raw, {String? displayText}) async {
+  ///
+  /// [requiresGateway]: o texto leva `@file:` de anexos preparados no
+  /// workspace da sessão TUI. A Runs API não resolve essas referências, então
+  /// sem gateway o envio falha e o rascunho fica (A85).
+  Future<bool> send(
+    String raw, {
+    String? displayText,
+    bool requiresGateway = false,
+  }) async {
     final text = raw.trim();
     if (text.isEmpty ||
         state.streaming ||
@@ -450,6 +458,20 @@ class ChatController extends _$ChatController {
         ref
             .read(activeConversationIdsProvider.notifier)
             .markInactive(sessionId);
+        return false;
+      }
+      if (requiresGateway) {
+        turnCapture.transportFallback('anexo exige o gateway; Runs recusado');
+        _fail(
+          asstId,
+          state.instructions.trim().isNotEmpty
+              ? 'Anexos não seguem com instruções do próximo turno ativas. '
+                    'Limpe as instruções ou envie os anexos sem elas.'
+              : 'Anexos só seguem pelo gateway, que não abriu agora. O texto '
+                    'e os anexos continuam no composer; tente de novo.',
+          epoch: epoch,
+          clearActiveRun: true,
+        );
         return false;
       }
 

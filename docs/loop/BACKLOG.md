@@ -44,9 +44,6 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
 - [ ] **A83 Reconstruir approval/clarify na retomada.** Reconciliar cards locais
   com `open_requests` e remover pedidos já resolvidos enquanto o app estava em
   background, sem perder respostas ainda válidas.
-- [ ] **A85 Não mandar `@file:` como texto no fallback Runs.** Quando o anexo
-  foi preparado no TUI mas o turno não abre, bloquear fallback e preservar o
-  rascunho até existir contrato Runs explícito para anexos.
 - [~] **A89 Encerrar gravação de áudio no lifecycle.** Cancelar recorder e
   descartar temporários ao sair da tela ou colocar o app em background.
 

@@ -635,6 +635,57 @@ void main() {
     expect(runs.historicos, hasLength(1));
   });
 
+  test('A85: anexo do gateway nunca cai para Runs como texto', () async {
+    const prompt = '@file:.hermes/desktop-attachments/nota.txt\n\nLeia.';
+    final runs = FakeHermesRepository();
+    final container = makeContainer(
+      runs,
+      MemoryActiveRunStore(),
+      FakeGatewayRepository(paired: false),
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(chatControllerProvider.notifier);
+    await controller.newChat();
+
+    final sent = await controller.send(prompt, requiresGateway: true);
+
+    expect(sent, isFalse);
+    expect(runs.historicos, isEmpty, reason: 'nenhum createRun');
+    final state = container.read(chatControllerProvider);
+    expect(state.streaming, isFalse);
+    final assistant = state.messages.last as AssistantMessage;
+    expect(assistant.phase, ChatPhase.failed);
+
+    // Sem anexo, o mesmo cenário continua indo pela Runs.
+    expect(await controller.send('Só texto'), isTrue);
+    await pumpUntil(() => !container.read(chatControllerProvider).streaming);
+    expect(runs.historicos, hasLength(1));
+  });
+
+  test('A85: anexo com instruções ativas explica o conflito', () async {
+    final turn = FakeGatewayLiveTurn(
+      storedSessionId: 'session-2',
+      liveSessionId: 'live-1',
+    );
+    final gateway = FakeGatewayRepository(turns: [turn]);
+    final runs = FakeHermesRepository();
+    final container = makeContainer(runs, MemoryActiveRunStore(), gateway);
+    addTearDown(container.dispose);
+    final controller = container.read(chatControllerProvider.notifier);
+    await controller.newChat();
+    controller.setInstructions('Responda em tópicos.');
+
+    final sent = await controller.send('@file:x.txt', requiresGateway: true);
+
+    expect(sent, isFalse);
+    expect(runs.historicos, isEmpty);
+    expect(turn.submitted, isEmpty);
+    final assistant =
+        container.read(chatControllerProvider).messages.last
+            as AssistantMessage;
+    expect(assistant.phase, ChatPhase.failed);
+  });
+
   test('reabre turno Dashboard concluído pelo histórico', () async {
     final active = MemoryActiveRunStore();
     active.records['session-1'] = ActiveRunRecord(

@@ -289,7 +289,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     final submitted = await ref
         .read(chatControllerProvider.notifier)
-        .send(prepared);
+        .send(
+          prepared,
+          requiresGateway: attachments.attachments.any(
+            (item) => item.kind == ComposerAttachmentKind.file,
+          ),
+        );
     if (!submitted || !mounted) return;
     ref.read(attachmentComposerControllerProvider.notifier).clear();
     if (_draftSessionId == chat.sessionId) _input.clear();

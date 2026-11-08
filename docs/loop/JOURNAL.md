@@ -117,6 +117,12 @@ versionada; o Git registra as mudanças do repositório.
   sobe de novo, porque o `@file:` é relativo ao workspace da sessão. Os
   gerados reescritos pelo build_runner com espaço no fim de linha foram
   restaurados; só `composer_attachment.freezed.dart` muda. 875 testes.
+- A85 concluído: com arquivo anexado, `send(requiresGateway: true)` não cai
+  para a Runs; o turno falha com a causa e o composer mantém texto e anexos.
+  Com instruções do próximo turno ativas (que sempre forçam a Runs), a
+  mensagem explica o conflito. O teste de widget de anexo dependia do defeito
+  (o fake recusava o turno ao vivo e o `@file:` ia para a Runs); agora ele abre
+  um turno e confere que o `@file:` chega ao gateway. 877 testes.
 
 ## Estado acionável
 
