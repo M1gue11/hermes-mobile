@@ -49,6 +49,19 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
   final _dashboardPassword = TextEditingController();
   String _savedApiKey = '';
   String _savedDashboardPassword = '';
+
+  /// Endereços a que os segredos salvos pertencem. Vazio deixa de significar
+  /// "manter" quando a origem digitada é outra (A81).
+  String? _savedApiOrigin;
+  String? _savedDashboardOrigin;
+
+  bool get _keepsApiKey =>
+      _savedApiKey.isNotEmpty &&
+      sameCredentialOrigin(_savedApiOrigin, _baseUrl.text);
+
+  bool get _keepsDashboardPassword =>
+      _savedDashboardPassword.isNotEmpty &&
+      sameCredentialOrigin(_savedDashboardOrigin, _dashboardUrl.text);
   bool _loadingSaved = false;
   bool _connecting = false;
   bool _forgetting = false;
@@ -61,8 +74,10 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     super.initState();
     final initial = widget.initialConnection;
     _savedApiKey = initial?.apiKey ?? '';
-    _baseUrl = TextEditingController(text: initial?.baseUrl ?? '');
-    _dashboardUrl = TextEditingController();
+    _savedApiOrigin = initial?.baseUrl;
+    _baseUrl = TextEditingController(text: initial?.baseUrl ?? '')
+      ..addListener(_originChanged);
+    _dashboardUrl = TextEditingController()..addListener(_originChanged);
     if (widget.editing) {
       _loadingSaved = true;
       _loadSavedDashboard();
@@ -78,6 +93,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       _dashboardUrl.text = credentials?.baseUrl ?? session?.baseUrl ?? '';
       _dashboardUser.text = credentials?.username ?? '';
       _savedDashboardPassword = credentials?.password ?? '';
+      _savedDashboardOrigin = credentials?.baseUrl;
     } catch (_) {
       if (mounted) {
         _error =
@@ -86,6 +102,11 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     } finally {
       if (mounted) setState(() => _loadingSaved = false);
     }
+  }
+
+  /// As dicas "mantém a chave atual" dependem do endereço digitado.
+  void _originChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -100,10 +121,28 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
 
   Future<void> _connect() async {
     if (_busy) return;
-    final apiKey = _apiKey.text.trim().isEmpty ? _savedApiKey : _apiKey.text;
-    final password = _dashboardPassword.text.isEmpty
-        ? _savedDashboardPassword
-        : _dashboardPassword.text;
+    final typedKey = _apiKey.text.trim().isNotEmpty;
+    if (!typedKey && _savedApiKey.isNotEmpty && !_keepsApiKey) {
+      setState(
+        () => _error =
+            'O endereço da API mudou. Informe a chave da API do novo servidor.',
+      );
+      return;
+    }
+    final typedPassword = _dashboardPassword.text.isNotEmpty;
+    if (!typedPassword &&
+        _savedDashboardPassword.isNotEmpty &&
+        !_keepsDashboardPassword) {
+      setState(
+        () => _error =
+            'O endereço do Dashboard mudou. Informe a senha do novo servidor.',
+      );
+      return;
+    }
+    final apiKey = typedKey ? _apiKey.text : _savedApiKey;
+    final password = typedPassword
+        ? _dashboardPassword.text
+        : _savedDashboardPassword;
     final connection = HermesConnection(
       baseUrl: _baseUrl.text,
       apiKey: apiKey,
@@ -332,7 +371,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                       const SizedBox(height: 10),
                       Text(
                         widget.editing
-                            ? 'Os novos dados só entram em vigor depois que os dois acessos forem validados. Campos secretos vazios mantêm o valor protegido atual.'
+                            ? 'Os novos dados só entram em vigor depois que os dois acessos forem validados. Campos secretos vazios mantêm o valor protegido atual enquanto o endereço não mudar.'
                             : 'O acesso funciona apenas pelo seu Tailnet. A chave e o login ficam no armazenamento seguro deste aparelho.',
                         style: tokens.serif.copyWith(
                           fontSize: 15.5,
@@ -363,12 +402,14 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                         obscureText: true,
                         decoration: _decoration(
                           tokens,
-                          hint: widget.editing && _savedApiKey.isNotEmpty
+                          hint: widget.editing && _keepsApiKey
                               ? 'Mantém a chave atual'
                               : 'Bearer token do Hermes',
-                          helper: widget.editing && _savedApiKey.isNotEmpty
+                          helper: !widget.editing || _savedApiKey.isEmpty
+                              ? null
+                              : _keepsApiKey
                               ? 'Deixe vazio para manter. Digite somente para substituir.'
-                              : null,
+                              : 'Endereço novo: informe a chave deste servidor.',
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -408,16 +449,15 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                             : const [AutofillHints.password],
                         decoration: _decoration(
                           tokens,
-                          hint:
-                              widget.editing &&
-                                  _savedDashboardPassword.isNotEmpty
+                          hint: widget.editing && _keepsDashboardPassword
                               ? 'Mantém a senha atual'
                               : null,
                           helper:
-                              widget.editing &&
-                                  _savedDashboardPassword.isNotEmpty
+                              !widget.editing || _savedDashboardPassword.isEmpty
+                              ? null
+                              : _keepsDashboardPassword
                               ? 'Deixe vazio para manter. Digite somente para substituir.'
-                              : null,
+                              : 'Endereço novo: informe a senha deste servidor.',
                         ),
                       ),
                       if (_error != null) ...[

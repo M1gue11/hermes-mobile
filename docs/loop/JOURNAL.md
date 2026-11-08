@@ -102,6 +102,11 @@ versionada; o Git registra as mudanças do repositório.
 - A89 implementado: gravação descartada em segundo plano, com outra rota por
   cima ou com o composer descartado (antes o microfone seguia ligado sem dono).
   868 testes. Falta conferir o indicador de microfone no aparelho.
+- A81 concluído: chave da API e senha do Dashboard salvas só são reaproveitadas
+  com o campo vazio se esquema, host e porta continuam os mesmos; host novo
+  pede a credencial nova, e a dica do campo muda enquanto a URL é digitada.
+  O teste antigo, que esperava reaproveitar a chave num host novo, foi
+  reescrito para o comportamento novo. 871 testes.
 
 ## Estado acionável
 

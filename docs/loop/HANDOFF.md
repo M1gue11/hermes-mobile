@@ -68,7 +68,9 @@ afetado.
 - `tool.complete` do TUI carrega `result`, `args` e `tool_id`; a Runs API continua
   sendo um fallback mais pobre por contrato.
 - Segredos nunca entram em terminal, log, screenshot, teste ou documentação.
-- Na edição de conexões, segredo vazio significa preservar o valor atual. Falha
+- Na edição de conexões, segredo vazio significa preservar o valor atual, só
+  enquanto esquema, host e porta não mudam (A81): host novo exige chave ou
+  senha nova, para a credencial salva nunca ir a outra máquina. Falha
   após mutação exige rollback das duas conexões; somente “Esquecer conexões” pode
   limpar deliberadamente o pareamento.
 - Copy de persona vem de `AgentPersona`; referências técnicas e de produto não

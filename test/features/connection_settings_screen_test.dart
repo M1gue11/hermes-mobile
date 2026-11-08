@@ -126,18 +126,109 @@ void main() {
     expect(apiField.obscureText, isTrue);
     expect(passwordField.obscureText, isTrue);
 
+    // Mesmo servidor, outro caminho: os segredos salvos continuam valendo.
     await tester.enterText(
       find.byKey(const ValueKey('connection-base-url')),
-      'https://api.new.ts.net',
+      'https://api.old.ts.net/hermes',
     );
     await tester.ensureVisible(find.byKey(const ValueKey('save-connections')));
     await tester.tap(find.byKey(const ValueKey('save-connections')));
     await tester.pumpAndSettle();
 
-    expect(connectionStore.value?.baseUrl, 'https://api.new.ts.net');
+    expect(connectionStore.value?.baseUrl, 'https://api.old.ts.net/hermes');
     expect(connectionStore.value?.apiKey, 'api-secret-old');
     expect(gateway.authentications.single.password, 'dashboard-secret-old');
-    expect(connected?.baseUrl, 'https://api.new.ts.net');
+    expect(connected?.baseUrl, 'https://api.old.ts.net/hermes');
+  });
+
+  testWidgets('A81: host novo da API exige a chave nova', (tester) async {
+    final connectionStore = _MemoryConnectionStore(oldConnection);
+    final dashboardStore = _MemoryDashboardStore(
+      session: oldSession,
+      credentials: oldCredentials,
+    );
+    final gateway = FakeGatewayRepository();
+
+    await tester.pumpWidget(
+      _screen(
+        connectionStore: connectionStore,
+        dashboardStore: dashboardStore,
+        gateway: gateway,
+        onConnected: (_) {},
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Mantém a chave atual'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('connection-base-url')),
+      'https://api.new.ts.net',
+    );
+    await tester.pump();
+    expect(find.text('Mantém a chave atual'), findsNothing);
+    expect(
+      find.text('Endereço novo: informe a chave deste servidor.'),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(find.byKey(const ValueKey('save-connections')));
+    await tester.tap(find.byKey(const ValueKey('save-connections')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'O endereço da API mudou. Informe a chave da API do novo servidor.',
+      ),
+      findsOneWidget,
+    );
+    expect(connectionStore.saves, 0);
+    expect(gateway.authentications, isEmpty);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('connection-api-key')),
+      'api-secret-new',
+    );
+    await tester.ensureVisible(find.byKey(const ValueKey('save-connections')));
+    await tester.tap(find.byKey(const ValueKey('save-connections')));
+    await tester.pumpAndSettle();
+
+    expect(connectionStore.value?.apiKey, 'api-secret-new');
+  });
+
+  testWidgets('A81: host novo do Dashboard exige a senha nova', (tester) async {
+    final connectionStore = _MemoryConnectionStore(oldConnection);
+    final dashboardStore = _MemoryDashboardStore(
+      session: oldSession,
+      credentials: oldCredentials,
+    );
+    final gateway = FakeGatewayRepository();
+
+    await tester.pumpWidget(
+      _screen(
+        connectionStore: connectionStore,
+        dashboardStore: dashboardStore,
+        gateway: gateway,
+        onConnected: (_) {},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('dashboard-connection-url')),
+      'http://dashboard.new.ts.net:9119',
+    );
+    await tester.ensureVisible(find.byKey(const ValueKey('save-connections')));
+    await tester.tap(find.byKey(const ValueKey('save-connections')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'O endereço do Dashboard mudou. Informe a senha do novo servidor.',
+      ),
+      findsOneWidget,
+    );
+    expect(gateway.authentications, isEmpty);
+    expect(connectionStore.saves, 0);
   });
 
   testWidgets('segredos digitados substituem os valores protegidos', (
@@ -220,6 +311,15 @@ void main() {
     await tester.enterText(
       find.byKey(const ValueKey('dashboard-connection-url')),
       'http://dashboard.new.ts.net:9119',
+    );
+    // Hosts novos exigem segredos novos (A81).
+    await tester.enterText(
+      find.byKey(const ValueKey('connection-api-key')),
+      'api-secret-new',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('dashboard-connection-password')),
+      'dashboard-secret-new',
     );
     await tester.ensureVisible(find.byKey(const ValueKey('save-connections')));
     await tester.tap(find.byKey(const ValueKey('save-connections')));

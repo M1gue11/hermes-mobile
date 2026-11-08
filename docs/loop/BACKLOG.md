@@ -38,9 +38,6 @@ pré-requisitos para tornar público o código-fonte**; avaliar separadamente a
 segurança e os requisitos antes de distribuir APKs a terceiros. Adicionar
 regressões automatizadas e aceite no aparelho conforme cada correção.
 
-- [ ] **A81 Vincular credenciais à origem da conexão.** Ao editar URL da API ou
-  Dashboard, não reaproveitar chave/senha da origem anterior quando o campo
-  estiver vazio; exigir credencial nova e testar mudança de host.
 - [ ] **A82 Reconciliar `prompt.submit` após queda do WebSocket.** Concluir RPCs
   pendentes ao fechar, mas não declarar um prompt não enviado sem consultar o
   estado remoto; cobrir aceite no servidor seguido de perda de resposta.

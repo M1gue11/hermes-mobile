@@ -24,3 +24,20 @@ class HermesConnection {
     apiKey: apiKey.trim(),
   );
 }
+
+/// Uma credencial salva só vale para a origem (esquema, host e porta) em que
+/// foi salva (A81). Trocar só o caminho mantém o servidor; trocar o host
+/// mandaria a chave ou a senha para outra máquina.
+bool sameCredentialOrigin(String? saved, String typed) {
+  Uri? parse(String? value) {
+    final uri = Uri.tryParse(value?.trim() ?? '');
+    return uri == null || !uri.hasAuthority || uri.host.isEmpty ? null : uri;
+  }
+
+  final a = parse(saved);
+  final b = parse(typed);
+  if (a == null || b == null) return false;
+  return a.scheme.toLowerCase() == b.scheme.toLowerCase() &&
+      a.host.toLowerCase() == b.host.toLowerCase() &&
+      a.port == b.port;
+}
