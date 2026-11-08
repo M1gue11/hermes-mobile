@@ -76,6 +76,59 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
   });
 
+  testWidgets('A78: arquivo, voz e texto seguem no mesmo turno, nessa ordem', (
+    tester,
+  ) async {
+    final gateway = _WidgetGatewayRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          chatLaunchProvider.overrideWithValue(StubChatLaunch()),
+          hermesRepositoryProvider.overrideWithValue(FakeHermesRepository()),
+          activeRunStoreProvider.overrideWithValue(MemoryActiveRunStore()),
+          attachmentSourceProvider.overrideWithValue(_WidgetAttachmentSource()),
+          gatewayRepositoryProvider.overrideWithValue(gateway),
+        ],
+        child: const HermesApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Conversa persistida'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+
+    await tester.tap(find.byKey(const ValueKey('composer-attach')));
+    await tester.pump();
+    // Com anexo e sem texto, o microfone continua disponível.
+    await tester.tap(find.byKey(const ValueKey('composer-record')));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Concluir gravação'));
+    await tester.pump();
+    expect(find.text('relatorio.pdf'), findsOneWidget);
+    expect(find.text('voz.m4a'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).last, 'Compare os dois.');
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('composer-record')),
+      findsNothing,
+      reason: 'com texto, a ação da vez é enviar',
+    );
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    for (var index = 0; index < 12; index++) {
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+
+    expect(
+      gateway.turns.single.submitted.single,
+      '@file:.hermes/desktop-attachments/relatorio.pdf\n\n'
+      'Mensagem de voz transcrita.\n\nCompare os dois.',
+    );
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
   testWidgets('grava, conclui e deixa a voz pronta no composer', (
     tester,
   ) async {

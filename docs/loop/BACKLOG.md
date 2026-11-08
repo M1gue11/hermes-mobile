@@ -84,7 +84,7 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   Falta aceite em aparelho; badges atualizados e busca global dentro do chat
   ficam para outra etapa, sem dependências nem métodos TUI novos.
 
-- [ ] **A78 Permitir arquivo e áudio no mesmo envio.** Hoje o compositor força
+- [~] **A78 Permitir arquivo e áudio no mesmo envio.** Hoje o compositor força
   escolher um ou outro. Permitir preparar anexo(s), gravar áudio e incluir texto
   no mesmo turno sem apagar a seleção anterior; oferecer revisão, remoção e
   confirmação do que será enviado. Respeitar o contrato real: voz é transcrita
@@ -93,6 +93,15 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   medido. Critério de aceite: arquivo + voz + texto chegam na ordem esperada,
   sem envio duplo, perda silenciosa ou upload sem consentimento; falha parcial
   mantém o rascunho recuperável. Testar permissões e retorno do background.
+
+  Implementado em 2026-11-08: o microfone deixou de sumir quando há anexo
+  (só some com texto digitado, quando a ação da vez é enviar). Arquivo, voz e
+  legenda chegam num turno só, nessa ordem (`@file:`, transcrição, legenda);
+  a tira mostra cada item com remoção; retry não repete upload (A84) e o
+  rascunho fica se o gateway não abrir (A85). **Decisão de design pendente:**
+  gravar com texto já digitado exigiria mostrar microfone e enviar juntos no
+  canto direito, o que o comentário do composer evitava de propósito. Falta
+  aceite no aparelho.
 
 - [ ] **A79 Corrigir interrupção e enfileiramento durante execução.** Reproduzir
   o bug do botão Parar e oferecer envio de uma nova mensagem enquanto o turno

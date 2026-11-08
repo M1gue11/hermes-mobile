@@ -138,6 +138,9 @@ versionada; o Git registra as mudanças do repositório.
   e o trecho dentro do host é em claro. Clientes HTTP sem redirect (o
   Dashboard nunca redireciona em `/api/`, conferido no 0.22.6). Remover a
   exceção depende de o usuário servir o Dashboard em HTTPS.
+- A78 implementado no mínimo que não muda o desenho: microfone visível com
+  anexo, escondido só com texto. O controller já compunha arquivo + voz +
+  legenda. Gravar com texto digitado fica como decisão de design.
 
 ## Estado acionável
 

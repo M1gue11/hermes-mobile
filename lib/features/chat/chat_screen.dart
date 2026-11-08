@@ -1352,14 +1352,11 @@ class _Composer extends StatelessWidget {
         conversationReady && !streaming && !awaitingApproval && !attachmentBusy;
 
     final podeAnexar = canCompose && !recording;
-    // O microfone só existe quando não há nada para enviar: com texto ou anexo,
-    // a ação da vez é enviar, e duas ofertas no mesmo canto disputam o dedo.
+    // Com texto digitado a ação da vez é enviar, e duas ofertas no mesmo canto
+    // disputam o dedo. Anexo não esconde o microfone (A78): arquivo e voz
+    // seguem no mesmo turno, a voz como transcrição antes da legenda.
     final mostrarMicrofone =
-        conversationReady &&
-        !streaming &&
-        !hasText &&
-        !hasAttachments &&
-        !recording;
+        conversationReady && !streaming && !hasText && !recording;
 
     return Container(
       // Sem folga no topo: a faixa das pastilhas já carrega a sua, por dentro
