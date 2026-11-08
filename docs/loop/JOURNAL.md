@@ -112,6 +112,11 @@ versionada; o Git registra as mudanças do repositório.
   microfone; o total, com os bytes em mão, descartando o que não coube. O
   gateway 0.22.6 aceita 256 MB por anexo, então o teto é do celular. Números
   escolhidos pelo loop; ajustar se o uso real pedir. 874 testes.
+- A84 concluído: o anexo guarda a sessão em que o `ref_text` foi confirmado e
+  a transcrição da voz. Um retry só sobe o que falhou; trocar de conversa
+  sobe de novo, porque o `@file:` é relativo ao workspace da sessão. Os
+  gerados reescritos pelo build_runner com espaço no fim de linha foram
+  restaurados; só `composer_attachment.freezed.dart` muda. 875 testes.
 
 ## Estado acionável
 

@@ -185,19 +185,45 @@ class AttachmentComposerController extends _$AttachmentComposerController {
       final transcripts = <String>[];
       for (var index = 0; index < state.attachments.length; index++) {
         final attachment = state.attachments[index];
+        // A84: o que já foi confirmado numa tentativa anterior não sobe de
+        // novo. Arquivo só reaproveita na mesma conversa, porque o `@file:`
+        // aponta para o workspace dela.
+        final transcript = attachment.transcript;
+        if (attachment.kind == ComposerAttachmentKind.audio &&
+            transcript != null) {
+          transcripts.add(transcript);
+          _replace(
+            attachment.copyWith(status: ComposerAttachmentStatus.uploaded),
+          );
+          continue;
+        }
+        if (attachment.kind == ComposerAttachmentKind.file &&
+            attachment.refText != null &&
+            attachment.uploadedSessionId == storedSessionId) {
+          final reused = attachment.copyWith(
+            status: ComposerAttachmentStatus.uploaded,
+          );
+          uploaded.add(reused);
+          _replace(reused);
+          continue;
+        }
         _replace(
           attachment.copyWith(status: ComposerAttachmentStatus.uploading),
         );
         if (attachment.kind == ComposerAttachmentKind.audio) {
-          transcripts.add(await gateway.transcribeAudio(attachment));
+          final spoken = await gateway.transcribeAudio(attachment);
+          transcripts.add(spoken);
           _replace(
-            attachment.copyWith(status: ComposerAttachmentStatus.uploaded),
+            attachment.copyWith(
+              status: ComposerAttachmentStatus.uploaded,
+              transcript: spoken,
+            ),
           );
         } else {
-          final result = await gateway.attachFile(
+          final result = (await gateway.attachFile(
             storedSessionId: storedSessionId,
             attachment: attachment,
-          );
+          )).copyWith(uploadedSessionId: storedSessionId);
           uploaded.add(result);
           _replace(result);
         }

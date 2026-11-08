@@ -224,6 +224,53 @@ void main() {
     expect(state.error, 'Limite de 10 anexos por mensagem.');
   });
 
+  test('A84: retry sobe só o que falhou e não transcreve de novo', () async {
+    ComposerAttachment file(String name) => ComposerAttachment(
+      id: name,
+      name: name,
+      mimeType: 'application/pdf',
+      bytes: Uint8List.fromList([1]),
+    );
+    final source = _FakeAttachmentSource(recorded: _audio())
+      ..queue.addAll([file('a.pdf'), file('b.pdf')]);
+    final gateway = _FakeGatewayRepository(transcript: 'Fala.')
+      ..failingNames.add('b.pdf');
+    final container = _container(source: source, gateway: gateway);
+    addTearDown(container.dispose);
+    final controller = container.read(
+      attachmentComposerControllerProvider.notifier,
+    );
+    await controller.startRecording();
+    await controller.stopRecording();
+    await controller.pickFile();
+    await controller.pickFile();
+
+    await expectLater(
+      controller.prepareInput(storedSessionId: 's1', caption: 'Veja.'),
+      throwsA(isA<GatewayOperationException>()),
+    );
+    expect(gateway.attachedNames, ['a.pdf']);
+    expect(gateway.transcribedNames, ['voz.m4a']);
+
+    gateway.failingNames.clear();
+    final input = await controller.prepareInput(
+      storedSessionId: 's1',
+      caption: 'Veja.',
+    );
+
+    expect(gateway.attachedNames, ['a.pdf', 'b.pdf']);
+    expect(gateway.transcribedNames, ['voz.m4a']);
+    expect(input, contains('@file:.hermes/desktop-attachments/a.pdf'));
+    expect(input, contains('@file:.hermes/desktop-attachments/b.pdf'));
+    expect(input, contains('Fala.'));
+
+    // Outra conversa: a referência do workspace anterior não serve.
+    await controller.prepareInput(storedSessionId: 's2', caption: '');
+    expect(gateway.attachedNames, ['a.pdf', 'b.pdf', 'a.pdf', 'b.pdf']);
+    expect(gateway.attachedSessionIds.skip(2), ['s2', 's2']);
+    expect(gateway.transcribedNames, ['voz.m4a']);
+  });
+
   test('o composer descartado não deixa o microfone ligado', () async {
     final source = _FakeAttachmentSource(recorded: _audio());
     final container = _container(
@@ -300,10 +347,13 @@ final class _FakeAttachmentSource implements AttachmentSource {
 
   int picks = 0;
 
+  /// Arquivos devolvidos em ordem; vazia, cai em [picked].
+  final List<ComposerAttachment> queue = [];
+
   @override
   Future<ComposerAttachment?> pickFile() async {
     picks++;
-    return picked;
+    return queue.isEmpty ? picked : queue.removeAt(0);
   }
 
   @override
@@ -325,6 +375,8 @@ final class _FakeGatewayRepository implements GatewayRepository {
   final String transcript;
   final bool requireAuthentication;
   final List<String> attachedSessionIds = [];
+  final List<String> attachedNames = [];
+  final Set<String> failingNames = {};
   final List<String> transcribedNames = [];
 
   @override
@@ -340,7 +392,11 @@ final class _FakeGatewayRepository implements GatewayRepository {
     required ComposerAttachment attachment,
   }) async {
     if (requireAuthentication) throw const GatewayAuthenticationRequired();
+    if (failingNames.contains(attachment.name)) {
+      throw const GatewayOperationException('Falha simulada no anexo.');
+    }
     attachedSessionIds.add(storedSessionId);
+    attachedNames.add(attachment.name);
     return attachment.copyWith(
       status: ComposerAttachmentStatus.uploaded,
       refText: '@file:.hermes/desktop-attachments/${attachment.name}',

@@ -19,6 +19,13 @@ abstract class ComposerAttachment with _$ComposerAttachment {
     @Default(ComposerAttachmentStatus.ready) ComposerAttachmentStatus status,
     String? localPath,
     String? refText,
+
+    /// Sessão em que [refText] foi confirmado. A referência é relativa ao
+    /// workspace dela, então só vale para reenviar na mesma conversa (A84).
+    String? uploadedSessionId,
+
+    /// Transcrição já obtida de uma gravação; um retry não transcreve de novo.
+    String? transcript,
     String? error,
   }) = _ComposerAttachment;
 }
