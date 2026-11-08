@@ -7,6 +7,7 @@ import '../models/gateway_inflight.dart';
 import '../models/gateway_recovery.dart';
 import '../models/hermes_skill.dart';
 import '../models/platform_pairing.dart';
+import '../models/push_device.dart';
 import '../models/run_event.dart';
 import '../models/server_health.dart';
 import '../models/server_tools.dart';
@@ -205,6 +206,20 @@ abstract interface class GatewayRepository {
   /// `POST /api/audio/speak`.
   Future<SpokenAudio> speak(String text);
 
+  /// Aparelhos do plugin `mobile-push`, por
+  /// `GET /api/plugins/mobile-push/devices`. Sem o plugin instalado no
+  /// servidor, lança [PushPluginMissing].
+  Future<PushServerState> pushDevices();
+
+  /// Registra ou renova este aparelho. Endpoint recusado pelo servidor vem
+  /// como [GatewayOperationException] com a causa em português.
+  Future<void> registerPushDevice(PushRegistration registration);
+
+  Future<void> removePushDevice(String deviceId);
+
+  /// Pede ao servidor um push de teste para este aparelho.
+  Future<PushTestResult> testPushDevice(String deviceId);
+
   /// Carrega o histórico durável pelo Dashboard sem adotar a sessão como um
   /// turno ao vivo. É a fonte autoritativa para conversas que usaram o TUI.
   Future<List<SessionMessage>> conversationHistory({
@@ -346,6 +361,16 @@ final class GatewayOperationException implements Exception {
 
 final class GatewayCredentialsRejected extends GatewayOperationException {
   const GatewayCredentialsRejected(super.message);
+}
+
+/// O Dashboard respondeu 404 nas rotas do `mobile-push`: o plugin não está
+/// instalado, não está ativo ou o Dashboard não foi reiniciado depois.
+final class PushPluginMissing extends GatewayOperationException {
+  const PushPluginMissing()
+    : super(
+        'O plugin mobile-push não está ativo neste Hermes.',
+        httpStatus: 404,
+      );
 }
 
 /// Traduz um erro JSON-RPC do gateway em algo que a pessoa possa agir.

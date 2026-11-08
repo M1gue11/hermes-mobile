@@ -8,6 +8,7 @@ import 'package:hermes_mobile/domain/models/session_message.dart';
 import 'package:hermes_mobile/domain/repositories/attachment_source.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/domain/models/platform_pairing.dart';
+import 'package:hermes_mobile/domain/models/push_device.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/models/server_tools.dart';
 import 'package:hermes_mobile/domain/models/session_search.dart';
@@ -337,4 +338,18 @@ final class _FakeGatewayRepository implements GatewayRepository {
 
   @override
   Future<SpokenAudio> speak(String text) => throw UnimplementedError();
+
+  @override
+  Future<PushServerState> pushDevices() => throw UnimplementedError();
+
+  @override
+  Future<void> registerPushDevice(PushRegistration registration) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> removePushDevice(String deviceId) => throw UnimplementedError();
+
+  @override
+  Future<PushTestResult> testPushDevice(String deviceId) =>
+      throw UnimplementedError();
 }

@@ -8,6 +8,7 @@ import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/domain/models/gateway_inflight.dart';
 import 'package:hermes_mobile/domain/models/hermes_skill.dart';
 import 'package:hermes_mobile/domain/models/platform_pairing.dart';
+import 'package:hermes_mobile/domain/models/push_device.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/models/server_tools.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
@@ -301,6 +302,55 @@ class FakeGatewayRepository implements GatewayRepository {
     final falha = falhaAoFalar;
     if (falha != null) throw falha;
     return (bytes: Uint8List.fromList([1, 2, 3]), mimeType: 'audio/mpeg');
+  }
+
+  /// Falso: o servidor responde como se o plugin `mobile-push` não existisse.
+  bool pluginDePush = true;
+  bool cifraNoServidor = true;
+  final Map<String, PushRegistration> aparelhosDePush = {};
+  final List<String> testesDePush = [];
+  PushTestResult resultadoDoTeste = (
+    ok: true,
+    status: 201,
+    encrypted: true,
+    gone: false,
+  );
+
+  @override
+  Future<PushServerState> pushDevices() async {
+    if (!pluginDePush) throw const PushPluginMissing();
+    return (
+      encryption: cifraNoServidor,
+      devices: [
+        for (final r in aparelhosDePush.values)
+          PushDevice(
+            id: r.deviceId,
+            label: r.label,
+            endpointHost: Uri.parse(r.endpoint).host,
+            encrypted: r.p256dh != null,
+          ),
+      ],
+    );
+  }
+
+  @override
+  Future<void> registerPushDevice(PushRegistration registration) async {
+    if (!pluginDePush) throw const PushPluginMissing();
+    aparelhosDePush[registration.deviceId] = registration;
+  }
+
+  @override
+  Future<void> removePushDevice(String deviceId) async {
+    if (!pluginDePush) throw const PushPluginMissing();
+    aparelhosDePush.remove(deviceId);
+  }
+
+  @override
+  Future<PushTestResult> testPushDevice(String deviceId) async {
+    if (!pluginDePush) throw const PushPluginMissing();
+    testesDePush.add(deviceId);
+    if (resultadoDoTeste.gone) aparelhosDePush.remove(deviceId);
+    return resultadoDoTeste;
   }
 }
 

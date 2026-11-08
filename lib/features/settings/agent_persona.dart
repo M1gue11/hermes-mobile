@@ -48,4 +48,17 @@ class AgentPersona {
   String get respondingSemantics => '$displayName está respondendo';
 
   String get imageNoteLabel => 'o que $displayName viu';
+
+  String get noticeReplied => '$displayName respondeu';
+
+  String get noticeFailed => '$displayName parou com erro';
+
+  String get noticeApproval => '$displayName precisa da sua aprovação';
+
+  String get noticeQuestion => '$displayName fez uma pergunta';
+
+  String get noticeSudo => '$displayName pede a senha de sudo';
+
+  String get noticeTestBody =>
+      'Os avisos de $displayName chegam neste aparelho.';
 }

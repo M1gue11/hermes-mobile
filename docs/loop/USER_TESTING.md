@@ -4,6 +4,28 @@ Este arquivo contém **somente** roteiros ainda pendentes de aceite em aparelho.
 Após validação, registrar o resultado na mudança correspondente, atualizar
 [BACKLOG.md](BACKLOG.md) e remover o roteiro daqui. O Git preserva o histórico.
 
+## [ ] A60: notificações com o app fechado
+
+Pré-requisitos no servidor (decisão do usuário, não automática): copiar
+`server/mobile-push` para `~/.hermes/plugins/mobile-push`, rodar
+`hermes plugins enable mobile-push` e reiniciar gateway e dashboard. No ntfy
+self-hosted com `deny-all`, liberar `ntfy access everyone 'up*' write-only`.
+
+- No celular, instale o app ntfy e aponte o servidor padrão dele para a sua
+  instância. Em Ajustes › Notificações, ligue: permitir a notificação, ver
+  Distribuidor `ntfy`, o host do seu ntfy, "mobile-push, aparelho registrado" e
+  "cifrado até o aparelho".
+- "Enviar aviso de teste": o aviso "Notificações ativas" chega em segundos.
+- Mande um prompt longo, saia do app e **feche-o** pelos recentes. Ao terminar,
+  chega "<persona> respondeu" com o título da conversa; tocar abre a conversa.
+- Peça um comando que exija aprovação e feche o app: chega o aviso urgente
+  "precisa da sua aprovação". Aprovar pelo desktop ou pelo app apaga o aviso.
+- Com a conversa aberta na tela, um turno dela não gera aviso; um turno de
+  outra conversa gera.
+- Na tela bloqueada, o aviso mostra só o título e o tipo (visibilidade privada).
+- Desligue a chave: o aparelho some de `GET /api/plugins/mobile-push/devices`
+  e nenhum aviso chega mais.
+
 ## [ ] A80 — comandos do gateway na conversa
 
 - Em uma conversa, digite `/sta`, selecione `/status` e envie: conferir o

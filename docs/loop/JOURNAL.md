@@ -69,6 +69,29 @@ versionada; o Git registra as mudanças do repositório.
 - Contrato e inventário de 104 comandos em `docs/dashboard-api/mobile-commands-0.22.5.md`
   e `mobile-command-inventory-0.22.5.md`; brief em `A80_COMMANDS_BRIEF.md`.
 
+## 2026-11-08: notificações com o app fechado (A60)
+
+- Decisões do usuário: UnifiedPush com o app ntfy como distribuidor, ntfy
+  self-hosted, payload mínimo (tipo e título). Pediu antes uma busca por plugin
+  pronto: nenhum serviu, e o nosso segue o molde do signal-notify (MIT).
+- `server/mobile-push`: hooks `on_session_end` e `on_human_input_*`, WebPush
+  `aes128gcm` cifrado com a chave do aparelho, registro de aparelhos atrás do
+  login do Dashboard. 21 testes Python, inclusive o vetor da RFC 8291.
+- App: Ajustes › Notificações, `PushController`, isolate headless
+  `--unifiedpush-bg`, toque abre a conversa, sem aviso da conversa visível.
+  Dependências: `unifiedpush_android` + interface (sem o guarda-chuva, que
+  traria BoringSSL e window_manager) e `flutter_local_notifications` 22.
+  Gradle: desugaring e exclusão do `tink` JVM, que colidia com o
+  `tink-android` do secure storage.
+- Corrigidos pelo caminho: `syncedEndpoint` não era zerado depois de um 410
+  (o novo registro não voltava ao servidor), e a presença era atualizada
+  dentro de uma notificação do GoRouter durante o build.
+- Validação: 863 testes Flutter, análise limpa, APK debug no emulador (Android 17)
+  contra o Dashboard real: permissão, estado sem distribuidor e "plugin não
+  encontrado". Nenhuma ação mudou o servidor do usuário.
+- A104 entrou no backlog a pedido do usuário: baixar arquivos citados na
+  conversa.
+
 ## Estado acionável
 
 - Decisão pendente: autorizar `session.usage` e `session.context_breakdown`
@@ -86,4 +109,8 @@ versionada; o Git registra as mudanças do repositório.
   preservando nomes técnicos e de produto.
 - A65: confirmar o contrato autenticado necessário para corpo integral, edição,
   exclusão e ativação/desativação persistidas de Skills.
-- A60, B0, B10, B9 e B11 permanecem posteriores conforme `BACKLOG.md`.
+- A60: instalar `server/mobile-push` no servidor (decisão do usuário) e
+  seguir o roteiro de aparelho em `USER_TESTING.md`.
+- Decisão pendente: subir o AGP para 9.1 (destrava
+  `flutter_local_notifications` 23 e `compileSdk` 37).
+- B0, B10, B9 e B11 permanecem posteriores conforme `BACKLOG.md`.

@@ -26,8 +26,10 @@ afetado.
   edição protegida e ativação; exclusão não existe no servidor) e aguarda
   aceite no aparelho. A94 segue aberto (aceite e relato do `500` de
   `/v1/skills`).
-- A60 continua condicionado a uma decisão explícita de escopo e privacidade.
-  B0, B10, B9 e B11 são a fila posterior de contrato e runtime.
+- A60 foi decidido e implementado em 2026-11-08 (UnifiedPush + ntfy
+  self-hosted + plugin `server/mobile-push`); falta instalar o plugin no
+  servidor e o aceite no aparelho. B0, B10, B9 e B11 são a fila posterior de
+  contrato e runtime.
 
 ## Fatos que evitam regressões
 
@@ -76,6 +78,16 @@ afetado.
 - `/chat` é filha de `/`, a navegação usa `go`, e o roteador é criado uma vez em
   `HermesApp`.
 - Não alterar o runtime Hermes como parte de uma mudança do cliente móvel.
+  Código que roda no servidor vive como plugin em `server/` e é instalado pelo
+  usuário; `server/mobile-push` tem testes próprios (`uv run --with
+  cryptography --with fastapi --with httpx python -m unittest`).
+- Push: o `main` recebe `--unifiedpush-bg` quando o distribuidor acorda o app
+  fechado; esse caminho não monta UI nem `ProviderScope`. Fora da tela o
+  `ChatController` solta os listeners do turno, então aviso de fim de turno
+  em segundo plano só vem do servidor.
+- Android: o conector UnifiedPush traz `tink` e o `flutter_secure_storage`
+  traz `tink-android`; o Gradle exclui o primeiro. Subir para
+  `flutter_local_notifications` 23 exige AGP 9.1 e `compileSdk` 37.
 
 ## Limites
 

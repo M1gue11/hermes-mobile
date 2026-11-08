@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- O ícone das notificações é pedido por nome no Dart; sem isto o shrinker
+     do build release o remove por não ver referência. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_hermes" />

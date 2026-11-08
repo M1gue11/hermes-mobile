@@ -60,6 +60,15 @@ Future<void> showSettingsSheet(
           },
         ),
         _SettingsAction(
+          key: const ValueKey('settings-notifications'),
+          icon: Icons.notifications_none_rounded,
+          title: 'Notificações',
+          subtitle: 'Avisos do agente com o app fechado',
+          onTap: () {
+            context.push('/notifications');
+          },
+        ),
+        _SettingsAction(
           icon: Icons.hub_outlined,
           title: 'Gateway',
           subtitle: 'Modelos, skills e toolsets efetivos',

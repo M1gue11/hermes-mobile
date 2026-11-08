@@ -60,6 +60,14 @@ dependencies:
   # A102: tocar a resposta sintetizada por `/api/audio/speak` direto dos bytes,
   # sem arquivo temporário. Biblioteca consolidada (bluefireteam).
   audioplayers: ^6.8.1
+  # A60: avisos do agente com o app fechado. Notificação local (autorizada em
+  # 2026-08-08); a 23 exige AGP 9.1 e compileSdk 37, por isso a 22.
+  flutter_local_notifications: ^22.3.3
+  # A60: push sem Firebase, com o app ntfy como distribuidor (escolhido pelo
+  # usuário em 2026-11-08). Só a implementação Android: o pacote guarda-chuva
+  # `unifiedpush` puxa a de Linux, com BoringSSL e window_manager.
+  unifiedpush_android: ^3.5.0
+  unifiedpush_platform_interface: ^4.0.0
 
 dev_dependencies:
   flutter_test:

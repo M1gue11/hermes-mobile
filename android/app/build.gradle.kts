@@ -10,6 +10,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // Exigido pelo flutter_local_notifications.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -42,4 +44,17 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+// O conector UnifiedPush traz o Tink JVM (`tink`) para decifrar WebPush, e o
+// flutter_secure_storage traz o mesmo código empacotado para Android
+// (`tink-android`). As classes colidem; fica só a versão Android, na versão
+// que o conector pede.
+configurations.all {
+    exclude(group = "com.google.crypto.tink", module = "tink")
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation("com.google.crypto.tink:tink-android:1.23.0")
 }

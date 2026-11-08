@@ -16,6 +16,7 @@ import '../../domain/models/gateway_inflight.dart';
 import '../../domain/models/gateway_completion.dart';
 import '../../domain/models/hermes_skill.dart';
 import '../../domain/models/platform_pairing.dart';
+import '../../domain/models/push_device.dart';
 import '../../domain/models/run.dart';
 import '../../domain/models/run_event.dart';
 import '../../domain/models/server_health.dart';
@@ -860,6 +861,114 @@ class DashboardGatewayRepository implements GatewayRepository {
       );
     }
     return (bytes: data.contentAsBytes(), mimeType: data.mimeType);
+  }
+
+  static const _pushDevicesPath = '/api/plugins/mobile-push/devices';
+
+  @override
+  Future<PushServerState> pushDevices() async {
+    final session = await _requireSession();
+    final Response<Object?> response;
+    try {
+      response = await _authorizedRequest(
+        session,
+        _pushDevicesPath,
+        method: 'GET',
+      );
+    } on GatewayOperationException catch (error) {
+      if (error.httpStatus == 404) throw const PushPluginMissing();
+      rethrow;
+    }
+    final body = response.data;
+    // Sem a rota, alguns Dashboards devolvem o HTML do SPA com 200.
+    if (body is! Map || body['devices'] is! List) {
+      throw const PushPluginMissing();
+    }
+    return (
+      encryption: body['encryption'] == true,
+      devices: [
+        for (final row in body['devices'] as List)
+          if (row is Map && row['id'] is String)
+            PushDevice(
+              id: row['id'] as String,
+              label: row['label'] as String? ?? '',
+              endpointHost: row['endpoint_host'] as String? ?? '',
+              encrypted: row['encrypted'] == true,
+              updatedAt: switch (row['updated_at']) {
+                final num seconds => DateTime.fromMillisecondsSinceEpoch(
+                  (seconds * 1000).round(),
+                ),
+                _ => null,
+              },
+            ),
+      ],
+    );
+  }
+
+  @override
+  Future<void> registerPushDevice(PushRegistration registration) => _pushAction(
+    '$_pushDevicesPath/${Uri.encodeComponent(registration.deviceId)}',
+    method: 'PUT',
+    data: {
+      'endpoint': registration.endpoint,
+      'label': registration.label,
+      'p256dh': registration.p256dh ?? '',
+      'auth': registration.auth ?? '',
+    },
+  );
+
+  @override
+  Future<void> removePushDevice(String deviceId) => _pushAction(
+    '$_pushDevicesPath/${Uri.encodeComponent(deviceId)}',
+    method: 'DELETE',
+  );
+
+  @override
+  Future<PushTestResult> testPushDevice(String deviceId) async {
+    final response = await _pushAction(
+      '$_pushDevicesPath/${Uri.encodeComponent(deviceId)}/test',
+      method: 'POST',
+      // O servidor espera o distribuidor responder (timeout de 15 s lá).
+      receiveTimeout: const Duration(seconds: 30),
+    );
+    final body = response.data;
+    if (body is! Map) {
+      throw const GatewayOperationException(
+        'O Dashboard não devolveu o resultado do teste.',
+      );
+    }
+    return (
+      ok: body['ok'] == true,
+      status: _intFrom(body['status']) ?? 0,
+      encrypted: body['encrypted'] == true,
+      gone: body['gone'] == true,
+    );
+  }
+
+  Future<Response<Object?>> _pushAction(
+    String path, {
+    required String method,
+    Map<String, dynamic>? data,
+    Duration? receiveTimeout,
+  }) async {
+    final session = await _requireSession();
+    try {
+      return await _authorizedRequest(
+        session,
+        path,
+        method: method,
+        data: data,
+        receiveTimeout: receiveTimeout,
+      );
+    } on GatewayOperationException catch (error) {
+      // O plugin responde 404 com causa em português; "Not Found" (FastAPI)
+      // ou corpo vazio é a rota que não existe.
+      if (error.httpStatus == 404 &&
+          (error.message == 'Not Found' || error.message.contains('(404)'))) {
+        throw const PushPluginMissing();
+      }
+      rethrow;
+    }
   }
 
   Future<void> _pairingAction(String path, Map<String, dynamic> data) async {

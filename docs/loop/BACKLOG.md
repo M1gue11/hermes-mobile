@@ -320,9 +320,20 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   0.22.5 (síntese em ~6 s, reprodução e volta ao repouso). **Falta** ouvir no
   aparelho e decidir se vale ouvir com a tela bloqueada.
 
+- [ ] **A104 Baixar arquivos citados na conversa.** Pedido do usuário em
+  2026-11-08. Hoje um `MEDIA:` que não é imagem aparece só como "Arquivo no
+  servidor" (`agent_media_figure.dart`), sem ação: `/api/media` serve apenas
+  imagens. Permitir baixar ou abrir o arquivo no aparelho (salvar, compartilhar
+  ou abrir com outro app), com nome, tamanho e progresso, e explicar a recusa
+  quando o servidor não permitir. Candidatos no Dashboard 0.22.6:
+  `/api/files/ticket` + `/api/files/download` e `/api/files/stream`
+  (`hermes_cli/web_routers/files.py`); conferir a política de pastas
+  permitidas e a autenticação antes de usar. Arquivo baixado não pode ir para
+  log nem cache compartilhado.
+
 ## Notificações
 
-- [ ] **A60 Notificações do Hermes e canal arbitrário do agente.** Entregar em
+- [~] **A60 Notificações do Hermes e canal arbitrário do agente.** Entregar em
   duas fases:
 
   1. apresentação local segura de eventos úteis, como erro, conclusão de
@@ -336,6 +347,27 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   abrir a conversa, mas nunca executar ação do agente. A arquitetura, a fronteira
   com o Gateway e a sequência de migração estão em
   [NOTIFICATIONS_ARCHITECTURE.md](NOTIFICATIONS_ARCHITECTURE.md).
+
+  Decidido pelo usuário em 2026-11-08: UnifiedPush com o app ntfy como
+  distribuidor e ntfy self-hosted como relay; sem Firebase; payload mínimo
+  (tipo e título da conversa). Nenhum plugin pronto servia (turn-bell,
+  ntfy-approval, signal-notify, telegram-notify, pushover avaliados), então
+  entrou um plugin próprio, `server/mobile-push`, no molde do signal-notify
+  (MIT). Ele escuta `on_session_end` e `on_human_input_request`/`_resolved`,
+  cifra WebPush `aes128gcm` com a chave do aparelho (vetor da RFC 8291 nos
+  testes) e expõe o registro de aparelhos em `/api/plugins/mobile-push/devices`,
+  atrás do login do Dashboard. No app: Ajustes › Notificações, registro no
+  distribuidor e no plugin, isolate headless (`--unifiedpush-bg`) que mostra o
+  aviso com o app fechado, toque abre `hermes://app/chat/<id>`, e nada de aviso
+  da conversa que está na tela. Dependências novas: `unifiedpush_android`,
+  `unifiedpush_platform_interface` e `flutter_local_notifications` 22 (a 23
+  exige AGP 9.1). Aviso local deduzido pelo app foi descartado: fora da tela o
+  `ChatController` solta os listeners do turno, então só o servidor sabe quando
+  um turno termina em segundo plano. Validado no emulador contra o Dashboard
+  real: permissão, estado sem distribuidor e "plugin não encontrado". **Falta**
+  instalar o plugin no servidor e o roteiro de aparelho em
+  [USER_TESTING.md](USER_TESTING.md); iOS fica sem push (UnifiedPush não existe
+  lá).
 
 ## Gateway TUI e runtime
 

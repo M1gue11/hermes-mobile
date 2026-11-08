@@ -21,10 +21,16 @@ import 'data/platform/device_attachment_source.dart';
 import 'domain/repositories/hermes_repository.dart';
 import 'features/chat/launch_provider.dart';
 import 'features/connection/connection_screen.dart';
+import 'features/notifications/push_controller.dart';
 import 'features/settings/settings_provider.dart';
+import 'push_background.dart';
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (args.contains(unifiedPushBackgroundArg)) {
+    await runPushBackground();
+    return;
+  }
   StoredAppSettings? settings;
   try {
     settings = await const SecureAppSettingsStore().read();
@@ -191,11 +197,58 @@ class _HermesAppState extends ConsumerState<HermesApp> {
   /// cada `build` jogava a pessoa de volta para a rota inicial toda vez que a
   /// atmosfera ou o tamanho do texto mudassem.
   GoRouter? _router;
+  StreamSubscription<String>? _toquesEmAvisos;
+  AppLifecycleListener? _cicloDeVida;
 
   @override
   void initState() {
     super.initState();
+    // Liga o push (registro a cada abertura e avisos com o app aberto).
+    ref.read(pushControllerProvider);
+    _cicloDeVida = AppLifecycleListener(
+      onStateChange: (estado) => ref
+          .read(appPresenceProvider.notifier)
+          .update(resumed: estado == AppLifecycleState.resumed),
+    );
     unawaited(_decidirAbertura());
+  }
+
+  @override
+  void dispose() {
+    _toquesEmAvisos?.cancel();
+    _cicloDeVida?.dispose();
+    _router?.routerDelegate.removeListener(_acompanharRota);
+    super.dispose();
+  }
+
+  /// O delegate do roteador notifica no meio do build, quando o Riverpod não
+  /// aceita mudar provider; a presença é atualizada logo depois do quadro.
+  void _acompanharRota() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final router = _router;
+      if (!mounted || router == null) return;
+      final path = router.routerDelegate.currentConfiguration.uri.path;
+      ref
+          .read(appPresenceProvider.notifier)
+          .update(onChat: path.startsWith('/chat'));
+    });
+  }
+
+  /// Toque num aviso com o app aberto: vai direto para a conversa.
+  void _abrirAviso(String payload) {
+    final location = conversationDeepLinkLocation(Uri.tryParse(payload));
+    if (location != null) _router?.go(location);
+  }
+
+  Future<String?> _avisoQueAbriuOApp() async {
+    try {
+      final payload = await ref.read(localNotifierProvider).launchPayload();
+      return payload == null
+          ? null
+          : conversationDeepLinkLocation(Uri.tryParse(payload));
+    } catch (_) {
+      return null;
+    }
   }
 
   /// A64. A decisão precisa vir **antes** da primeira rota, e não depois do
@@ -210,7 +263,8 @@ class _HermesAppState extends ConsumerState<HermesApp> {
       );
       initialLocation = widget.forceConversationList
           ? null
-          : conversationDeepLinkLocation(widget.initialUri ?? platformUri);
+          : conversationDeepLinkLocation(widget.initialUri ?? platformUri) ??
+                await _avisoQueAbriuOApp();
       if (initialLocation == null) {
         abrirNoChat =
             !widget.forceConversationList &&
@@ -223,13 +277,15 @@ class _HermesAppState extends ConsumerState<HermesApp> {
       // própria falha; ficar no papel em branco seria a pior saída possível.
     }
     if (!mounted) return;
-    setState(() {
-      _router = buildAppRouter(
-        connectionSettingsBuilder: widget.connectionSettingsBuilder,
-        abrirNoChat: abrirNoChat,
-        initialLocation: initialLocation,
-      );
-    });
+    final router = buildAppRouter(
+      connectionSettingsBuilder: widget.connectionSettingsBuilder,
+      abrirNoChat: abrirNoChat,
+      initialLocation: initialLocation,
+    );
+    router.routerDelegate.addListener(_acompanharRota);
+    _toquesEmAvisos = ref.read(localNotifierProvider).taps.listen(_abrirAviso);
+    setState(() => _router = router);
+    _acompanharRota();
   }
 
   @override

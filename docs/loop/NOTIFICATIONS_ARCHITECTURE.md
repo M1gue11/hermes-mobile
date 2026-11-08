@@ -62,6 +62,37 @@ dispositivos Mobile.
 6. Migrar categorias de evento somente após validação real; rollback reativa
    apenas o adaptador existente.
 
+## Decisão de 2026-11-08
+
+```text
+on_session_end / on_human_input_*  (hooks do Hermes)
+       │ envelope mínimo {v, id, kind, session_id, title?, input?, request_id?}
+       ▼
+plugin server/mobile-push ── WebPush aes128gcm com a chave do aparelho
+       │ POST no endpoint UnifiedPush
+       ▼
+ntfy self-hosted ──► app ntfy (distribuidor) ──► Hermes Mobile
+                                                  ├ app aberto: PushController
+                                                  └ app fechado: main --unifiedpush-bg
+```
+
+- Transporte: UnifiedPush, com o app ntfy como distribuidor. Sem Firebase. O
+  iOS fica de fora: UnifiedPush não existe lá.
+- Registro de dispositivos: `PUT/DELETE /api/plugins/mobile-push/devices/{id}`,
+  atrás do login do Dashboard. O id é aleatório e gerado no aparelho; endpoint
+  e chaves ficam no armazenamento seguro. Um endpoint que responde 404/410 sai
+  do registro sozinho.
+- Privacidade: o envelope nunca leva prompt, resposta, comando ou argumento. O
+  título da conversa é opcional (`include_title`). A notificação usa
+  visibilidade privada na tela bloqueada.
+- Dedupe: o id do aviso no Android vem do *slot* (`turn:<sessão>`,
+  `input:<pedido>`), com hash estável entre o app aberto e o isolate de
+  background. O `input.resolved` apaga o aviso do mesmo pedido.
+- Ainda **não** existe outbox durável nem inbox: o plugin tenta duas vezes, e
+  quem ficou offline perde o aviso. O cache do ntfy (12 h por padrão) cobre
+  quedas curtas do aparelho. Inbox e regras propostas pelo agente continuam
+  como fase posterior.
+
 ## Escopo do repositório
 
 A primeira fase do cliente deve traduzir sinais live permitidos em modelos de
