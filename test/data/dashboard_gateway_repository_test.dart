@@ -11,6 +11,7 @@ import 'package:hermes_mobile/domain/models/gateway_command.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/run.dart';
 import 'package:hermes_mobile/domain/models/run_event.dart';
+import 'package:hermes_mobile/domain/models/subagent_run.dart';
 import 'package:hermes_mobile/domain/models/server_health.dart';
 import 'package:hermes_mobile/domain/models/tool_call.dart';
 import 'package:hermes_mobile/domain/models/conversation_timeline.dart';
@@ -244,6 +245,48 @@ void main() {
       await turn.close();
     },
   );
+  test('B9: frames subagent.* viram eventos de agente, não prévia', () async {
+    final socket = _FakeGatewaySocket(
+      readyPayload: const {'replay_epoch': 'process-1'},
+    );
+    final turn = await _replayRepository(
+      socket,
+    ).openLiveTurn(storedSessionId: 'stored-session');
+    final events = <RunEvent>[];
+    final subscription = turn.events.listen(events.add);
+    await Future<void>.delayed(Duration.zero);
+    const base = {'goal': 'Ler logs', 'task_count': 1, 'task_index': 0};
+    var seq = 0;
+    for (final (type, extra) in [
+      ('subagent.start', <String, dynamic>{'subagent_id': 'sa'}),
+      (
+        'subagent.thinking',
+        <String, dynamic>{'subagent_id': 'sa', 'text': 'Lendo.'},
+      ),
+      (
+        'subagent.complete',
+        <String, dynamic>{'subagent_id': 'sa', 'status': 'completed'},
+      ),
+    ]) {
+      socket.emit(
+        type,
+        {...base, ...extra},
+        sessionId: 'live-session',
+        seq: ++seq,
+      );
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(events.whereType<RunActivityPreview>(), isEmpty);
+    expect(events.whereType<RunSubagent>().map((e) => e.event.kind), [
+      SubagentEventKind.start,
+      SubagentEventKind.thinking,
+      SubagentEventKind.complete,
+    ]);
+    await subscription.cancel();
+    await turn.close();
+  });
+
   test(
     'cold replay escolhe apenas o último turno e entrega seu terminal',
     () async {

@@ -55,7 +55,7 @@ extension RunEventPatterns on RunEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RunActivityPreview value)?  activityPreview,TResult Function( RunReasoningDelta value)?  reasoningDelta,TResult Function( RunThinkingState value)?  thinkingState,TResult Function( RunTextDelta value)?  delta,TResult Function( RunInterim value)?  interim,TResult Function( RunToolRisk value)?  toolRisk,TResult Function( RunToolProgress value)?  toolProgress,TResult Function( RunApprovalRequest value)?  approvalRequest,TResult Function( RunApprovalResolved value)?  approvalResolved,TResult Function( RunClarifyRequest value)?  clarifyRequest,TResult Function( RunClarifyResolved value)?  clarifyResolved,TResult Function( RunStatusEvent value)?  status,TResult Function( RunCompleted value)?  completed,TResult Function( RunFailed value)?  failed,TResult Function( RunUnknown value)?  unknown,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( RunActivityPreview value)?  activityPreview,TResult Function( RunReasoningDelta value)?  reasoningDelta,TResult Function( RunThinkingState value)?  thinkingState,TResult Function( RunTextDelta value)?  delta,TResult Function( RunInterim value)?  interim,TResult Function( RunToolRisk value)?  toolRisk,TResult Function( RunToolProgress value)?  toolProgress,TResult Function( RunSubagent value)?  subagent,TResult Function( RunApprovalRequest value)?  approvalRequest,TResult Function( RunApprovalResolved value)?  approvalResolved,TResult Function( RunClarifyRequest value)?  clarifyRequest,TResult Function( RunClarifyResolved value)?  clarifyResolved,TResult Function( RunStatusEvent value)?  status,TResult Function( RunCompleted value)?  completed,TResult Function( RunFailed value)?  failed,TResult Function( RunUnknown value)?  unknown,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
@@ -65,7 +65,8 @@ return thinkingState(_that);case RunTextDelta() when delta != null:
 return delta(_that);case RunInterim() when interim != null:
 return interim(_that);case RunToolRisk() when toolRisk != null:
 return toolRisk(_that);case RunToolProgress() when toolProgress != null:
-return toolProgress(_that);case RunApprovalRequest() when approvalRequest != null:
+return toolProgress(_that);case RunSubagent() when subagent != null:
+return subagent(_that);case RunApprovalRequest() when approvalRequest != null:
 return approvalRequest(_that);case RunApprovalResolved() when approvalResolved != null:
 return approvalResolved(_that);case RunClarifyRequest() when clarifyRequest != null:
 return clarifyRequest(_that);case RunClarifyResolved() when clarifyResolved != null:
@@ -91,7 +92,7 @@ return unknown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RunActivityPreview value)  activityPreview,required TResult Function( RunReasoningDelta value)  reasoningDelta,required TResult Function( RunThinkingState value)  thinkingState,required TResult Function( RunTextDelta value)  delta,required TResult Function( RunInterim value)  interim,required TResult Function( RunToolRisk value)  toolRisk,required TResult Function( RunToolProgress value)  toolProgress,required TResult Function( RunApprovalRequest value)  approvalRequest,required TResult Function( RunApprovalResolved value)  approvalResolved,required TResult Function( RunClarifyRequest value)  clarifyRequest,required TResult Function( RunClarifyResolved value)  clarifyResolved,required TResult Function( RunStatusEvent value)  status,required TResult Function( RunCompleted value)  completed,required TResult Function( RunFailed value)  failed,required TResult Function( RunUnknown value)  unknown,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( RunActivityPreview value)  activityPreview,required TResult Function( RunReasoningDelta value)  reasoningDelta,required TResult Function( RunThinkingState value)  thinkingState,required TResult Function( RunTextDelta value)  delta,required TResult Function( RunInterim value)  interim,required TResult Function( RunToolRisk value)  toolRisk,required TResult Function( RunToolProgress value)  toolProgress,required TResult Function( RunSubagent value)  subagent,required TResult Function( RunApprovalRequest value)  approvalRequest,required TResult Function( RunApprovalResolved value)  approvalResolved,required TResult Function( RunClarifyRequest value)  clarifyRequest,required TResult Function( RunClarifyResolved value)  clarifyResolved,required TResult Function( RunStatusEvent value)  status,required TResult Function( RunCompleted value)  completed,required TResult Function( RunFailed value)  failed,required TResult Function( RunUnknown value)  unknown,}){
 final _that = this;
 switch (_that) {
 case RunActivityPreview():
@@ -101,7 +102,8 @@ return thinkingState(_that);case RunTextDelta():
 return delta(_that);case RunInterim():
 return interim(_that);case RunToolRisk():
 return toolRisk(_that);case RunToolProgress():
-return toolProgress(_that);case RunApprovalRequest():
+return toolProgress(_that);case RunSubagent():
+return subagent(_that);case RunApprovalRequest():
 return approvalRequest(_that);case RunApprovalResolved():
 return approvalResolved(_that);case RunClarifyRequest():
 return clarifyRequest(_that);case RunClarifyResolved():
@@ -123,7 +125,7 @@ return unknown(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RunActivityPreview value)?  activityPreview,TResult? Function( RunReasoningDelta value)?  reasoningDelta,TResult? Function( RunThinkingState value)?  thinkingState,TResult? Function( RunTextDelta value)?  delta,TResult? Function( RunInterim value)?  interim,TResult? Function( RunToolRisk value)?  toolRisk,TResult? Function( RunToolProgress value)?  toolProgress,TResult? Function( RunApprovalRequest value)?  approvalRequest,TResult? Function( RunApprovalResolved value)?  approvalResolved,TResult? Function( RunClarifyRequest value)?  clarifyRequest,TResult? Function( RunClarifyResolved value)?  clarifyResolved,TResult? Function( RunStatusEvent value)?  status,TResult? Function( RunCompleted value)?  completed,TResult? Function( RunFailed value)?  failed,TResult? Function( RunUnknown value)?  unknown,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( RunActivityPreview value)?  activityPreview,TResult? Function( RunReasoningDelta value)?  reasoningDelta,TResult? Function( RunThinkingState value)?  thinkingState,TResult? Function( RunTextDelta value)?  delta,TResult? Function( RunInterim value)?  interim,TResult? Function( RunToolRisk value)?  toolRisk,TResult? Function( RunToolProgress value)?  toolProgress,TResult? Function( RunSubagent value)?  subagent,TResult? Function( RunApprovalRequest value)?  approvalRequest,TResult? Function( RunApprovalResolved value)?  approvalResolved,TResult? Function( RunClarifyRequest value)?  clarifyRequest,TResult? Function( RunClarifyResolved value)?  clarifyResolved,TResult? Function( RunStatusEvent value)?  status,TResult? Function( RunCompleted value)?  completed,TResult? Function( RunFailed value)?  failed,TResult? Function( RunUnknown value)?  unknown,}){
 final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
@@ -133,7 +135,8 @@ return thinkingState(_that);case RunTextDelta() when delta != null:
 return delta(_that);case RunInterim() when interim != null:
 return interim(_that);case RunToolRisk() when toolRisk != null:
 return toolRisk(_that);case RunToolProgress() when toolProgress != null:
-return toolProgress(_that);case RunApprovalRequest() when approvalRequest != null:
+return toolProgress(_that);case RunSubagent() when subagent != null:
+return subagent(_that);case RunApprovalRequest() when approvalRequest != null:
 return approvalRequest(_that);case RunApprovalResolved() when approvalResolved != null:
 return approvalResolved(_that);case RunClarifyRequest() when clarifyRequest != null:
 return clarifyRequest(_that);case RunClarifyResolved() when clarifyResolved != null:
@@ -158,7 +161,7 @@ return unknown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String text)?  activityPreview,TResult Function( String text)?  reasoningDelta,TResult Function( String text)?  thinkingState,TResult Function( String text)?  delta,TResult Function( String text,  bool alreadyStreamed)?  interim,TResult Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult Function( ToolCall tool)?  toolProgress,TResult Function( ApprovalRequest request)?  approvalRequest,TResult Function( ApprovalChoice? choice)?  approvalResolved,TResult Function( ClarifyRequest request)?  clarifyRequest,TResult Function()?  clarifyResolved,TResult Function( RunStatus status)?  status,TResult Function( String? output,  GatewayCompletion? gateway)?  completed,TResult Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult Function( String type,  Map<String, dynamic> data)?  unknown,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String text)?  activityPreview,TResult Function( String text)?  reasoningDelta,TResult Function( String text)?  thinkingState,TResult Function( String text)?  delta,TResult Function( String text,  bool alreadyStreamed)?  interim,TResult Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult Function( ToolCall tool)?  toolProgress,TResult Function( SubagentEvent event)?  subagent,TResult Function( ApprovalRequest request)?  approvalRequest,TResult Function( ApprovalChoice? choice)?  approvalResolved,TResult Function( ClarifyRequest request)?  clarifyRequest,TResult Function()?  clarifyResolved,TResult Function( RunStatus status)?  status,TResult Function( String? output,  GatewayCompletion? gateway)?  completed,TResult Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult Function( String type,  Map<String, dynamic> data)?  unknown,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that.text);case RunReasoningDelta() when reasoningDelta != null:
@@ -167,7 +170,8 @@ return thinkingState(_that.text);case RunTextDelta() when delta != null:
 return delta(_that.text);case RunInterim() when interim != null:
 return interim(_that.text,_that.alreadyStreamed);case RunToolRisk() when toolRisk != null:
 return toolRisk(_that.toolId,_that.risk,_that.redacted);case RunToolProgress() when toolProgress != null:
-return toolProgress(_that.tool);case RunApprovalRequest() when approvalRequest != null:
+return toolProgress(_that.tool);case RunSubagent() when subagent != null:
+return subagent(_that.event);case RunApprovalRequest() when approvalRequest != null:
 return approvalRequest(_that.request);case RunApprovalResolved() when approvalResolved != null:
 return approvalResolved(_that.choice);case RunClarifyRequest() when clarifyRequest != null:
 return clarifyRequest(_that.request);case RunClarifyResolved() when clarifyResolved != null:
@@ -193,7 +197,7 @@ return unknown(_that.type,_that.data);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String text)  activityPreview,required TResult Function( String text)  reasoningDelta,required TResult Function( String text)  thinkingState,required TResult Function( String text)  delta,required TResult Function( String text,  bool alreadyStreamed)  interim,required TResult Function( String toolId,  String risk,  bool redacted)  toolRisk,required TResult Function( ToolCall tool)  toolProgress,required TResult Function( ApprovalRequest request)  approvalRequest,required TResult Function( ApprovalChoice? choice)  approvalResolved,required TResult Function( ClarifyRequest request)  clarifyRequest,required TResult Function()  clarifyResolved,required TResult Function( RunStatus status)  status,required TResult Function( String? output,  GatewayCompletion? gateway)  completed,required TResult Function( String? error,  String? output,  GatewayCompletion? gateway)  failed,required TResult Function( String type,  Map<String, dynamic> data)  unknown,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String text)  activityPreview,required TResult Function( String text)  reasoningDelta,required TResult Function( String text)  thinkingState,required TResult Function( String text)  delta,required TResult Function( String text,  bool alreadyStreamed)  interim,required TResult Function( String toolId,  String risk,  bool redacted)  toolRisk,required TResult Function( ToolCall tool)  toolProgress,required TResult Function( SubagentEvent event)  subagent,required TResult Function( ApprovalRequest request)  approvalRequest,required TResult Function( ApprovalChoice? choice)  approvalResolved,required TResult Function( ClarifyRequest request)  clarifyRequest,required TResult Function()  clarifyResolved,required TResult Function( RunStatus status)  status,required TResult Function( String? output,  GatewayCompletion? gateway)  completed,required TResult Function( String? error,  String? output,  GatewayCompletion? gateway)  failed,required TResult Function( String type,  Map<String, dynamic> data)  unknown,}) {final _that = this;
 switch (_that) {
 case RunActivityPreview():
 return activityPreview(_that.text);case RunReasoningDelta():
@@ -202,7 +206,8 @@ return thinkingState(_that.text);case RunTextDelta():
 return delta(_that.text);case RunInterim():
 return interim(_that.text,_that.alreadyStreamed);case RunToolRisk():
 return toolRisk(_that.toolId,_that.risk,_that.redacted);case RunToolProgress():
-return toolProgress(_that.tool);case RunApprovalRequest():
+return toolProgress(_that.tool);case RunSubagent():
+return subagent(_that.event);case RunApprovalRequest():
 return approvalRequest(_that.request);case RunApprovalResolved():
 return approvalResolved(_that.choice);case RunClarifyRequest():
 return clarifyRequest(_that.request);case RunClarifyResolved():
@@ -224,7 +229,7 @@ return unknown(_that.type,_that.data);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String text)?  activityPreview,TResult? Function( String text)?  reasoningDelta,TResult? Function( String text)?  thinkingState,TResult? Function( String text)?  delta,TResult? Function( String text,  bool alreadyStreamed)?  interim,TResult? Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult? Function( ToolCall tool)?  toolProgress,TResult? Function( ApprovalRequest request)?  approvalRequest,TResult? Function( ApprovalChoice? choice)?  approvalResolved,TResult? Function( ClarifyRequest request)?  clarifyRequest,TResult? Function()?  clarifyResolved,TResult? Function( RunStatus status)?  status,TResult? Function( String? output,  GatewayCompletion? gateway)?  completed,TResult? Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult? Function( String type,  Map<String, dynamic> data)?  unknown,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String text)?  activityPreview,TResult? Function( String text)?  reasoningDelta,TResult? Function( String text)?  thinkingState,TResult? Function( String text)?  delta,TResult? Function( String text,  bool alreadyStreamed)?  interim,TResult? Function( String toolId,  String risk,  bool redacted)?  toolRisk,TResult? Function( ToolCall tool)?  toolProgress,TResult? Function( SubagentEvent event)?  subagent,TResult? Function( ApprovalRequest request)?  approvalRequest,TResult? Function( ApprovalChoice? choice)?  approvalResolved,TResult? Function( ClarifyRequest request)?  clarifyRequest,TResult? Function()?  clarifyResolved,TResult? Function( RunStatus status)?  status,TResult? Function( String? output,  GatewayCompletion? gateway)?  completed,TResult? Function( String? error,  String? output,  GatewayCompletion? gateway)?  failed,TResult? Function( String type,  Map<String, dynamic> data)?  unknown,}) {final _that = this;
 switch (_that) {
 case RunActivityPreview() when activityPreview != null:
 return activityPreview(_that.text);case RunReasoningDelta() when reasoningDelta != null:
@@ -233,7 +238,8 @@ return thinkingState(_that.text);case RunTextDelta() when delta != null:
 return delta(_that.text);case RunInterim() when interim != null:
 return interim(_that.text,_that.alreadyStreamed);case RunToolRisk() when toolRisk != null:
 return toolRisk(_that.toolId,_that.risk,_that.redacted);case RunToolProgress() when toolProgress != null:
-return toolProgress(_that.tool);case RunApprovalRequest() when approvalRequest != null:
+return toolProgress(_that.tool);case RunSubagent() when subagent != null:
+return subagent(_that.event);case RunApprovalRequest() when approvalRequest != null:
 return approvalRequest(_that.request);case RunApprovalResolved() when approvalResolved != null:
 return approvalResolved(_that.choice);case RunClarifyRequest() when clarifyRequest != null:
 return clarifyRequest(_that.request);case RunClarifyResolved() when clarifyResolved != null:
@@ -722,6 +728,81 @@ $ToolCallCopyWith<$Res> get tool {
 
   return $ToolCallCopyWith<$Res>(_self.tool, (value) {
     return _then(_self.copyWith(tool: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class RunSubagent implements RunEvent {
+  const RunSubagent(this.event);
+
+
+ final  SubagentEvent event;
+
+/// Create a copy of RunEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$RunSubagentCopyWith<RunSubagent> get copyWith => _$RunSubagentCopyWithImpl<RunSubagent>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RunSubagent&&(identical(other.event, event) || other.event == event));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,event);
+
+@override
+String toString() {
+  return 'RunEvent.subagent(event: $event)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $RunSubagentCopyWith<$Res> implements $RunEventCopyWith<$Res> {
+  factory $RunSubagentCopyWith(RunSubagent value, $Res Function(RunSubagent) _then) = _$RunSubagentCopyWithImpl;
+@useResult
+$Res call({
+ SubagentEvent event
+});
+
+
+$SubagentEventCopyWith<$Res> get event;
+
+}
+/// @nodoc
+class _$RunSubagentCopyWithImpl<$Res>
+    implements $RunSubagentCopyWith<$Res> {
+  _$RunSubagentCopyWithImpl(this._self, this._then);
+
+  final RunSubagent _self;
+  final $Res Function(RunSubagent) _then;
+
+/// Create a copy of RunEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? event = null,}) {
+  return _then(RunSubagent(
+null == event ? _self.event : event // ignore: cast_nullable_to_non_nullable
+as SubagentEvent,
+  ));
+}
+
+/// Create a copy of RunEvent
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$SubagentEventCopyWith<$Res> get event {
+
+  return $SubagentEventCopyWith<$Res>(_self.event, (value) {
+    return _then(_self.copyWith(event: value));
   });
 }
 }

@@ -345,6 +345,16 @@ class TurnCapture extends ChangeNotifier {
           'duration': tool.duration,
         },
       ),
+      RunSubagent(:final event) => (
+        'subagent',
+        <String, Object?>{
+          'kind': event.kind.wire,
+          'key': event.key,
+          'task': '${event.taskIndex + 1}/${event.taskCount}',
+          'phase': event.phase?.name,
+          'text': event.text,
+        },
+      ),
       RunApprovalRequest(:final request) => (
         'approvalRequest',
         <String, Object?>{'command': request.command},
@@ -721,6 +731,13 @@ class TurnCapture extends ChangeNotifier {
     TurnCommentary(:final text) => 'comentário  ${_render("text", text)}',
     TurnActivityPreview(:final text) => 'atividade  ${_render("text", text)}',
     TurnReasoning(:final text) => 'raciocínio  ${_render("text", text)}',
+    TurnSubagentActivity(:final run) => [
+      'subagent  ${run.taskIndex + 1}/${run.taskCount}',
+      'key=${run.key}',
+      'phase=${run.phase.name}',
+      'tools=${run.toolCalls}',
+      'goal=${_render("text", run.goal)}',
+    ].join('  '),
     TurnToolActivity(:final tool) => [
       'tool  ${tool.name}',
       'id=${_render("tool_id", tool.id)}',

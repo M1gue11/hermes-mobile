@@ -3,6 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'approval_request.dart';
 import 'clarify_request.dart';
 import 'run.dart';
+import 'subagent_run.dart';
 import 'tool_call.dart';
 import 'gateway_completion.dart';
 
@@ -48,6 +49,9 @@ sealed class RunEvent with _$RunEvent {
 
   /// Progresso de uma tool call (entra na timeline, separada do texto).
   const factory RunEvent.toolProgress(ToolCall tool) = RunToolProgress;
+
+  /// Frame `subagent.*` de um agente delegado (B9).
+  const factory RunEvent.subagent(SubagentEvent event) = RunSubagent;
 
   /// O servidor quer executar algo perigoso e está **bloqueado** esperando
   /// resposta. A run fica em `waiting_for_approval` até um gesto explícito.

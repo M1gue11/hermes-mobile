@@ -152,6 +152,10 @@ versionada; o Git registra as mudanças do repositório.
   estavam como abertos, mas já implementados: passaram a `[~]`. B9 é viável:
   no 0.22.6 todo `subagent.*` traz `goal`, `task_count` e `task_index`
   (`tui_gateway/contracts/events.py`), com `subagent_id` opcional.
+- B9 implementado: `TurnActivity.subagent` + `SubagentRun`, `RunEvent.subagent`
+  no adapter TUI, agregação no controller e linha na timeline cronológica.
+  `settleTurnTools` também fecha subagents abertos, então nenhuma chamada
+  nova precisou ser espalhada. 894 testes.
 
 ## Estado acionável
 

@@ -431,9 +431,22 @@ registrá-lo; operações destrutivas pedem confirmação explícita na interfac
   pendente, restart e ring expirado, inclusive o limite do snapshot sem watermark
   atômico; ver a auditoria 0.21.6.
 
-- [ ] **B9 Mostrar subagents na timeline.** Reduzir eventos `subagent.*` em um
+- [~] **B9 Mostrar subagents na timeline.** Reduzir eventos `subagent.*` em um
   bloco aninhado, sem convertê-los em texto do assistant. Cobrir spawn, thinking,
   tool, progress, complete e reconciliação.
+
+  Implementado em 2026-11-08 contra o contrato do 0.22.6
+  (`tui_gateway/contracts/events.py`: todo frame traz `goal`, `task_count` e
+  `task_index`; `subagent_id`, `delegation_id`, `status`, `summary` e
+  `duration_seconds` opcionais). Cada agente vira um bloco na timeline
+  cronológica, na posição em que apareceu: "Subagente i/n · estado", o
+  objetivo, a última ferramenta ou nota enquanto roda e o resumo ao terminar.
+  `thinking`/`progress` deixaram de virar prévia solta. Chave por
+  `subagent_id`, senão `delegation_id#task_index`; início para chave já
+  encerrada abre bloco novo. Fim do turno fecha quem ficou aberto. Limites:
+  o modo consolidado ainda não mostra subagents, e o histórico persistido não
+  traz os frames, então reabrir a conversa perde o bloco (não é inventado).
+  Falta aceite com uma delegação real no aparelho.
 
 - [ ] **B14 Tirar subagents da listagem plana e agrupá-los no chat pai.**
   Recomendação: manter a lista principal só com conversas humanas, exibir no

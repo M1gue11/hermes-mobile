@@ -23,6 +23,7 @@ import '../../domain/models/server_health.dart';
 import '../../domain/models/server_tools.dart';
 import '../../domain/models/session_search.dart';
 import '../../domain/models/session_message.dart';
+import '../../domain/models/subagent_run.dart';
 import '../../domain/models/usage_summary.dart';
 import '../../domain/models/tool_call.dart';
 import '../../domain/models/tool_preview.dart';
@@ -1943,10 +1944,18 @@ final class _DashboardLiveTurn implements GatewayLiveTurn {
       case 'tool.generating':
       case 'background.complete':
       case 'review.summary':
-      case 'subagent.thinking':
-      case 'subagent.progress':
         final text = _eventText(payload);
         if (text.isNotEmpty) yield RunEvent.activityPreview(text);
+      // B9: cada agente delegado vira um bloco agregado na timeline do pai,
+      // nunca texto do assistant.
+      case 'subagent.spawn_requested':
+      case 'subagent.start':
+      case 'subagent.thinking':
+      case 'subagent.tool':
+      case 'subagent.progress':
+      case 'subagent.complete':
+        final event = SubagentEvent.fromGateway(type, payload);
+        if (event != null) yield RunEvent.subagent(event);
       case 'tool.start':
         final name = payload['name']?.toString().trim() ?? '';
         if (name.isNotEmpty) {

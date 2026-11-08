@@ -201,7 +201,9 @@ class _UserBubbleState extends State<UserBubble> {
               SizedBox(height: 8 * scale),
               if (envelope == null)
                 Text(
-                  message.displayText ?? skillInvocationText(message.text) ?? message.text,
+                  message.displayText ??
+                      skillInvocationText(message.text) ??
+                      message.text,
                   textAlign: TextAlign.right,
                   style: t
                       .serifIn(FontWeight.w400, italic: true)
@@ -686,6 +688,12 @@ class _ChronologicalTimeline extends StatelessWidget {
           animateLive: index == latestRunningToolIndex,
           onInteraction: onInteraction,
         ),
+        TurnSubagentActivity(:final id, :final run) => _SubagentEventRow(
+          key: ValueKey('turn-subagent-$id'),
+          run: run,
+          first: first,
+          last: last,
+        ),
       });
     }
 
@@ -707,6 +715,113 @@ class _ChronologicalTimeline extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: events,
+      ),
+    );
+  }
+}
+
+/// Agente delegado pelo turno (B9): objetivo, estado e o último sinal de vida
+/// enquanto roda; o resumo que ele devolveu quando termina.
+class _SubagentEventRow extends StatelessWidget {
+  const _SubagentEventRow({
+    super.key,
+    required this.run,
+    required this.first,
+    required this.last,
+  });
+
+  final SubagentRun run;
+  final bool first;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = HermesTokens.of(context);
+    final position = run.taskCount > 1
+        ? 'Subagente ${run.taskIndex + 1}/${run.taskCount}'
+        : 'Subagente';
+    final seconds = run.duration == null
+        ? null
+        : formatToolDuration('${run.duration!.inMilliseconds / 1000}');
+    final state = switch (run.phase) {
+      SubagentPhase.queued => 'na fila',
+      SubagentPhase.running => switch (run.toolCalls) {
+        0 => 'rodando',
+        1 => 'rodando · 1 ferramenta',
+        final n => 'rodando · $n ferramentas',
+      },
+      SubagentPhase.completed =>
+        seconds == null ? 'concluído' : 'concluído · $seconds',
+      SubagentPhase.failed => 'falhou',
+      SubagentPhase.interrupted => 'interrompido',
+    };
+    final detail = run.finished ? run.summary : run.lastNote;
+    final goal = run.goal.isEmpty ? 'Tarefa delegada' : run.goal;
+
+    return Semantics(
+      container: true,
+      label: '$position, $state: $goal',
+      excludeSemantics: true,
+      child: _TimelineEventFrame(
+        first: first,
+        last: last,
+        marker: _ToolStatusMarker(
+          status: switch (run.phase) {
+            SubagentPhase.queued || SubagentPhase.running => ToolStatus.running,
+            SubagentPhase.completed => ToolStatus.done,
+            SubagentPhase.failed ||
+            SubagentPhase.interrupted => ToolStatus.error,
+          },
+          animateLive: run.phase == SubagentPhase.running,
+        ),
+        header: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$position · $state'.toUpperCase(),
+                  style: t.mono.copyWith(
+                    fontSize: 10,
+                    letterSpacing: 1.2,
+                    color: run.phase == SubagentPhase.failed
+                        ? t.accentInk
+                        : t.faint,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  goal,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.serif.copyWith(
+                    fontSize: 14.5,
+                    height: 1.4,
+                    color: t.ink,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        detail: detail == null
+            ? null
+            : Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  detail,
+                  maxLines: run.finished ? 4 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.serif.copyWith(
+                    fontSize: 13.5,
+                    height: 1.5,
+                    color: t.dim,
+                  ),
+                ),
+              ),
       ),
     );
   }

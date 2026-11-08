@@ -86,14 +86,15 @@ extension TurnActivityPatterns on TurnActivity {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( TurnCommentary value)?  commentary,TResult Function( TurnActivityPreview value)?  activity,TResult Function( TurnReasoning value)?  reasoning,TResult Function( TurnToolActivity value)?  tool,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( TurnCommentary value)?  commentary,TResult Function( TurnActivityPreview value)?  activity,TResult Function( TurnReasoning value)?  reasoning,TResult Function( TurnToolActivity value)?  tool,TResult Function( TurnSubagentActivity value)?  subagent,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case TurnCommentary() when commentary != null:
 return commentary(_that);case TurnActivityPreview() when activity != null:
 return activity(_that);case TurnReasoning() when reasoning != null:
 return reasoning(_that);case TurnToolActivity() when tool != null:
-return tool(_that);case _:
+return tool(_that);case TurnSubagentActivity() when subagent != null:
+return subagent(_that);case _:
   return orElse();
 
 }
@@ -111,14 +112,15 @@ return tool(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( TurnCommentary value)  commentary,required TResult Function( TurnActivityPreview value)  activity,required TResult Function( TurnReasoning value)  reasoning,required TResult Function( TurnToolActivity value)  tool,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( TurnCommentary value)  commentary,required TResult Function( TurnActivityPreview value)  activity,required TResult Function( TurnReasoning value)  reasoning,required TResult Function( TurnToolActivity value)  tool,required TResult Function( TurnSubagentActivity value)  subagent,}){
 final _that = this;
 switch (_that) {
 case TurnCommentary():
 return commentary(_that);case TurnActivityPreview():
 return activity(_that);case TurnReasoning():
 return reasoning(_that);case TurnToolActivity():
-return tool(_that);}
+return tool(_that);case TurnSubagentActivity():
+return subagent(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -132,14 +134,15 @@ return tool(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( TurnCommentary value)?  commentary,TResult? Function( TurnActivityPreview value)?  activity,TResult? Function( TurnReasoning value)?  reasoning,TResult? Function( TurnToolActivity value)?  tool,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( TurnCommentary value)?  commentary,TResult? Function( TurnActivityPreview value)?  activity,TResult? Function( TurnReasoning value)?  reasoning,TResult? Function( TurnToolActivity value)?  tool,TResult? Function( TurnSubagentActivity value)?  subagent,}){
 final _that = this;
 switch (_that) {
 case TurnCommentary() when commentary != null:
 return commentary(_that);case TurnActivityPreview() when activity != null:
 return activity(_that);case TurnReasoning() when reasoning != null:
 return reasoning(_that);case TurnToolActivity() when tool != null:
-return tool(_that);case _:
+return tool(_that);case TurnSubagentActivity() when subagent != null:
+return subagent(_that);case _:
   return null;
 
 }
@@ -156,13 +159,14 @@ return tool(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String text,  int? rowId)?  commentary,TResult Function( String id,  String text)?  activity,TResult Function( String id,  String text)?  reasoning,TResult Function( String id,  ToolCall tool)?  tool,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String id,  String text,  int? rowId)?  commentary,TResult Function( String id,  String text)?  activity,TResult Function( String id,  String text)?  reasoning,TResult Function( String id,  ToolCall tool)?  tool,TResult Function( String id,  SubagentRun run)?  subagent,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case TurnCommentary() when commentary != null:
 return commentary(_that.id,_that.text,_that.rowId);case TurnActivityPreview() when activity != null:
 return activity(_that.id,_that.text);case TurnReasoning() when reasoning != null:
 return reasoning(_that.id,_that.text);case TurnToolActivity() when tool != null:
-return tool(_that.id,_that.tool);case _:
+return tool(_that.id,_that.tool);case TurnSubagentActivity() when subagent != null:
+return subagent(_that.id,_that.run);case _:
   return orElse();
 
 }
@@ -180,13 +184,14 @@ return tool(_that.id,_that.tool);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String text,  int? rowId)  commentary,required TResult Function( String id,  String text)  activity,required TResult Function( String id,  String text)  reasoning,required TResult Function( String id,  ToolCall tool)  tool,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String id,  String text,  int? rowId)  commentary,required TResult Function( String id,  String text)  activity,required TResult Function( String id,  String text)  reasoning,required TResult Function( String id,  ToolCall tool)  tool,required TResult Function( String id,  SubagentRun run)  subagent,}) {final _that = this;
 switch (_that) {
 case TurnCommentary():
 return commentary(_that.id,_that.text,_that.rowId);case TurnActivityPreview():
 return activity(_that.id,_that.text);case TurnReasoning():
 return reasoning(_that.id,_that.text);case TurnToolActivity():
-return tool(_that.id,_that.tool);}
+return tool(_that.id,_that.tool);case TurnSubagentActivity():
+return subagent(_that.id,_that.run);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -200,13 +205,14 @@ return tool(_that.id,_that.tool);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String text,  int? rowId)?  commentary,TResult? Function( String id,  String text)?  activity,TResult? Function( String id,  String text)?  reasoning,TResult? Function( String id,  ToolCall tool)?  tool,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String id,  String text,  int? rowId)?  commentary,TResult? Function( String id,  String text)?  activity,TResult? Function( String id,  String text)?  reasoning,TResult? Function( String id,  ToolCall tool)?  tool,TResult? Function( String id,  SubagentRun run)?  subagent,}) {final _that = this;
 switch (_that) {
 case TurnCommentary() when commentary != null:
 return commentary(_that.id,_that.text,_that.rowId);case TurnActivityPreview() when activity != null:
 return activity(_that.id,_that.text);case TurnReasoning() when reasoning != null:
 return reasoning(_that.id,_that.text);case TurnToolActivity() when tool != null:
-return tool(_that.id,_that.tool);case _:
+return tool(_that.id,_that.tool);case TurnSubagentActivity() when subagent != null:
+return subagent(_that.id,_that.run);case _:
   return null;
 
 }
@@ -493,6 +499,83 @@ $ToolCallCopyWith<$Res> get tool {
 
   return $ToolCallCopyWith<$Res>(_self.tool, (value) {
     return _then(_self.copyWith(tool: value));
+  });
+}
+}
+
+/// @nodoc
+
+
+class TurnSubagentActivity implements TurnActivity {
+  const TurnSubagentActivity({required this.id, required this.run});
+
+
+@override final  String id;
+ final  SubagentRun run;
+
+/// Create a copy of TurnActivity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TurnSubagentActivityCopyWith<TurnSubagentActivity> get copyWith => _$TurnSubagentActivityCopyWithImpl<TurnSubagentActivity>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TurnSubagentActivity&&(identical(other.id, id) || other.id == id)&&(identical(other.run, run) || other.run == run));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,run);
+
+@override
+String toString() {
+  return 'TurnActivity.subagent(id: $id, run: $run)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TurnSubagentActivityCopyWith<$Res> implements $TurnActivityCopyWith<$Res> {
+  factory $TurnSubagentActivityCopyWith(TurnSubagentActivity value, $Res Function(TurnSubagentActivity) _then) = _$TurnSubagentActivityCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, SubagentRun run
+});
+
+
+$SubagentRunCopyWith<$Res> get run;
+
+}
+/// @nodoc
+class _$TurnSubagentActivityCopyWithImpl<$Res>
+    implements $TurnSubagentActivityCopyWith<$Res> {
+  _$TurnSubagentActivityCopyWithImpl(this._self, this._then);
+
+  final TurnSubagentActivity _self;
+  final $Res Function(TurnSubagentActivity) _then;
+
+/// Create a copy of TurnActivity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? run = null,}) {
+  return _then(TurnSubagentActivity(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,run: null == run ? _self.run : run // ignore: cast_nullable_to_non_nullable
+as SubagentRun,
+  ));
+}
+
+/// Create a copy of TurnActivity
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$SubagentRunCopyWith<$Res> get run {
+
+  return $SubagentRunCopyWith<$Res>(_self.run, (value) {
+    return _then(_self.copyWith(run: value));
   });
 }
 }

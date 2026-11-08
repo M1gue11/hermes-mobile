@@ -1721,6 +1721,17 @@ class ChatController extends _$ChatController {
             ),
           ),
         );
+      case RunSubagent(:final event):
+        _patch(
+          id,
+          (message) => message.copyWith(
+            activityItems: applySubagentEvent(
+              message.activityItems,
+              event,
+              blockId: _nextTurnEventId(id),
+            ),
+          ),
+        );
       case RunToolProgress(:final tool):
         if (tool.name == '_thinking' && !state.reasoning.showActivity) return;
         _patch(
