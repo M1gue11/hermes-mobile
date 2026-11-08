@@ -47,8 +47,8 @@ class MachineSession extends _$MachineSession {
   late SshStore _store;
   SSHClient? _client;
   SSHSession? _shell;
-  StreamSubscription<Uint8List>? _saida;
-  StreamSubscription<Uint8List>? _erroPadrao;
+  StreamSubscription<String>? _saida;
+  StreamSubscription<String>? _erroPadrao;
 
   /// O terminal vive fora do estado porque tem buffer: recriá-lo a cada
   /// mudança de estado apagaria a rolagem do que já foi lido.
@@ -214,8 +214,8 @@ class MachineSession extends _$MachineSession {
         return;
       }
       _shell = shell;
-      _saida = shell.stdout.listen(_escrever);
-      _erroPadrao = shell.stderr.listen(_escrever);
+      _saida = terminalText(shell.stdout).listen(terminal.write);
+      _erroPadrao = terminalText(shell.stderr).listen(terminal.write);
       unawaited(shell.done.then((_) => _quedaDaSessao()));
 
       // Só fixa depois de a sessão subir: fixar uma chave de uma conexão que
@@ -254,9 +254,6 @@ class MachineSession extends _$MachineSession {
 
   _FalhaDeHost? _falhaAtual;
 
-  void _escrever(Uint8List dados) =>
-      terminal.write(utf8.decode(dados, allowMalformed: true));
-
   void _enviar(String dados) =>
       _shell?.stdin.add(Uint8List.fromList(utf8.encode(dados)));
 
@@ -265,10 +262,7 @@ class MachineSession extends _$MachineSession {
 
   void _quedaDaSessao() {
     if (!ref.mounted || state.stage != MachineStage.conectado) return;
-    state = _com(
-      stage: MachineStage.desconectado,
-      erro: 'A sessão terminou.',
-    );
+    state = _com(stage: MachineStage.desconectado, erro: 'A sessão terminou.');
   }
 
   Future<void> _fechar() async {
@@ -297,6 +291,11 @@ class MachineSession extends _$MachineSession {
     hostKeyChanged: false,
   );
 }
+
+/// Texto de uma saída do shell. Um decodificador por stream, não por pacote:
+/// um caractere multibyte pode chegar partido entre dois pacotes SSH (A88).
+Stream<String> terminalText(Stream<Uint8List> bytes) =>
+    bytes.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true));
 
 /// A chave do host mudou. Carrega a nova impressão digital para a tela mostrar.
 class _FalhaDeHost {

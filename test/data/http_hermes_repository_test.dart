@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_mobile/domain/models/approval_request.dart';
 import 'package:hermes_mobile/domain/models/cron_job.dart';
 import 'package:hermes_mobile/domain/models/hermes_failure.dart';
+import 'package:hermes_mobile/domain/models/run_event.dart';
 import 'package:hermes_mobile/data/http/http_hermes_repository.dart';
 
 void main() {
@@ -483,6 +484,34 @@ void main() {
       );
     });
 
+    test('caractere multibyte partido entre pedaços chega inteiro', () async {
+      // A88: decodificar cada pedaço sozinho trocava o caractere cortado por
+      // U+FFFD. Aqui cada fronteira cai no meio de um caractere.
+      final bytes = utf8.encode(
+        'data: {"event":"message.delta","delta":"ação ✓ 🙂"}\n\n'
+        'data: {"event":"run.completed","output":"fim"}\n\n',
+      );
+      final start = utf8
+          .encode('data: {"event":"message.delta","delta":"a')
+          .length;
+      final cuts = [start + 1, start + 4, start + 8, start + 11, start + 13];
+      final chunks = <List<int>>[];
+      var from = 0;
+      for (final cut in cuts) {
+        chunks.add(bytes.sublist(from, cut));
+        from = cut;
+      }
+      chunks.add(bytes.sublist(from));
+      final repository = HttpHermesRepository(
+        apiKey: 'test-key',
+        dio: Dio()..httpClientAdapter = _ChunkedSseAdapter(chunks),
+      );
+
+      final events = await repository.runEvents('run-1').toList();
+
+      expect(events.whereType<RunTextDelta>().single.text, 'ação ✓ 🙂');
+    });
+
     test('404 ao abrir SSE é reconciliação, não evento de run falha', () async {
       final repository = HttpHermesRepository(
         apiKey: 'test-key',
@@ -532,6 +561,28 @@ class _BrokenSseAdapter implements HttpClientAdapter {
       },
     );
   }
+}
+
+class _ChunkedSseAdapter implements HttpClientAdapter {
+  _ChunkedSseAdapter(this.chunks);
+
+  final List<List<int>> chunks;
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async => ResponseBody(
+    Stream.fromIterable([for (final c in chunks) Uint8List.fromList(c)]),
+    200,
+    headers: {
+      Headers.contentTypeHeader: ['text/event-stream'],
+    },
+  );
 }
 
 /// Como o `_JsonAdapter`, mas guarda o pedido: é o único jeito de provar para

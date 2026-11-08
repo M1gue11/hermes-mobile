@@ -57,8 +57,6 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   revela caminho local nem colide com arquivos do host.
 - [ ] **A87 Limitar quantidade/tamanho total dos anexos.** Além do limite por
   arquivo, impedir acúmulo excessivo de bytes e Base64 em memória; medir uso.
-- [ ] **A88 Decodificar SSE UTF-8 incrementalmente.** Testar caractere
-  multibyte partido entre chunks, sem substituição por caractere inválido.
 - [ ] **A89 Encerrar gravação de áudio no lifecycle.** Cancelar recorder e
   descartar temporários ao sair da tela ou colocar o app em background.
 - [ ] **A90 Evitar carregamento automático de imagens remotas em Markdown.**

@@ -91,6 +91,9 @@ versionada; o Git registra as mudanças do repositório.
   encontrado". Nenhuma ação mudou o servidor do usuário.
 - A104 entrou no backlog a pedido do usuário: baixar arquivos citados na
   conversa.
+- A88 concluído: o SSE da Runs API e a saída do terminal SSH decodificam UTF-8
+  por stream, não por pedaço. Antes, um caractere partido entre dois pacotes
+  virava `�` (reproduzido em teste antes da correção).
 
 ## Estado acionável
 

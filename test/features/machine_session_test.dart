@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_mobile/data/config/ssh_store.dart';
@@ -53,6 +56,24 @@ class FakeSshStore implements SshStore {
 }
 
 void main() {
+  test(
+    'saída do shell com caractere partido entre pacotes chega inteira',
+    () async {
+      final bytes = utf8.encode('ação ✓ 🙂\r\n');
+      final pacotes = [
+        bytes.sublist(0, 2),
+        bytes.sublist(2, 4),
+        bytes.sublist(4, 9),
+        bytes.sublist(9, 12),
+        bytes.sublist(12),
+      ].map(Uint8List.fromList);
+
+      final texto = await terminalText(Stream.fromIterable(pacotes)).join();
+
+      expect(texto, 'ação ✓ 🙂\r\n');
+    },
+  );
+
   test('sem chave gerada, a sessão começa em semChave', () {
     final (:container, :store) = montar();
     expect(container.read(machineSessionProvider).stage, MachineStage.semChave);

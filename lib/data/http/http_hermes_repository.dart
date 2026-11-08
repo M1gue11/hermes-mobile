@@ -567,9 +567,14 @@ class HttpHermesRepository implements HermesRepository {
     final dataLines = <String>[];
 
     try {
-      // Cada linha em branco fecha um "frame" SSE.
-      await for (final chunk in body.stream) {
-        buffer += utf8.decode(chunk, allowMalformed: true);
+      // Cada linha em branco fecha um "frame" SSE. O decodificador é do stream
+      // inteiro, não de cada pedaço: um caractere multibyte pode chegar
+      // partido entre dois pedaços da rede (A88).
+      final text = body.stream.cast<List<int>>().transform(
+        const Utf8Decoder(allowMalformed: true),
+      );
+      await for (final chunk in text) {
+        buffer += chunk;
         var idx = buffer.indexOf('\n');
         while (idx >= 0) {
           final line = buffer.substring(0, idx).replaceAll('\r', '');
