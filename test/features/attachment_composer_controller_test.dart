@@ -165,6 +165,65 @@ void main() {
     expect(state.error, 'A gravação foi descartada ao sair da conversa.');
   });
 
+  test('A87: anexo que estoura o total é descartado e explicado', () async {
+    final big = ComposerAttachment(
+      id: 'big',
+      name: 'grande.bin',
+      mimeType: 'application/octet-stream',
+      bytes: Uint8List(maxComposerAttachmentBytes),
+    );
+    final source = _FakeAttachmentSource(picked: big, recorded: big);
+    final container = _container(
+      source: source,
+      gateway: _FakeGatewayRepository(),
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(
+      attachmentComposerControllerProvider.notifier,
+    );
+
+    await controller.pickFile();
+    await controller.pickFile();
+    expect(
+      container.read(attachmentComposerControllerProvider).attachments,
+      hasLength(2),
+    );
+
+    await controller.startRecording();
+    await controller.stopRecording();
+
+    final state = container.read(attachmentComposerControllerProvider);
+    expect(state.attachments, hasLength(2));
+    expect(state.recording, isFalse);
+    expect(state.error, contains('50 MB'));
+    expect(source.discardedIds, ['big']);
+  });
+
+  test('A87: com 10 anexos não abre seletor nem microfone', () async {
+    final source = _FakeAttachmentSource(picked: _file(), recorded: _audio());
+    final container = _container(
+      source: source,
+      gateway: _FakeGatewayRepository(),
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(
+      attachmentComposerControllerProvider.notifier,
+    );
+    for (var i = 0; i < maxComposerAttachments; i++) {
+      await controller.pickFile();
+    }
+    expect(source.picks, maxComposerAttachments);
+
+    await controller.pickFile();
+    await controller.startRecording();
+
+    final state = container.read(attachmentComposerControllerProvider);
+    expect(source.picks, maxComposerAttachments);
+    expect(source.recording, isFalse);
+    expect(state.attachments, hasLength(maxComposerAttachments));
+    expect(state.error, 'Limite de 10 anexos por mensagem.');
+  });
+
   test('o composer descartado não deixa o microfone ligado', () async {
     final source = _FakeAttachmentSource(recorded: _audio());
     final container = _container(
@@ -239,8 +298,13 @@ final class _FakeAttachmentSource implements AttachmentSource {
   @override
   Future<bool> hasMicrophonePermission() async => true;
 
+  int picks = 0;
+
   @override
-  Future<ComposerAttachment?> pickFile() async => picked;
+  Future<ComposerAttachment?> pickFile() async {
+    picks++;
+    return picked;
+  }
 
   @override
   Future<void> startRecording() async => recording = true;

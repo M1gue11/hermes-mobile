@@ -107,6 +107,11 @@ versionada; o Git registra as mudanças do repositório.
   pede a credencial nova, e a dica do campo muda enquanto a URL é digitada.
   O teste antigo, que esperava reaproveitar a chave num host novo, foi
   reescrito para o comportamento novo. 871 testes.
+- A87 concluído: até 10 anexos e 50 MB somados por mensagem (dois arquivos no
+  teto individual de 25 MB). A contagem é checada antes de abrir seletor ou
+  microfone; o total, com os bytes em mão, descartando o que não coube. O
+  gateway 0.22.6 aceita 256 MB por anexo, então o teto é do celular. Números
+  escolhidos pelo loop; ajustar se o uso real pedir. 874 testes.
 
 ## Estado acionável
 

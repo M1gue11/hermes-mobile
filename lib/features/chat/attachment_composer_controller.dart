@@ -42,9 +42,17 @@ class AttachmentComposerController extends _$AttachmentComposerController {
 
   Future<void> pickFile() async {
     if (state.busy || state.recording) return;
+    final full = composerBudgetProblem(state.attachments);
+    if (full != null) return _setError(full);
     try {
-      final picked = await ref.read(attachmentSourceProvider).pickFile();
+      final source = ref.read(attachmentSourceProvider);
+      final picked = await source.pickFile();
       if (picked == null) return;
+      final over = composerBudgetProblem(state.attachments, adding: picked);
+      if (over != null) {
+        unawaited(source.discard(picked));
+        return _setError(over);
+      }
       state = (
         attachments: [...state.attachments, picked],
         recording: false,
@@ -60,6 +68,8 @@ class AttachmentComposerController extends _$AttachmentComposerController {
 
   Future<void> startRecording() async {
     if (state.busy || state.recording) return;
+    final full = composerBudgetProblem(state.attachments);
+    if (full != null) return _setError(full);
     try {
       final source = ref.read(attachmentSourceProvider);
       _source = source;
@@ -80,9 +90,21 @@ class AttachmentComposerController extends _$AttachmentComposerController {
   Future<void> stopRecording() async {
     if (!state.recording) return;
     try {
-      final recording = await ref
-          .read(attachmentSourceProvider)
-          .stopRecording();
+      final source = ref.read(attachmentSourceProvider);
+      final recording = await source.stopRecording();
+      final over = recording == null
+          ? null
+          : composerBudgetProblem(state.attachments, adding: recording);
+      if (over != null) {
+        unawaited(source.discard(recording!));
+        state = (
+          attachments: state.attachments,
+          recording: false,
+          busy: false,
+          error: over,
+        );
+        return;
+      }
       state = (
         attachments: recording == null
             ? state.attachments

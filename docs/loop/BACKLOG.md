@@ -49,8 +49,6 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
 - [ ] **A85 Não mandar `@file:` como texto no fallback Runs.** Quando o anexo
   foi preparado no TUI mas o turno não abre, bloquear fallback e preservar o
   rascunho até existir contrato Runs explícito para anexos.
-- [ ] **A87 Limitar quantidade/tamanho total dos anexos.** Além do limite por
-  arquivo, impedir acúmulo excessivo de bytes e Base64 em memória; medir uso.
 - [~] **A89 Encerrar gravação de áudio no lifecycle.** Cancelar recorder e
   descartar temporários ao sair da tela ou colocar o app em background.
 

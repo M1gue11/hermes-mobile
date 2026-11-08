@@ -27,6 +27,30 @@ abstract class ComposerAttachment with _$ComposerAttachment {
 /// A transcrição do Dashboard impõe o mesmo teto para áudio.
 const maxComposerAttachmentBytes = 25 * 1024 * 1024;
 
+/// Teto do conjunto de uma mensagem (A87). Os bytes ficam em memória até o
+/// envio e viram base64 (mais um terço) na hora; sem teto, anexos somados
+/// esgotavam a memória de um celular modesto.
+const maxComposerAttachments = 10;
+const maxComposerTotalBytes = 50 * 1024 * 1024;
+
+/// Por que [current] não comporta mais um anexo; `null` quando cabe.
+/// Sem [adding], pergunta só se ainda cabe algum (antes de abrir o seletor).
+String? composerBudgetProblem(
+  List<ComposerAttachment> current, {
+  ComposerAttachment? adding,
+}) {
+  if (current.length >= maxComposerAttachments) {
+    return 'Limite de $maxComposerAttachments anexos por mensagem.';
+  }
+  if (adding == null) return null;
+  final total = current.fold<int>(0, (sum, item) => sum + item.bytes.length);
+  if (total + adding.bytes.length > maxComposerTotalBytes) {
+    return 'Os anexos passariam de ${maxComposerTotalBytes ~/ (1024 * 1024)} MB. '
+        'Envie em mensagens separadas.';
+  }
+  return null;
+}
+
 String attachmentMimeType(String name) {
   final lower = name.toLowerCase();
   const known = <String, String>{
