@@ -141,6 +141,10 @@ versionada; o Git registra as mudanças do repositório.
 - A78 implementado no mínimo que não muda o desenho: microfone visível com
   anexo, escondido só com texto. O controller já compunha arquivo + voz +
   legenda. Gravar com texto digitado fica como decisão de design.
+- A77 implementado: `_resumeVisibleConversation` saía cedo sem turno ativo, e
+  uma conversa continuada em outro lugar só aparecia ao reabri-la. Agora relê
+  o histórico com guardas (ver backlog). Voltar de Skills/Ferramentas também
+  relê: um GET por volta. 886 testes.
 
 ## Estado acionável
 

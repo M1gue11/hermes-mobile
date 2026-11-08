@@ -118,7 +118,11 @@ class ChatController extends _$ChatController {
     } catch (_) {
       return;
     }
-    if (active == null || !_canListen(epoch, generation)) return;
+    if (!_canListen(epoch, generation)) return;
+    if (active == null) {
+      await _refreshIdleConversation(sessionId, epoch, generation);
+      return;
+    }
 
     try {
       final persisted =
@@ -142,6 +146,52 @@ class ChatController extends _$ChatController {
     }
     if (!_canListen(epoch, generation)) return;
     await _resumeActiveRun(sessionId, epoch, listenerGeneration: generation);
+  }
+
+  /// A77: sem turno registrado, a conversa pode ter andado em outro lugar
+  /// (desktop, Telegram, cron) enquanto o app estava fora. Relê o histórico
+  /// autoritativo e troca a timeline só quando o servidor está à frente.
+  Future<void> _refreshIdleConversation(
+    String sessionId,
+    int epoch,
+    int generation,
+  ) async {
+    bool quiet() =>
+        _canListen(epoch, generation) &&
+        state.sessionId == sessionId &&
+        !state.streaming &&
+        !state.openingConversation &&
+        state.conversationLoadFailure == null &&
+        state.pendingApproval == null &&
+        state.pendingClarification == null;
+    if (!quiet()) return;
+
+    List<SessionMessage> persisted;
+    try {
+      persisted = await _dashboardConversationHistory(sessionId);
+      if (persisted.isEmpty) {
+        persisted = await _repo.conversationMessages(sessionId);
+      }
+    } catch (_) {
+      // Sem rede, a timeline que já está na tela continua valendo.
+      return;
+    }
+    if (!quiet()) return;
+
+    final remoteUsers = persisted.where((m) => m.role == 'user').length;
+    final localUsers = state.messages.whereType<UserMessage>().length;
+    // Um envio que falhou só existe aqui; trocar a timeline o apagaria.
+    if (remoteUsers < localUsers) return;
+
+    final timeline = conversationTimeline(persisted, model: state.modelId);
+    final current = state.messages;
+    String? lastReply(List<ChatMessage> messages) =>
+        messages.whereType<AssistantMessage>().lastOrNull?.text;
+    if (timeline.length == current.length &&
+        lastReply(timeline) == lastReply(current)) {
+      return;
+    }
+    state = state.copyWith(messages: timeline);
   }
 
   bool _canListen(int epoch, [int? generation]) =>

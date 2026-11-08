@@ -578,6 +578,84 @@ void main() {
     );
   });
 
+  group('A77: volta ao app sem turno ativo', () {
+    var remote = <SessionMessage>[];
+    late ProviderContainer container;
+    late ChatController controller;
+
+    setUp(() async {
+      remote = const [
+        SessionMessage(id: 'u1', role: 'user', content: 'Oi'),
+        SessionMessage(id: 'a1', role: 'assistant', content: 'Olá.'),
+      ];
+      container = makeContainer(
+        FakeHermesRepository(conversationMessagesHandler: (_) async => remote),
+      );
+      controller = container.read(chatControllerProvider.notifier);
+      await controller.openConversation(
+        const Conversation(id: 'session-1', title: 'Teste'),
+      );
+    });
+
+    tearDown(() => container.dispose());
+
+    test('mostra o que a conversa ganhou em outro lugar', () async {
+      await controller.setLiveUpdatesVisible(false);
+      remote = [
+        ...remote,
+        const SessionMessage(id: 'u2', role: 'user', content: 'E agora?'),
+        const SessionMessage(
+          id: 'a2',
+          role: 'assistant',
+          content: 'Respondido pelo desktop.',
+        ),
+      ];
+      await controller.setLiveUpdatesVisible(true);
+
+      final messages = container.read(chatControllerProvider).messages;
+      expect(messages, hasLength(4));
+      expect(
+        (messages.last as AssistantMessage).text,
+        'Respondido pelo desktop.',
+      );
+    });
+
+    test('sem mudança no servidor a timeline não é reconstruída', () async {
+      var emissions = 0;
+      final subscription = container.listen(
+        chatControllerProvider,
+        (_, _) => emissions++,
+      );
+      addTearDown(subscription.close);
+      await controller.setLiveUpdatesVisible(false);
+      await controller.setLiveUpdatesVisible(true);
+
+      expect(emissions, 0);
+    });
+
+    test('envio local que o servidor não tem não é apagado', () async {
+      container.read(chatControllerProvider.notifier).state = container
+          .read(chatControllerProvider)
+          .copyWith(
+            messages: [
+              ...container.read(chatControllerProvider).messages,
+              const ChatMessage.user(
+                id: 'local',
+                text: 'Falhou',
+                time: '10:00',
+              ),
+            ],
+          );
+      await controller.setLiveUpdatesVisible(false);
+      await controller.setLiveUpdatesVisible(true);
+
+      expect(
+        container.read(chatControllerProvider).messages.last,
+        isA<UserMessage>().having((m) => m.text, 'text', 'Falhou'),
+      );
+    });
+  });
+
   test('A83: aprovação resolvida fora some ao retomar; aberta volta', () async {
     final first = FakeGatewayLiveTurn(
       storedSessionId: 'session-2',

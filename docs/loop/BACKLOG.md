@@ -141,7 +141,7 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   ficam legíveis e distinguíveis no streaming e ao reabrir a conversa, sem
   expor Markdown cru nem alterar trechos de código ou texto comum.
 
-- [ ] **A77 Atualizar a conversa ao sair e voltar ao app.** Ao retornar do
+- [~] **A77 Atualizar a conversa ao sair e voltar ao app.** Ao retornar do
   background ou reabrir o app, reconciliar a conversa selecionada com o
   histórico/estado remoto antes de apresentá-la como atualizada, preservando
   mensagens locais e o turno em curso. Não duplicar mensagens, perder a
@@ -149,6 +149,14 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   de aceite: uma resposta concluída enquanto o app estava fora aparece ao
   voltar; falha de rede mostra estado recuperável; testes cobrem retorno
   com turno ativo, histórico sem mudanças e troca de conversa durante refresh.
+
+  Implementado em 2026-11-08: com turno ativo, a retomada que já existia
+  segue igual; sem turno, voltar ao app ou à rota do chat relê o histórico
+  (Dashboard quando pareado, senão API) e troca a timeline só se o servidor
+  estiver à frente. Não mexe com envio em andamento, cartão de aprovação ou
+  clarify, nem com outra conversa aberta no meio; não apaga envio local que
+  o servidor não tem; sem mudança não reescreve o estado; sem rede mantém a
+  tela. Falta aceite no aparelho (conversa continuada no desktop).
 
 - [~] **A72 Aplicar a persona configurada de ponta a ponta.** A configuração de
   nome/gênero foi validada, mas ainda existem fallbacks visíveis como `Hermes`
