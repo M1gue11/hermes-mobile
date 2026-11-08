@@ -123,6 +123,10 @@ versionada; o Git registra as mudanças do repositório.
   mensagem explica o conflito. O teste de widget de anexo dependia do defeito
   (o fake recusava o turno ao vivo e o `@file:` ia para a Runs); agora ele abre
   um turno e confere que o `@file:` chega ao gateway. 877 testes.
+- A91 implementado: a primeira chave SSH espera um "confio" explícito (o
+  `onVerifyHostKey` do dartssh2 aceita `Future`, então o handshake fica parado
+  na pergunta). Teste de widget cobre a tela e as decisões; o handshake real
+  depende de servidor SSH e foi para `USER_TESTING.md`. 878 testes.
 
 ## Estado acionável
 

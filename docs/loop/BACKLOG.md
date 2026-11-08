@@ -55,8 +55,15 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   indicador de microfone do Android apaga ao sair do app.
 - [ ] **A90 Evitar carregamento automático de imagens remotas em Markdown.**
   Rever privacidade e consentimento antes de buscar URLs de terceiros.
-- [ ] **A91 Confirmar a primeira host key SSH.** Exibir fingerprint e exigir
+- [~] **A91 Confirmar a primeira host key SSH.** Exibir fingerprint e exigir
   confirmação consciente antes de confiar e persistir a chave.
+
+  Implementado em 2026-11-08: na primeira conexão o handshake para no estágio
+  `confirmandoHost`; a tela mostra a impressão digital e o comando para
+  conferi-la no servidor, com "Confiar e conectar" e "Cancelar". Sem resposta
+  em 90 s, ou saindo da sessão, é recusa; só se fixa a chave depois do
+  "confio" e da sessão de pé. Falta o aceite contra um SSH real
+  ([USER_TESTING.md](USER_TESTING.md)).
 - [ ] **A92 Revisar transporte HTTP/WS em `*.ts.net`.** Documentar ameaça e
   controles para a exceção cleartext; preferir proteção autenticada do serviço
   quando aplicável, sem confundir criptografia Tailscale com TLS do servidor.

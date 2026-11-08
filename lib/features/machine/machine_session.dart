@@ -21,7 +21,22 @@ part 'machine_session.g.dart';
 SshStore sshStore(Ref ref) => const SecureSshStore();
 
 /// Em que ponto a sessão de shell está.
-enum MachineStage { semChave, desconectado, conectando, conectado, falhou }
+///
+/// [confirmandoHost]: primeira conexão a esta máquina; o handshake está parado
+/// esperando a pessoa conferir a impressão digital (que vem em
+/// [MachineState] `.fingerprint`) e decidir se confia (A91).
+enum MachineStage {
+  semChave,
+  desconectado,
+  conectando,
+  confirmandoHost,
+  conectado,
+  falhou,
+}
+
+/// Quanto o handshake espera a pessoa decidir. O servidor SSH costuma
+/// derrubar a conexão em 120 s sem login.
+const hostConfirmationTimeout = Duration(seconds: 90);
 
 /// O estado que a tela lê.
 ///
@@ -175,6 +190,7 @@ class MachineSession extends _$MachineSession {
     }
 
     _falhaAtual = null;
+    _recusada = false;
     state = _com(stage: MachineStage.conectando, erro: null);
 
     final fixada = await _store.readHostFingerprint();
@@ -196,6 +212,11 @@ class MachineSession extends _$MachineSession {
           if (veredito == HostKeyVerdict.mudou) {
             _falhaAtual = _FalhaDeHost(recebida!);
             return false;
+          }
+          // A91: a primeira chave não é aceita em silêncio; quem conecta
+          // confere a impressão digital por fora e decide.
+          if (veredito == HostKeyVerdict.primeiraVez) {
+            return _perguntarSeConfia(target, recebida!);
           }
           return true;
         },
@@ -237,14 +258,51 @@ class MachineSession extends _$MachineSession {
       if (!ref.mounted) return;
       final falha = _falhaAtual;
       state = (
-        stage: MachineStage.falhou,
+        stage: _recusada ? MachineStage.desconectado : MachineStage.falhou,
         target: target,
         publicKeyLine: state.publicKeyLine,
         fingerprint: fixada,
-        erro: falha?.mensagem ?? _legivel(erro),
+        erro: _recusada
+            ? 'Conexão cancelada: a chave da máquina não foi confirmada.'
+            : falha?.mensagem ?? _legivel(erro),
         hostKeyChanged: falha != null,
       );
     }
+  }
+
+  Completer<bool>? _confirmacao;
+  bool _recusada = false;
+
+  Future<bool> _perguntarSeConfia(SshTarget target, String recebida) async {
+    final confirmacao = _confirmacao = Completer<bool>();
+    state = (
+      stage: MachineStage.confirmandoHost,
+      target: target,
+      publicKeyLine: state.publicKeyLine,
+      fingerprint: recebida,
+      erro: null,
+      hostKeyChanged: false,
+    );
+    final confia = await confirmacao.future.timeout(
+      hostConfirmationTimeout,
+      onTimeout: () => false,
+    );
+    if (identical(_confirmacao, confirmacao)) _confirmacao = null;
+    _recusada = !confia;
+    if (confia && ref.mounted) {
+      state = _com(stage: MachineStage.conectando, erro: null);
+    }
+    return confia;
+  }
+
+  /// A pessoa conferiu a impressão digital por fora e confia nesta máquina.
+  void confiarHost() => _decidir(true);
+
+  void recusarHost() => _decidir(false);
+
+  void _decidir(bool confia) {
+    final pendente = _confirmacao;
+    if (pendente != null && !pendente.isCompleted) pendente.complete(confia);
   }
 
   Future<void> desconectar() async {
@@ -266,6 +324,8 @@ class MachineSession extends _$MachineSession {
   }
 
   Future<void> _fechar() async {
+    // Sair no meio da pergunta é recusar: nada é fixado sem um "confio".
+    _decidir(false);
     await _saida?.cancel();
     await _erroPadrao?.cancel();
     _saida = null;

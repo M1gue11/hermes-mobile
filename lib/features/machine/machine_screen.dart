@@ -60,6 +60,7 @@ class _TopBar extends ConsumerWidget {
       MachineStage.semChave => 'SEM CHAVE',
       MachineStage.desconectado => 'DESCONECTADO',
       MachineStage.conectando => 'CONECTANDO',
+      MachineStage.confirmandoHost => 'CONFERIR CHAVE',
       MachineStage.conectado => 'CONECTADO',
       MachineStage.falhou => 'FALHOU',
     };
@@ -415,7 +416,59 @@ class _SetupPaneState extends ConsumerState<_SetupPane> {
           ),
         ],
 
-        if (state.fingerprint != null) ...[
+        if (state.stage == MachineStage.confirmandoHost &&
+            state.fingerprint != null) ...[
+          const SizedBox(height: 20),
+          Container(
+            key: const ValueKey('confirmar-host'),
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              border: Border.all(color: t.accent),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Secao(titulo: 'Primeira conexão a esta máquina'),
+                const SizedBox(height: 8),
+                Text(
+                  'Confira se esta impressão digital é a da sua máquina antes '
+                  'de confiar. Depois disso, qualquer outra chave é recusada.',
+                  style: t.serif.copyWith(
+                    fontSize: 14.5,
+                    height: 1.5,
+                    color: t.ink,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SelectableText(
+                  state.fingerprint!,
+                  style: t.mono.copyWith(fontSize: 12, color: t.ink),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'No servidor: ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub',
+                  style: t.mono.copyWith(fontSize: 10.5, color: t.dim),
+                ),
+                const SizedBox(height: 14),
+                _Botao(
+                  key: const ValueKey('confiar-host'),
+                  label: 'Confiar e conectar',
+                  destaque: true,
+                  onTap: () =>
+                      ref.read(machineSessionProvider.notifier).confiarHost(),
+                ),
+                const SizedBox(height: 8),
+                _Botao(
+                  key: const ValueKey('recusar-host'),
+                  label: 'Cancelar',
+                  onTap: () =>
+                      ref.read(machineSessionProvider.notifier).recusarHost(),
+                ),
+              ],
+            ),
+          ),
+        ] else if (state.fingerprint != null) ...[
           const SizedBox(height: 20),
           _Secao(titulo: 'Impressão digital fixada'),
           const SizedBox(height: 8),
@@ -472,7 +525,7 @@ class _SetupPaneState extends ConsumerState<_SetupPane> {
         ],
 
         const SizedBox(height: 26),
-        if (temChave)
+        if (temChave && state.stage != MachineStage.confirmandoHost)
           _Botao(
             key: const ValueKey('conectar-maquina'),
             label: state.stage == MachineStage.conectando

@@ -26,6 +26,17 @@ self-hosted com `deny-all`, liberar `ntfy access everyone 'up*' write-only`.
 - Desligue a chave: o aparelho some de `GET /api/plugins/mobile-push/devices`
   e nenhum aviso chega mais.
 
+## [ ] A91: confirmar a primeira chave SSH
+
+- Em Máquina, toque "Esquecer a chave antiga" se houver uma fixada, e
+  conecte. A conexão para em "CONFERIR CHAVE" mostrando `SHA256:...`.
+- No servidor, `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` deve
+  imprimir a mesma impressão. "Cancelar" volta a desconectado sem fixar nada;
+  conectar de novo pergunta outra vez.
+- "Confiar e conectar" abre o shell; a impressão aparece como fixada e a
+  próxima conexão não pergunta mais.
+- Deixe a pergunta aberta por mais de 90 s: a conexão é cancelada.
+
 ## [ ] A80 — comandos do gateway na conversa
 
 - Em uma conversa, digite `/sta`, selecione `/status` e envie: conferir o
