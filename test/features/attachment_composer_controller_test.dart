@@ -139,6 +139,53 @@ void main() {
       );
     },
   );
+
+  test('sair do app no meio da gravação descarta e explica', () async {
+    final source = _FakeAttachmentSource(recorded: _audio());
+    final container = _container(
+      source: source,
+      gateway: _FakeGatewayRepository(),
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(
+      attachmentComposerControllerProvider.notifier,
+    );
+
+    await controller.interruptRecording();
+    expect(source.cancellations, 0, reason: 'sem gravação, nada a cancelar');
+
+    await controller.startRecording();
+    await controller.interruptRecording();
+
+    final state = container.read(attachmentComposerControllerProvider);
+    expect(source.recording, isFalse);
+    expect(source.cancellations, 1);
+    expect(state.recording, isFalse);
+    expect(state.attachments, isEmpty);
+    expect(state.error, 'A gravação foi descartada ao sair da conversa.');
+  });
+
+  test('o composer descartado não deixa o microfone ligado', () async {
+    final source = _FakeAttachmentSource(recorded: _audio());
+    final container = _container(
+      source: source,
+      gateway: _FakeGatewayRepository(),
+    );
+    final subscription = container.listen(
+      attachmentComposerControllerProvider,
+      (_, _) {},
+    );
+    await container
+        .read(attachmentComposerControllerProvider.notifier)
+        .startRecording();
+
+    subscription.close();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(source.recording, isFalse);
+    expect(source.cancellations, 1);
+    container.dispose();
+  });
 }
 
 ProviderContainer _container({
@@ -172,10 +219,14 @@ final class _FakeAttachmentSource implements AttachmentSource {
   final ComposerAttachment? picked;
   final ComposerAttachment? recorded;
   bool recording = false;
+  int cancellations = 0;
   final List<String> discardedIds = [];
 
   @override
-  Future<void> cancelRecording() async => recording = false;
+  Future<void> cancelRecording() async {
+    cancellations++;
+    recording = false;
+  }
 
   @override
   Future<void> dispose() async {}

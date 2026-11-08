@@ -99,6 +99,9 @@ versionada; o Git registra as mudanças do repositório.
   ganha dos bytes do `data_url`, então o nome sozinho (fallback sem
   `localPath`) podia anexar um homônimo do servidor no lugar do arquivo do
   telefone.
+- A89 implementado: gravação descartada em segundo plano, com outra rota por
+  cima ou com o composer descartado (antes o microfone seguia ligado sem dono).
+  868 testes. Falta conferir o indicador de microfone no aparelho.
 
 ## Estado acionável
 

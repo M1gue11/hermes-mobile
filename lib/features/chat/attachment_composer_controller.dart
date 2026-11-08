@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../data/gateway_repository_provider.dart';
 import '../../domain/models/composer_attachment.dart';
+import '../../domain/repositories/attachment_source.dart';
 import '../../domain/repositories/gateway_repository.dart';
 
 part 'attachment_composer_controller.g.dart';
@@ -18,8 +19,26 @@ typedef AttachmentComposerState = ({
 @riverpod
 class AttachmentComposerController extends _$AttachmentComposerController {
   @override
-  AttachmentComposerState build() =>
-      (attachments: const [], recording: false, busy: false, error: null);
+  AttachmentComposerState build() {
+    // A fonte vive o app inteiro; o composer, só a tela. Sem isto, sair da
+    // conversa no meio de uma gravação deixava o microfone ligado (A89).
+    ref.onDispose(() {
+      if (!_recording) return;
+      _recording = false;
+      unawaited(_source?.cancelRecording());
+    });
+    return (attachments: const [], recording: false, busy: false, error: null);
+  }
+
+  /// Espelho de `state.recording` que o `onDispose` pode ler.
+  bool _recording = false;
+  AttachmentSource? _source;
+
+  @override
+  set state(AttachmentComposerState value) {
+    _recording = value.recording;
+    super.state = value;
+  }
 
   Future<void> pickFile() async {
     if (state.busy || state.recording) return;
@@ -42,7 +61,9 @@ class AttachmentComposerController extends _$AttachmentComposerController {
   Future<void> startRecording() async {
     if (state.busy || state.recording) return;
     try {
-      await ref.read(attachmentSourceProvider).startRecording();
+      final source = ref.read(attachmentSourceProvider);
+      _source = source;
+      await source.startRecording();
       state = (
         attachments: state.attachments,
         recording: true,
@@ -95,6 +116,15 @@ class AttachmentComposerController extends _$AttachmentComposerController {
       busy: false,
       error: null,
     );
+  }
+
+  /// O app saiu da frente ou outra tela cobriu a conversa. O Android não
+  /// deixa gravar em segundo plano sem serviço próprio, então a gravação
+  /// seguiria capturando silêncio; ela é descartada, com o motivo na tela.
+  Future<void> interruptRecording() async {
+    if (!state.recording) return;
+    await cancelRecording();
+    _setError('A gravação foi descartada ao sair da conversa.');
   }
 
   void remove(String id) {

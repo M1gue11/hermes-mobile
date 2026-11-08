@@ -54,8 +54,15 @@ regressões automatizadas e aceite no aparelho conforme cada correção.
   rascunho até existir contrato Runs explícito para anexos.
 - [ ] **A87 Limitar quantidade/tamanho total dos anexos.** Além do limite por
   arquivo, impedir acúmulo excessivo de bytes e Base64 em memória; medir uso.
-- [ ] **A89 Encerrar gravação de áudio no lifecycle.** Cancelar recorder e
+- [~] **A89 Encerrar gravação de áudio no lifecycle.** Cancelar recorder e
   descartar temporários ao sair da tela ou colocar o app em background.
+
+  Implementado em 2026-11-08: a gravação é descartada (o `record` apaga o
+  arquivo no `cancel`) quando o app vai para `hidden`/`paused`, quando outra
+  rota cobre a conversa e quando o composer é descartado; a tela diz o motivo.
+  `inactive` não interrompe, porque o diálogo de permissão do microfone e a
+  cortina de notificações passam por ele. Falta conferir no aparelho que o
+  indicador de microfone do Android apaga ao sair do app.
 - [ ] **A90 Evitar carregamento automático de imagens remotas em Markdown.**
   Rever privacidade e consentimento antes de buscar URLs de terceiros.
 - [ ] **A91 Confirmar a primeira host key SSH.** Exibir fingerprint e exigir

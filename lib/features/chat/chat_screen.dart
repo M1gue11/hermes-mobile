@@ -138,6 +138,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _appVisible = state == AppLifecycleState.resumed;
     _syncLiveUpdates();
+    // `inactive` não conta: o diálogo de permissão do microfone e a cortina
+    // de notificações passam por ele com a pessoa ainda gravando.
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused) {
+      _interruptRecording();
+    }
   }
 
   @override
@@ -156,6 +162,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void didPushNext() {
     _routeVisible = false;
     _syncLiveUpdates();
+    _interruptRecording();
   }
 
   @override
@@ -461,6 +468,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       setState(() => _recordingElapsed += const Duration(seconds: 1));
       if (_recordingElapsed.inMinutes >= 10) _toggleRecording();
     });
+  }
+
+  /// A89: gravação não sobrevive à conversa sair da tela.
+  void _interruptRecording() {
+    if (!ref.read(attachmentComposerControllerProvider).recording) return;
+    _recordingTimer?.cancel();
+    unawaited(
+      ref
+          .read(attachmentComposerControllerProvider.notifier)
+          .interruptRecording(),
+    );
+    if (mounted) setState(() => _recordingElapsed = Duration.zero);
   }
 
   Future<void> _cancelRecording() async {

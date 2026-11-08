@@ -145,11 +145,61 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 1));
   });
+
+  testWidgets('A89: app em segundo plano descarta a gravação; inactive não', (
+    tester,
+  ) async {
+    final source = _WidgetAttachmentSource();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          chatLaunchProvider.overrideWithValue(StubChatLaunch()),
+          hermesRepositoryProvider.overrideWithValue(FakeHermesRepository()),
+          attachmentSourceProvider.overrideWithValue(source),
+          gatewayRepositoryProvider.overrideWithValue(
+            _WidgetGatewayRepository(),
+          ),
+        ],
+        child: MaterialApp(theme: AppTheme.build(), home: const ChatScreen()),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('composer-record')));
+    await tester.pump();
+
+    // Diálogo de permissão ou cortina de notificações: segue gravando.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(find.byKey(const ValueKey('composer-recording')), findsOneWidget);
+    expect(source.cancellations, 0);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+
+    expect(source.cancellations, 1);
+    expect(find.byKey(const ValueKey('composer-recording')), findsNothing);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(
+      find.text('A gravação foi descartada ao sair da conversa.'),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 1));
+  });
 }
 
 final class _WidgetAttachmentSource implements AttachmentSource {
+  int cancellations = 0;
+
   @override
-  Future<void> cancelRecording() async {}
+  Future<void> cancelRecording() async => cancellations++;
 
   @override
   Future<void> dispose() async {}
