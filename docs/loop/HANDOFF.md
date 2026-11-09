@@ -24,15 +24,20 @@ afetado.
 - O pacote de Ajustes, a lista de conversas, a abertura inicial, a timeline
   operacional, o Markdown, os primitivos compartilhados e o catálogo de Skills
   somente leitura foram validados em aparelho; revalidar ao mudar o runtime.
-- Aceitos no aparelho até 2026-11-08: A65, A72 a A75, A80, A95 a A103 e
-  B12/B13; o registro está no vault pessoal ("Histórico e decisões do loop").
-  As validações ainda abertas (A60, A77, A78, A89, A91, B9) vivem em
-  [USER_TESTING.md](USER_TESTING.md). A94 segue aberto (aceite e relato do
-  `500` de `/v1/skills`).
+- Aceitos no aparelho até 2026-11-08: A65, A72 a A75, A78 (primeira parte),
+  A80, A95 a A103 e B12/B13; o registro está no vault pessoal ("Histórico e
+  decisões do loop"). As validações ainda abertas (A60, A77, A89, A91) vivem
+  em [USER_TESTING.md](USER_TESTING.md). A94 segue aberto (aceite e relato
+  do `500` de `/v1/skills`).
+- Decisões do usuário em 2026-11-08, já no backlog: A104 é o próximo item;
+  B9 volta para refino no molde do Hermes Desktop (cartão na conversa e
+  bandeja acima do composer); A78 ganha seleção múltipla e voz com texto;
+  A92 libera qualquer URL com avisos de segurança; A98/B10 autorizados (a
+  allowlist era só do app); A79 se reduz a mostrar o erro do Parar; A90
+  fechado mantendo imagens remotas carregando sozinhas.
 - A60 foi decidido e implementado em 2026-11-08 (UnifiedPush + ntfy
   self-hosted + plugin `server/mobile-push`); falta instalar o plugin no
-  servidor e o aceite no aparelho. B0, B10, B9 e B11 são a fila posterior de
-  contrato e runtime.
+  servidor e o aceite no aparelho.
 
 ## Fatos que evitam regressões
 

@@ -159,32 +159,23 @@ versionada; o Git registra as mudanças do repositório.
 
 ## Estado acionável
 
-- Decisão pendente: autorizar `session.usage` e `session.context_breakdown`
-  para contexto estruturado da sessão (A98). Desfazer e compactar foram
-  autorizados e implementados pelos comandos confirmados em A80; os métodos
-  diretos `session.undo` e `session.compress` seguem fora da allowlist.
+Atualizado em 2026-11-08 com as respostas do usuário; o detalhe de cada item
+está em `BACKLOG.md`.
 
-- A75: validar clarify batch real no Android, incluindo retry, reconexão e
-  multi-seleção.
-- A73: validar a expansão ancorada da timeline em tools, raciocínio e no resumo
-  de ferramentas, incluindo texto ampliado e movimento reduzido.
-- A74: validar acompanhamento e pausa do streaming por intenção em conversa
-  real.
-- A72: substituir fallbacks visíveis de identidade pela persona configurada,
-  preservando nomes técnicos e de produto.
-- A65: confirmar o contrato autenticado necessário para corpo integral, edição,
-  exclusão e ativação/desativação persistidas de Skills.
-- A60: instalar `server/mobile-push` no servidor (decisão do usuário) e
-  seguir o roteiro de aparelho em `USER_TESTING.md`.
-- Decisões pendentes abertas pelo loop de 2026-11-08: A90 (imagens remotas no
-  Markdown: carregar sozinhas ou só com toque), A92 (servir o Dashboard em
-  HTTPS para remover a exceção de `*.ts.net`), A93 (application ID e
-  assinatura release), A78 (gravar voz com texto já digitado mudaria o canto
-  do composer), A98/B10 (liberar `session.usage` na allowlist TUI).
-- Precisam do usuário ou do aparelho: A79 (sintoma do bug do Parar), A76
+- Próximo item: A104 (baixar arquivos citados na conversa).
+- Decididos e prontos para implementar: B9 (refino no molde do Hermes
+  Desktop), A78 (seleção múltipla e voz com texto digitado), A92 (qualquer
+  URL com avisos de segurança), A98/B10 (`session.usage` e
+  `session.context_breakdown` autorizados; a allowlist era só do app) e A79
+  (mostrar o erro do Parar no aviso do composer).
+- A90 fechado: imagens remotas no Markdown continuam carregando sozinhas.
+- A78 (arquivo, voz e legenda no mesmo turno) aceito no aparelho; B9 testado
+  e devolvido para refino.
+- Aceites em aparelho pendentes: A60, A77, A89, A91.
+- A60: instalar `server/mobile-push` no servidor (decisão do usuário).
+- Esperam o usuário: A93 (application ID e assinatura release), A76
   (mensagens reais com Markdown errado), B11/B14 (medir eventos disparando
-  turnos no servidor), A104 (adiado a pedido).
-- Aceites em aparelho novos: A60, A77, A78, A89, A91, B9.
-- Decisão pendente: subir o AGP para 9.1 (destrava
+  turnos no servidor), subir o AGP para 9.1 (destrava
   `flutter_local_notifications` 23 e `compileSdk` 37).
-- B0, B10, B9 e B11 permanecem posteriores conforme `BACKLOG.md`.
+- Os métodos diretos `session.undo` e `session.compress` seguem fora da
+  allowlist; desfazer e compactar usam os comandos confirmados de A80.

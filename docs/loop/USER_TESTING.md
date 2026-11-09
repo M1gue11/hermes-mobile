@@ -39,15 +39,6 @@ self-hosted com `deny-all`, liberar `ntfy access everyone 'up*' write-only`.
   substitui nada na tela.
 - Com a rede cortada, voltar mantém o que estava na tela.
 
-## [ ] A78: arquivo e voz na mesma mensagem
-
-- Anexe um arquivo: o microfone continua disponível. Grave uma mensagem de voz
-  e conclua: a tira mostra o arquivo e a voz, cada um com remoção.
-- Digite uma legenda: o microfone some e só "enviar" fica no canto.
-- Envie: o turno chega com o arquivo, a transcrição e a legenda, nessa ordem, e
-  a bolha mostra o cartão do arquivo sem `@file:`.
-- Remova um dos itens antes de enviar: só o outro segue.
-
 ## [ ] A89: gravação descartada ao sair
 
 - Comece uma gravação e vá para a tela inicial do Android: o indicador de
@@ -69,15 +60,3 @@ self-hosted com `deny-all`, liberar `ntfy access everyone 'up*' write-only`.
 - "Confiar e conectar" abre o shell; a impressão aparece como fixada e a
   próxima conexão não pergunta mais.
 - Deixe a pergunta aberta por mais de 90 s: a conexão é cancelada.
-
-## [ ] B9: subagentes na timeline
-
-- Peça ao agente uma tarefa que ele delegue a dois subagentes em paralelo
-  (por exemplo, "use subagentes para ler os logs do gateway e conferir o
-  disco"). Na timeline cronológica aparecem dois blocos "SUBAGENTE 1/2" e
-  "SUBAGENTE 2/2", com o objetivo de cada um.
-- Enquanto rodam, cada bloco mostra "rodando" e a última ferramenta ou nota;
-  ao terminar, o estado e o resumo que o subagente devolveu.
-- Nada dos subagentes aparece como fala do assistant nem como prévia solta.
-- Se um subagente falhar, o bloco dele diz "falhou" em terracota e o outro
-  segue normal.
