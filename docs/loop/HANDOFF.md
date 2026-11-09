@@ -16,23 +16,19 @@ afetado.
 - Atualização de streaming de 2026-10-11: análise limpa, 690 testes passaram,
   APK debug compilado e instalado. Rotina remota validada com 10 tools, replay
   de 13 eventos após background, um único submit e reabertura com resposta e
-  saída da última tool preservadas. B12/B13 mantêm aceites específicos de
-  interim/risco, aprovação, restart e ring expirado. A auditoria 0.21.6 registra
-  também a correção de perda de output/risco no snapshot compacto.
+  saída da última tool preservadas. A auditoria 0.21.6 registra também a
+  correção de perda de output/risco no snapshot compacto.
 
 - O baseline registrado no último pacote foi `flutter analyze` limpo, suíte de
   testes verde e APK debug compilado.
 - O pacote de Ajustes, a lista de conversas, a abertura inicial, a timeline
   operacional, o Markdown, os primitivos compartilhados e o catálogo de Skills
   somente leitura foram validados em aparelho; revalidar ao mudar o runtime.
-- As validações manuais ainda abertas são A75, A73 e A74; os roteiros vivem em
-  [USER_TESTING.md](USER_TESTING.md).
-- A72 foi implementado em 2026-10-31 (estado vazio e rótulo de modelo seguem a
-  persona; inventário no backlog) e aguarda conferência no aparelho.
-- A65 foi implementado em 2026-10-31 pelo Dashboard (`SKILL.md` integral,
-  edição protegida e ativação; exclusão não existe no servidor) e aguarda
-  aceite no aparelho. A94 segue aberto (aceite e relato do `500` de
-  `/v1/skills`).
+- Aceitos no aparelho até 2026-11-08: A65, A72 a A75, A80, A95 a A103 e
+  B12/B13; o registro está no vault pessoal ("Histórico e decisões do loop").
+  As validações ainda abertas (A60, A77, A78, A89, A91, B9) vivem em
+  [USER_TESTING.md](USER_TESTING.md). A94 segue aberto (aceite e relato do
+  `500` de `/v1/skills`).
 - A60 foi decidido e implementado em 2026-11-08 (UnifiedPush + ntfy
   self-hosted + plugin `server/mobile-push`); falta instalar o plugin no
   servidor e o aceite no aparelho. B0, B10, B9 e B11 são a fila posterior de
