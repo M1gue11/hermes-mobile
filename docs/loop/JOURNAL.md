@@ -163,6 +163,10 @@ Atualizado em 2026-11-08 com as respostas do usuário; o detalhe de cada item
 está em `BACKLOG.md`.
 
 - Próximo item: A104 (baixar arquivos citados na conversa).
+- Pacote da barra de mensagem (pedido em 2026-11-08), a trabalhar junto e a
+  partir de um desenho aprovado: A105 (design, animações, alinhamento e
+  responsividade), A78, A106 (enfileirar, steer, parar e enviar), A79 e o
+  indicador de A98.
 - Decididos e prontos para implementar: B9 (refino no molde do Hermes
   Desktop), A78 (seleção múltipla e voz com texto digitado), A92 (qualquer
   URL com avisos de segurança), A98/B10 (`session.usage` e

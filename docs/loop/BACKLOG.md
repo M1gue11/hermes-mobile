@@ -13,8 +13,10 @@ O plano de ataque de produto e interface está em
 
 1. **A104** (baixar arquivos citados na conversa) é o próximo item.
 2. Em seguida, os itens com decisão tomada em 2026-11-08: B9 (refino dos
-   subagentes), A78 (múltiplos arquivos e voz com texto), A92 (qualquer URL
-   com avisos), A98/B10 (contexto da conversa viva) e A79 (erro do Parar).
+   subagentes), A92 (qualquer URL com avisos), A98/B10 (contexto da conversa
+   viva) e o pacote da barra de mensagem (A105 design, A78 anexos e voz,
+   A106 controles de envio, A79 erro do Parar), que começa pelo desenho de
+   A105.
 3. Aceites em aparelho pendentes: A60, A77, A89 e A91, com roteiros em
    [USER_TESTING.md](USER_TESTING.md).
 
@@ -30,6 +32,98 @@ O plano de ataque de produto e interface está em
   (`hermes_cli/web_routers/files.py`); conferir a política de pastas
   permitidas e a autenticação antes de usar. Arquivo baixado não pode ir para
   log nem cache compartilhado.
+
+## Barra de mensagem
+
+Itens que mexem no mesmo ponto da tela e devem ser trabalhados juntos, com um
+desenho único da barra antes de implementar cada um: A105 (design da barra),
+A78 (anexos e voz), A106 (controles de envio), A79 (erro do Parar) e o
+indicador de contexto de A98. A bandeja de subagentes de B9 (e talvez as
+tarefas de B11) fica logo acima da barra e entra no mesmo desenho. Composer
+hoje em `chat_screen.dart` (`_Composer`, `_ComposerSurface`, `_ComposerSlot`,
+`_ComposerButton`, `_ComposerAttachmentStrip`, `_ComposerTextAction`) e
+`attachment_composer_controller.dart`.
+
+- [ ] **A105 Refinar design, animações, alinhamento e responsividade da
+  barra de mensagem.** Pedido do usuário em 2026-11-08: a barra tem
+  probleminhas e limitações, e o espaço é pouco aproveitado para o lugar mais
+  importante da tela. Começar por um levantamento no aparelho (capturas em
+  tela estreita, texto a 180%, teclado aberto e fechado, paisagem, várias
+  linhas de texto, tira de anexos cheia, gravação, turno em andamento,
+  aprovação pendente) e anotar cada defeito de alinhamento, salto e corte,
+  medindo a tinta e não a caixa do texto. Depois propor ao usuário um
+  desenho da barra inteira, com referência no `design/Hermes.dc.html` e no
+  Hermes Desktop (que leva modelo, esforço, microfone e voz na própria barra),
+  definindo:
+  - o que mora na barra e o que vai para um menu: anexar, voz, modelo e
+    esforço, indicador de contexto (A98), comandos e as ações de envio de
+    A106;
+  - estados: vazio, digitando, com anexos, gravando, turno rodando, turno
+    esperando subagente, sem conexão;
+  - transições animadas entre estados (troca enviar/parar/microfone,
+    crescimento do campo, entrada e saída da tira de anexos), respeitando
+    movimento reduzido;
+  - comportamento responsivo: altura máxima do campo, quebra dos controles em
+    tela estreita e com fonte ampliada, alvos de toque de 48 dp.
+
+  O desenho é aprovado pelo usuário antes de mexer no código (desvio de
+  design pede decisão). Critério de aceite: nenhum estado salta ou corta,
+  rascunho e anexos sobrevivem a cada transição, e o leitor de tela anuncia
+  cada controle.
+
+- [ ] **A78 Vários arquivos de uma vez e voz com texto digitado.** A primeira
+  parte (arquivo, voz e legenda no mesmo turno) foi aceita no aparelho em
+  2026-11-08. Refino decidido pelo usuário no mesmo dia:
+  - **seleção múltipla**: o seletor do sistema deixa escolher vários arquivos
+    de uma vez (`openFiles` do `file_selector` em vez de `openFile`, em
+    `device_attachment_source.dart`). Cada arquivo continua passando pelo
+    limite de 25 MB, e o lote pelos limites do composer (A87: 10 anexos,
+    50 MB no total); o que estourar é recusado com o nome do arquivo e o
+    resto entra;
+  - **gravar com texto já digitado**: o microfone fica disponível ao lado do
+    enviar quando há texto. Mostrar os dois no canto direito sem ambiguidade
+    sobre qual é a ação principal (enviar continua o primário). A transcrição
+    entra antes da legenda, como hoje. O lugar exato sai do desenho de A105.
+
+  Testes: lote com um arquivo grande demais, lote que estoura a contagem,
+  gravação iniciada com texto e o texto preservado depois dela.
+
+- [ ] **A106 Controles granulares de envio durante o turno.** Pedido do
+  usuário em 2026-11-08: enfileirar mensagem, orientar o turno em andamento
+  (steering) e afins. Absorve a parte de fila e steer que saiu de A79. Hoje,
+  com o turno rodando, a barra só oferece Parar; o repositório já tem
+  `steer()` sobre `session.steer` (método já na allowlist), mas nenhuma tela
+  o usa. Ações a distinguir na interface, sem ambiguidade:
+  - **orientar agora** (`session.steer`): o texto entra no turno em curso;
+  - **enfileirar**: a mensagem espera o fim do turno e sai como turno novo;
+  - **parar e enviar**: interrompe e manda em seguida;
+  - **parar** sozinho, como hoje.
+
+  Medir antes no 0.22.6, porque o contrato decide o que é possível:
+  - o que o `session.steer` faz de fato (quando é aplicado, se gera evento,
+    se falha fora de turno);
+  - o que acontece com `prompt.submit` durante um turno (recusa, fila no
+    servidor, ou turno concorrente); os frames já trazem `queued`,
+    `submission_id` e `user_row_ids`, que o app ignora hoje;
+  - se a fila deve morar no servidor ou no app. Fila local precisa
+    sobreviver a background e reconexão sem enviar duas vezes nem se perder,
+    e precisa poder ser editada ou cancelada antes de sair.
+
+  Na timeline, a mensagem enfileirada aparece com estado fiel ("na fila",
+  "enviada", "recusada") e nunca como resposta já entregue; o steer aparece
+  como intervenção dentro do turno. No fallback Runs, mostrar só o que o
+  contrato oferece (ver a pendência de steer em A94). `prompt.background`
+  segue bloqueado sem decisão. Critério de aceite: toque repetido, rede
+  instável, troca de conversa e retorno ao app não duplicam nem perdem
+  mensagem. Gestos e lugar dos controles saem do desenho de A105.
+
+- [ ] **A79 Mostrar o erro do Parar.** Decidido pelo usuário em 2026-11-08:
+  por enquanto, só fazer a falha aparecer. Hoje `ChatController.stop()`
+  transforma a falha do interrupt em erro da resposta
+  (`_failCurrentAssistant`), e sai em silêncio quando não há `runId`. Passa a
+  mostrar o motivo no aviso flutuante que o composer já usa
+  (`_showComposerError`, um `SnackBar`), sem marcar a resposta como falha,
+  porque o turno pode continuar rodando. Fila e steer passaram para A106.
 
 ## Segurança e distribuição
 
@@ -78,32 +172,6 @@ O plano de ataque de produto e interface está em
 
 ## Produto e interface
 
-- [ ] **A78 Vários arquivos de uma vez e voz com texto digitado.** A primeira
-  parte (arquivo, voz e legenda no mesmo turno) foi aceita no aparelho em
-  2026-11-08. Refino decidido pelo usuário no mesmo dia:
-  - **seleção múltipla**: o seletor do sistema deixa escolher vários arquivos
-    de uma vez (`openFiles` do `file_selector` em vez de `openFile`, em
-    `device_attachment_source.dart`). Cada arquivo continua passando pelo
-    limite de 25 MB, e o lote pelos limites do composer (A87: 10 anexos,
-    50 MB no total); o que estourar é recusado com o nome do arquivo e o
-    resto entra;
-  - **gravar com texto já digitado**: o microfone fica disponível ao lado do
-    enviar quando há texto. Mostrar os dois no canto direito sem ambiguidade
-    sobre qual é a ação principal (enviar continua o primário). A transcrição
-    entra antes da legenda, como hoje.
-
-  Testes: lote com um arquivo grande demais, lote que estoura a contagem,
-  gravação iniciada com texto e o texto preservado depois dela.
-
-- [ ] **A79 Mostrar o erro do Parar.** Decidido pelo usuário em 2026-11-08:
-  por enquanto, só fazer a falha aparecer. Hoje `ChatController.stop()`
-  transforma a falha do interrupt em erro da resposta
-  (`_failCurrentAssistant`), e sai em silêncio quando não há `runId`. Passa a
-  mostrar o motivo no aviso flutuante que o composer já usa
-  (`_showComposerError`, um `SnackBar`), sem marcar a resposta como falha,
-  porque o turno pode continuar rodando. Fila e steer durante o turno ficam
-  para depois.
-
 - [ ] **A76 Ajustar o Markdown das ações no estilo Obsidian.** Reproduzir com
   mensagens reais onde ações, tarefas ou instruções em Markdown aparecem
   incorretamente no chat; comparar o texto original com a renderização e
@@ -147,8 +215,9 @@ operações destrutivas pedem confirmação explícita na interface.
   `session.context_breakdown` pelo `/api/ws`. Os dois são de leitura e o
   gateway já os atende (o Desktop usa); a "allowlist" que travava era a do
   próprio app, então nada muda no servidor. Mostrar o uso de contexto da
-  conversa aberta (quanto da janela está ocupado e por quê) perto do
-  seletor de modelo ou na folha de detalhes. Medir antes o retorno no 0.22.6:
+  conversa aberta (quanto da janela está ocupado e por quê) na barra de
+  mensagem, junto do seletor de modelo, com o detalhe na folha de detalhes;
+  o lugar exato sai do desenho de A105. Medir antes o retorno no 0.22.6:
   `usage` opcional e `plan_gauge` (`events.py:318-351`); billing do Nous não
   foi medido e não entra sem medir. A parte HTTP (Ajustes › Uso por período)
   já foi aceita.
