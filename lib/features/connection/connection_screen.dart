@@ -9,6 +9,7 @@ import '../../data/http/http_hermes_repository.dart';
 import '../../domain/models/hermes_failure.dart';
 import '../../domain/repositories/gateway_repository.dart';
 import '../../domain/repositories/hermes_repository.dart';
+import 'transport_notice.dart';
 
 typedef HermesRepositoryFactory =
     HermesRepository Function(HermesConnection connection);
@@ -372,7 +373,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                       Text(
                         widget.editing
                             ? 'Os novos dados só entram em vigor depois que os dois acessos forem validados. Campos secretos vazios mantêm o valor protegido atual enquanto o endereço não mudar.'
-                            : 'O acesso funciona apenas pelo seu Tailnet. A chave e o login ficam no armazenamento seguro deste aparelho.',
+                            : 'Conecte à sua instalação Hermes por HTTP ou HTTPS. A chave e o login ficam no armazenamento seguro deste aparelho.',
                         style: tokens.serif.copyWith(
                           fontSize: 15.5,
                           height: 1.45,
@@ -387,12 +388,13 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                       const SizedBox(height: 18),
                       _ConnectionField(
                         fieldKey: const ValueKey('connection-base-url'),
-                        label: 'URL HTTPS',
+                        label: 'URL HTTP ou HTTPS',
                         controller: _baseUrl,
                         enabled: !_busy,
                         keyboardType: TextInputType.url,
                         decoration: _decoration(tokens),
                       ),
+                      TransportWarning(url: _baseUrl.text),
                       const SizedBox(height: 18),
                       _ConnectionField(
                         fieldKey: const ValueKey('connection-api-key'),
@@ -426,6 +428,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                         keyboardType: TextInputType.url,
                         decoration: _decoration(tokens),
                       ),
+                      TransportWarning(url: _dashboardUrl.text),
                       const SizedBox(height: 18),
                       _ConnectionField(
                         fieldKey: const ValueKey('dashboard-connection-user'),

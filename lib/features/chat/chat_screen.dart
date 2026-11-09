@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../connection/transport_notice.dart';
 
 import '../../core/theme/hermes_motion.dart';
 import '../../core/theme/hermes_radius.dart';
@@ -273,6 +274,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         authenticate: controller.authenticate,
       );
       if (!authenticated || !mounted) return;
+      ref.invalidate(dashboardUsesCleartextProvider);
       try {
         prepared = await _prepareAttachmentInput(chat.sessionId!, text);
       } on GatewayAuthenticationRequired catch (error) {
@@ -834,8 +836,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   onDismissAttachmentError: () => ref
                       .read(attachmentComposerControllerProvider.notifier)
                       .clearError(),
-                  onStop: () =>
-                      ref.read(chatControllerProvider.notifier).stop(),
+                  onStop: () async {
+                    final error = await ref
+                        .read(chatControllerProvider.notifier)
+                        .stop();
+                    if (mounted && error != null) _showComposerError(error);
+                  },
                   onOpenModel: () => showModelSheet(context, ref),
                   onOpenResources: () => showChatResourcesSheet(
                     context,

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../models/agent_file.dart';
 import '../models/approval_request.dart';
 import '../models/gateway_command.dart';
 import '../models/composer_attachment.dart';
@@ -144,6 +145,15 @@ abstract interface class GatewayRepository {
   /// Hermes (`images`, `screenshots`, `cache`) e até 25 MB; a recusa vem como
   /// [GatewayOperationException] com a causa em português.
   Future<Uint8List> agentMedia(String path);
+
+  /// Download autenticado para um destino privado do app. Cancelar interrompe
+  /// a rede e o chamador descarta o arquivo parcial.
+  Future<AgentFileInfo> downloadAgentFile({
+    required String path,
+    required String destination,
+    required void Function(int received, int? total) onProgress,
+    required Future<void> cancelled,
+  });
 
   /// Estado do processo do gateway, por `GET /api/status`.
   Future<GatewayRuntime> gatewayRuntime();

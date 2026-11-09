@@ -52,6 +52,12 @@ por cada usuário. Tokens, cookies, tickets e chaves não devem ser incluídos e
 logs, issues, screenshots, testes ou documentação. Use armazenamento seguro do
 sistema para segredos e revise cuidadosamente qualquer dado antes de compartilhá-lo.
 
+API Server e Dashboard aceitam HTTP ou HTTPS com host ou IP escolhido pelo usuário.
+HTTP mostra avisos de conexão sem TLS no formulário, em Ajustes e no diagnóstico;
+sem VPN ou túnel, credenciais e mensagens ficam expostas no trajeto. Certificados
+HTTPS continuam validados, e requisições autenticadas não seguem redirecionamentos.
+Veja a [política de transporte](docs/seguranca-transporte-tailnet.md).
+
 O suporte de segurança é limitado ao código disponível neste repositório; não
 há garantia de resposta, atualização ou correção em prazo específico. O Hermes
 Mobile não declara auditoria independente, compatibilidade estável ou aptidão

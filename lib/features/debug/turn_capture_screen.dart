@@ -7,6 +7,7 @@ import '../../core/diagnostics/turn_capture.dart';
 import '../../core/theme/hermes_tokens.dart';
 import '../../core/widgets/paper_texture.dart';
 import '../../data/gateway_repository_provider.dart';
+import '../connection/transport_notice.dart';
 
 /// Superfície de desenvolvimento que fecha o diagnóstico de A58/A59.
 ///
@@ -81,6 +82,10 @@ class _TurnCaptureScreenState extends ConsumerState<TurnCaptureScreen> {
             child: Column(
               children: [
                 _CaptureBar(onBack: context.pop),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: ConnectionTransportNotice(),
+                ),
                 if (_capture.lastFallbackReason case final motivo?)
                   _FallbackWarning(motivo),
                 _Controls(
@@ -140,10 +145,9 @@ class _CaptureBar extends StatelessWidget {
           Expanded(
             child: Text(
               'Captura de turno',
-              style: tokens.monoIn(FontWeight.w500).copyWith(
-                fontSize: 13,
-                color: tokens.ink,
-              ),
+              style: tokens
+                  .monoIn(FontWeight.w500)
+                  .copyWith(fontSize: 13, color: tokens.ink),
             ),
           ),
         ],

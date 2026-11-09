@@ -6,14 +6,30 @@
 /// fora, como no `MEDIA_TAG_CLEANUP_RE` do gateway: `**MEDIA:/a.png**.` entrega
 /// `/a.png`.
 const mediaDirectivePattern =
+    // Uma diretiva sozinha na linha pode carregar nomes com espaços. Em
+    // prosa inline, espaços exigem aspas para não engolir o texto seguinte.
+    r'^MEDIA:[ \t]*((?:/|~/|[A-Za-z]:[\\/])'
+    r'''[^\r\n<>"'`]*[^\s<>"'`.,;:!?)\]}*_])[ \t]*$|'''
+    r'''MEDIA:[ \t]*"((?:/|~/|[A-Za-z]:[\\/])[^"\r\n]+)"|'''
+    r"MEDIA:[ \t]*'((?:/|~/|[A-Za-z]:[\\/])[^'\r\n]+)'|"
     r'MEDIA:[ \t]*((?:/|~/|[A-Za-z]:[\\/])'
     r'''(?:[^\s<>"'`]*[^\s<>"'`.,;:!?)\]}*_])?)''';
 
-final _mediaDirective = RegExp(mediaDirectivePattern);
+final _mediaDirective = RegExp(mediaDirectivePattern, multiLine: true);
+
+String mediaPathFromMatch(Match match) {
+  for (var index = 1; index <= match.groupCount; index++) {
+    if (match[index] case final path?) {
+      return path.trim();
+    }
+  }
+  throw StateError('Diretiva de mídia sem caminho.');
+}
 
 /// Caminhos entregues em [text], na ordem em que aparecem.
 List<String> mediaPathsIn(String text) => [
-  for (final match in _mediaDirective.allMatches(text)) match[1]!,
+  for (final match in _mediaDirective.allMatches(text))
+    mediaPathFromMatch(match),
 ];
 
 /// Último segmento do caminho, aceitando separadores POSIX e Windows.

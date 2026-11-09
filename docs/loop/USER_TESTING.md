@@ -6,6 +6,48 @@ Após validação, registrar o resultado na mudança correspondente, atualizar
 e os aceites consolidados ficam no vault pessoal, em "Histórico e decisões do
 loop" do projeto Hermes Mobile.
 
+## [ ] A104: baixar arquivo entregue na conversa
+
+- Receba um `MEDIA:` não-imagem que esteja em uma pasta permitida no servidor.
+  Toque **Baixar arquivo**: veja bytes/progresso e, ao terminar, o seletor do
+  sistema com o nome correto. Salve em Downloads e confira o conteúdo.
+- Cancele um download em curso e feche o seletor sem salvar: estados distintos
+  de cancelamento, sem confirmação falsa de salvamento. Sair da conversa no
+  meio da transferência cancela e descarta o parcial.
+- Arquivo removido ou fora das pastas permitidas: veja o motivo da recusa no
+  próprio bloco; nenhuma página de login/erro deve virar arquivo salvo.
+- Desligue a rede durante a transferência e tente de novo depois de reconectar.
+  O Android já salvou um arquivo sintético no emulador; falta sucesso com um
+  arquivo permitido no runtime real (o smoke encontrou apenas duas recusas).
+- iOS: compilar em Mac e conferir exportação/cancelamento no seletor Arquivos.
+
+## [ ] A78: selecionar vários arquivos
+
+- Com texto já digitado, abra Anexar e selecione vários arquivos numa só vez.
+  Todos aparecem na tira e a legenda permanece.
+- Inclua um arquivo maior que 25 MB: o aviso identifica o nome dele, e os
+  menores entram. Repita ultrapassando 10 anexos e 50 MB no total.
+- Cancele o seletor: anexos anteriores e texto permanecem; o envio volta a
+  ficar disponível. Voz com texto digitado ainda depende de A105.
+
+## [ ] A79: recusa do Parar visível
+
+- Durante um turno, corte a rede e toque **Parar a resposta**. A falha aparece
+  no aviso flutuante e a resposta não ganha estado de erro por esse motivo.
+- Reconecte: a resposta pode continuar chegando. Repita com `/stop`.
+
+## [ ] A92: HTTP com avisos de transporte
+
+- Em Conexões, digite HTTP com IP privado e com host público: ambos mostram
+  **Conexão sem TLS**, e o público tem aviso reforçado. Trocar para HTTPS
+  remove o aviso do formulário. A conexão não é bloqueada por ser HTTP.
+- Configure um servidor HTTP cujo Host header aceite o endereço escolhido.
+  Ajustes e Captura de turno continuam mostrando **Conexão sem TLS** depois
+  de salvar, fechar e reabrir o app; o aviso identifica API Server/Dashboard.
+- Troque origem de uma URL e deixe o segredo vazio: o app ainda exige a nova
+  chave/senha. HTTPS com certificado inválido continua recusado.
+- iOS: compilar em Mac e verificar HTTP por IP e HTTPS com certificado válido.
+
 ## [ ] A60: notificações com o app fechado
 
 Pré-requisitos no servidor (decisão do usuário, não automática): copiar

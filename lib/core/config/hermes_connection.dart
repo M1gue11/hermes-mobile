@@ -1,3 +1,5 @@
+import 'transport_security.dart';
+
 /// Configuração de acesso do cliente nativo ao Hermes API Server.
 ///
 /// A chave nunca é incluída no APK: ela é informada pelo dono do aparelho e
@@ -9,9 +11,8 @@ class HermesConnection {
   final String apiKey;
 
   String? validate() {
-    final uri = Uri.tryParse(baseUrl);
-    if (uri == null || !uri.hasAuthority || uri.scheme != 'https') {
-      return 'Use uma URL HTTPS válida para o gateway.';
+    if (normalizeHttpEndpoint(baseUrl) == null) {
+      return 'Use uma URL HTTP ou HTTPS válida para o gateway.';
     }
     if (apiKey.trim().isEmpty) {
       return 'Informe a chave da API do Hermes.';

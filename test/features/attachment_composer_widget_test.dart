@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_mobile/domain/models/agent_file.dart';
 import 'package:hermes_mobile/core/theme/app_theme.dart';
 import 'package:hermes_mobile/data/gateway_repository_provider.dart';
 import 'package:hermes_mobile/data/hermes_repository_provider.dart';
@@ -269,11 +270,19 @@ final class _WidgetAttachmentSource implements AttachmentSource {
   Future<bool> hasMicrophonePermission() async => true;
 
   @override
-  Future<ComposerAttachment?> pickFile() async => ComposerAttachment(
-    id: 'file-1',
-    name: 'relatorio.pdf',
-    mimeType: 'application/pdf',
-    bytes: Uint8List.fromList([1, 2, 3]),
+  Future<AttachmentSelection> pickFiles({
+    required int availableSlots,
+    required int availableBytes,
+  }) async => (
+    attachments: [
+      ComposerAttachment(
+        id: 'file-1',
+        name: 'relatorio.pdf',
+        mimeType: 'application/pdf',
+        bytes: Uint8List.fromList([1, 2, 3]),
+      ),
+    ],
+    errors: <String>[],
   );
 
   @override
@@ -290,6 +299,13 @@ final class _WidgetAttachmentSource implements AttachmentSource {
 }
 
 final class _WidgetGatewayRepository implements GatewayRepository {
+  @override
+  Future<AgentFileInfo> downloadAgentFile({
+    required String path,
+    required String destination,
+    required void Function(int, int?) onProgress,
+    required Future<void> cancelled,
+  }) => throw UnimplementedError();
   final List<String> attachedSessionIds = [];
 
   @override

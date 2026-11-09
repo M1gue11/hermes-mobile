@@ -6,6 +6,8 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 
 import '../../core/diagnostics/turn_capture.dart';
+import '../../core/config/transport_security.dart';
+import '../../domain/models/agent_file.dart';
 import '../../domain/models/approval_request.dart';
 import '../../domain/models/gateway_command.dart';
 import '../../domain/models/clarify_request.dart';
@@ -49,6 +51,25 @@ final class IoGatewaySocket implements GatewaySocket {
 
   final WebSocket _socket;
 
+  static Future<IoGatewaySocket> connect(
+    Uri uri, {
+    required Map<String, dynamic> headers,
+  }) async {
+    final client = HttpClient();
+    try {
+      return IoGatewaySocket(
+        await WebSocket.connect(
+          uri.toString(),
+          headers: headers,
+          customClient: _UpgradeHttpClient(client),
+        ),
+      );
+    } finally {
+      // O socket do upgrade já foi destacado do cliente HTTP.
+      client.close();
+    }
+  }
+
   @override
   Stream<dynamic> get stream => _socket;
 
@@ -62,9 +83,27 @@ final class IoGatewaySocket implements GatewaySocket {
   Future<void> close() async => _socket.close();
 }
 
+/// `WebSocket.connect` usa apenas openUrl no customClient (Dart 3.12.2).
+/// O adapter bloqueia redirects no handshake, antes de entregar cookies ou
+/// ticket a um destino diferente. Uma mudança do SDK falha fechada.
+final class _UpgradeHttpClient implements HttpClient {
+  _UpgradeHttpClient(this._client);
+  final HttpClient _client;
+  @override
+  Future<HttpClientRequest> openUrl(String method, Uri url) async {
+    final request = await _client.openUrl(method, url);
+    request.followRedirects = false;
+    return request;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError('Operação fora do handshake WebSocket.');
+}
+
 class DashboardGatewayRepository implements GatewayRepository {
   static const invalidBaseUrlMessage =
-      'Use HTTPS ou HTTP em um host MagicDNS do Tailnet (*.ts.net).';
+      'Use uma URL HTTP ou HTTPS válida para o Dashboard, sem caminho.';
 
   /// O gateway só anuncia esse keepalive em `gateway.ready.heartbeat`.
   /// Os valores acompanham o cliente Desktop: uma sondagem a cada 15 s e
@@ -101,9 +140,7 @@ class DashboardGatewayRepository implements GatewayRepository {
   static Future<GatewaySocket> _connectIoSocket(
     Uri uri, {
     required Map<String, dynamic> headers,
-  }) async => IoGatewaySocket(
-    await WebSocket.connect(uri.toString(), headers: headers),
-  );
+  }) => IoGatewaySocket.connect(uri, headers: headers);
 
   @override
   Future<bool> hasSession() async =>
@@ -493,6 +530,85 @@ class DashboardGatewayRepository implements GatewayRepository {
       );
     }
     return data.contentAsBytes();
+  }
+
+  @override
+  Future<AgentFileInfo> downloadAgentFile({
+    required String path,
+    required String destination,
+    required void Function(int received, int? total) onProgress,
+    required Future<void> cancelled,
+  }) async {
+    final token = CancelToken();
+    var finished = false;
+    unawaited(
+      cancelled.then((_) {
+        if (!finished) token.cancel();
+      }),
+    );
+    try {
+      final session = await _requireSession();
+      final response = await _authorizedRequest(
+        session,
+        '/api/files/download?${Uri(queryParameters: {'path': path}).query}',
+        method: 'GET',
+        responseType: ResponseType.stream,
+        cancelToken: token,
+        receiveTimeout: const Duration(seconds: 60),
+      );
+      final body = response.data as ResponseBody;
+      final total = int.tryParse(
+        response.headers.value('content-length') ?? '',
+      );
+      final sink = File(destination).openWrite();
+      var received = 0;
+      onProgress(0, total);
+      try {
+        await sink.addStream(
+          body.stream.map((chunk) {
+            if (token.isCancelled) throw const AgentFileDownloadCancelled();
+            received += chunk.length;
+            onProgress(received, total);
+            return chunk;
+          }),
+        );
+        await sink.flush();
+      } finally {
+        await sink.close();
+      }
+      if (token.isCancelled) throw const AgentFileDownloadCancelled();
+      if (total != null &&
+          response.headers.value('content-encoding') == null &&
+          received != total) {
+        throw const GatewayOperationException(
+          'O download foi interrompido. Tente de novo.',
+        );
+      }
+      return (
+        size: received,
+        mimeType:
+            response.headers.value('content-type')?.split(';').first ??
+            'application/octet-stream',
+      );
+    } on GatewayOperationException catch (error) {
+      if (token.isCancelled) throw const AgentFileDownloadCancelled();
+      throw GatewayOperationException(switch (error.httpStatus) {
+        403 =>
+          'O servidor não permite baixar este arquivo. Ele pode estar '
+              'fora das pastas permitidas ou ser protegido.',
+        404 => 'O arquivo não está disponível no servidor.',
+        409 => 'O arquivo está em uso no servidor. Tente mais tarde.',
+        413 => 'O arquivo excede o limite de download do servidor.',
+        _ => error.message,
+      }, httpStatus: error.httpStatus);
+    } on DioException {
+      if (token.isCancelled) throw const AgentFileDownloadCancelled();
+      throw const GatewayOperationException(
+        'O download foi interrompido. Confira a conexão e tente de novo.',
+      );
+    } finally {
+      finished = true;
+    }
   }
 
   @override
@@ -1351,20 +1467,28 @@ class DashboardGatewayRepository implements GatewayRepository {
     required String method,
     Map<String, dynamic>? data,
     Duration? receiveTimeout,
+    ResponseType? responseType,
+    CancelToken? cancelToken,
     bool renewSession = true,
   }) async {
     try {
       final response = await _dio.request<Object?>(
         '${session.baseUrl}$path',
         data: data,
+        cancelToken: cancelToken,
         options: Options(
           method: method,
           headers: {'Cookie': _cookieHeader(session.cookies)},
           receiveTimeout: receiveTimeout,
+          responseType: responseType,
+          receiveDataWhenStatusError: responseType != ResponseType.stream,
           validateStatus: (status) => status != null && status < 500,
         ),
       );
       if (response.statusCode == 401) {
+        if (response.data case ResponseBody body) {
+          await body.stream.listen(null).cancel();
+        }
         await store.clear();
         if (renewSession) {
           final renewed = await _renewSession();
@@ -1375,6 +1499,8 @@ class DashboardGatewayRepository implements GatewayRepository {
               method: method,
               data: data,
               receiveTimeout: receiveTimeout,
+              responseType: responseType,
+              cancelToken: cancelToken,
               renewSession: false,
             );
           }
@@ -1383,8 +1509,9 @@ class DashboardGatewayRepository implements GatewayRepository {
           'O login salvo não está mais válido. Entre novamente.',
         );
       }
-      if (response.statusCode == null || response.statusCode! >= 400) {
+      if (response.statusCode == null || response.statusCode! >= 300) {
         final body = response.data;
+        if (body is ResponseBody) await body.stream.listen(null).cancel();
         final detail = body is Map ? body['detail']?.toString() : null;
         throw GatewayOperationException(
           detail?.isNotEmpty == true
@@ -1430,28 +1557,10 @@ class DashboardGatewayRepository implements GatewayRepository {
   }
 
   static String? _normalizeBaseUrl(String raw) {
-    final uri = Uri.tryParse(raw.trim().replaceFirst(RegExp(r'/+$'), ''));
-    if (uri == null ||
-        !uri.hasAuthority ||
-        uri.userInfo.isNotEmpty ||
-        uri.path.isNotEmpty ||
-        uri.hasQuery ||
-        uri.hasFragment) {
-      return null;
-    }
-
-    final scheme = uri.scheme.toLowerCase();
-    if (scheme != 'https' && scheme != 'http') return null;
-    if (scheme == 'http' && !_isTailnetHost(uri.host)) return null;
-    return uri.replace(scheme: scheme).toString();
+    return normalizeHttpEndpoint(raw, allowPath: false);
   }
 
   static bool supportsBaseUrl(String raw) => _normalizeBaseUrl(raw) != null;
-
-  static bool _isTailnetHost(String host) {
-    final normalized = host.toLowerCase();
-    return normalized.endsWith('.ts.net');
-  }
 
   static Uri _webSocketUri(String baseUrl, String ticket) {
     final baseUri = Uri.parse(baseUrl);

@@ -142,11 +142,8 @@ class GatewayCommands extends Notifier<GatewayCommandsState> {
       _sameSession(sessionId);
       if (!command.custom && !command.skill) {
         if (command.name == 'stop' && invocation.arguments.isEmpty) {
-          if (!await controller.stop()) {
-            throw const GatewayOperationException(
-              'Não há uma execução ativa que possa ser interrompida nesta conversa.',
-            );
-          }
+          final error = await controller.stop();
+          if (error != null) throw GatewayOperationException(error);
           _record(sessionId, raw, 'Pedido de interrupção enviado.');
           return const CommandOutcome(notice: 'Pedido de interrupção enviado.');
         }

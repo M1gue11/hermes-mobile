@@ -11,6 +11,7 @@ import '../../../core/widgets/tap_scale.dart';
 import '../../../domain/models/agent_media.dart';
 import '../../../domain/repositories/gateway_repository.dart';
 import '../agent_media_provider.dart';
+import 'agent_file_reference.dart';
 import 'image_viewer.dart';
 
 /// Altura máxima de uma figura na conversa. Uma captura de celular em pé
@@ -50,12 +51,7 @@ class _AgentMediaFigureState extends ConsumerState<AgentMediaFigure> {
       );
     }
     if (!isInlineImagePath(widget.path)) {
-      return MediaReference(
-        icon: Icons.insert_drive_file_outlined,
-        title: name,
-        note: 'Arquivo no servidor',
-        path: widget.path,
-      );
+      return AgentFileReference(key: ValueKey(widget.path), path: widget.path);
     }
 
     final media = ref.watch(agentMediaProvider(widget.path));

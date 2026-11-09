@@ -53,6 +53,69 @@ ProviderContainer makeContainer([
 
 void main() {
   test(
+    'A79: interrupt recusado avisa e mantém o turno recebendo eventos',
+    () async {
+      final turn =
+          FakeGatewayLiveTurn(
+              storedSessionId: 'session-2',
+              liveSessionId: 'live',
+            )
+            ..interruptError = const GatewayOperationException(
+              'Interrupção recusada.',
+            );
+      final container = makeContainer(
+        FakeHermesRepository(messages: {'session-2': []}),
+        MemoryActiveRunStore(),
+        FakeGatewayRepository(turns: [turn]),
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(chatControllerProvider.notifier);
+      await controller.openConversation(
+        const Conversation(id: 'session-2', title: 'Teste'),
+      );
+      await controller.send('Pergunta');
+      final before = container.read(chatControllerProvider);
+      expect(await controller.stop(), contains('Interrupção recusada.'));
+      expect(container.read(chatControllerProvider), same(before));
+      expect(turn.closed, isFalse);
+      turn.add(const RunEvent.delta('Resposta continua.'));
+      await pumpUntil(
+        () => container
+            .read(chatControllerProvider)
+            .messages
+            .last
+            .text
+            .contains('continua'),
+      );
+      expect(container.read(chatControllerProvider).streaming, isTrue);
+      expect(
+        (container.read(chatControllerProvider).messages.last
+                as AssistantMessage)
+            .error,
+        isNull,
+      );
+      turn.interruptError = null;
+      expect(await controller.stop(), isNull);
+      expect(turn.interrupted, isTrue);
+    },
+  );
+
+  test(
+    'A79: turno sem identificador devolve aviso sem alterar a resposta',
+    () async {
+      final container = makeContainer();
+      addTearDown(container.dispose);
+      final controller = container.read(chatControllerProvider.notifier);
+      controller.state = controller.state.copyWith(
+        streaming: true,
+        runId: null,
+      );
+      final before = controller.state;
+      expect(await controller.stop(), contains('identificação'));
+      expect(controller.state, same(before));
+    },
+  );
+  test(
     'snapshot compacto preserva output e risco locais pelo tool_call_id',
     () async {
       final first = FakeGatewayLiveTurn(

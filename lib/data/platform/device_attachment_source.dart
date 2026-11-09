@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:record/record.dart';
@@ -8,36 +9,75 @@ import '../../domain/repositories/attachment_source.dart';
 import '../../domain/repositories/gateway_repository.dart';
 
 class DeviceAttachmentSource implements AttachmentSource {
-  DeviceAttachmentSource({AudioRecorder? recorder})
-    : _recorder = recorder ?? AudioRecorder();
+  DeviceAttachmentSource({
+    AudioRecorder? recorder,
+    Future<List<XFile>> Function()? filePicker,
+  }) : _audioRecorder = recorder,
+       _filePicker = filePicker ?? openFiles;
 
-  final AudioRecorder _recorder;
+  AudioRecorder? _audioRecorder;
+  AudioRecorder get _recorder => _audioRecorder ??= AudioRecorder();
+  final Future<List<XFile>> Function() _filePicker;
   final Set<String> _ownedRecordings = {};
   String? _recordingPath;
   var _seed = 0;
 
   @override
-  Future<ComposerAttachment?> pickFile() async {
-    final file = await openFile();
-    if (file == null) return null;
-    if (await file.length() > maxComposerAttachmentBytes) {
-      throw const GatewayOperationException(
-        'O arquivo excede o limite móvel de 25 MB.',
-      );
+  Future<AttachmentSelection> pickFiles({
+    required int availableSlots,
+    required int availableBytes,
+  }) async {
+    final files = await _filePicker();
+    final attachments = <ComposerAttachment>[];
+    final errors = <String>[];
+    var remaining = availableBytes;
+    for (final file in files) {
+      try {
+        if (attachments.length >= availableSlots) {
+          errors.add('${file.name}: limite de 10 anexos por mensagem.');
+          continue;
+        }
+        final size = await file.length();
+        if (size > maxComposerAttachmentBytes) {
+          errors.add('${file.name}: excede o limite de 25 MB por arquivo.');
+          continue;
+        }
+        if (size > remaining) {
+          errors.add('${file.name}: os anexos passariam de 50 MB.');
+          continue;
+        }
+        // Limitar também durante a leitura: um arquivo pode crescer depois
+        // do stat. O lote nunca acumula mais bytes do que o composer comporta.
+        final builder = BytesBuilder(copy: false);
+        var tooLarge = false;
+        await for (final chunk in file.openRead()) {
+          if (builder.length + chunk.length > maxComposerAttachmentBytes ||
+              builder.length + chunk.length > remaining) {
+            tooLarge = true;
+            break;
+          }
+          builder.add(chunk);
+        }
+        if (tooLarge) {
+          errors.add('${file.name}: excede o limite de tamanho dos anexos.');
+          continue;
+        }
+        final bytes = builder.takeBytes();
+        remaining -= bytes.length;
+        attachments.add(
+          ComposerAttachment(
+            id: _id(),
+            name: file.name,
+            mimeType: attachmentMimeType(file.name),
+            bytes: bytes,
+            localPath: file.path,
+          ),
+        );
+      } catch (_) {
+        errors.add('${file.name}: não foi possível abrir este arquivo.');
+      }
     }
-    final bytes = await file.readAsBytes();
-    if (bytes.length > maxComposerAttachmentBytes) {
-      throw const GatewayOperationException(
-        'O arquivo excede o limite móvel de 25 MB.',
-      );
-    }
-    return ComposerAttachment(
-      id: _id(),
-      name: file.name,
-      mimeType: attachmentMimeType(file.name),
-      bytes: bytes,
-      localPath: file.path,
-    );
+    return (attachments: attachments, errors: errors);
   }
 
   @override
@@ -120,7 +160,7 @@ class DeviceAttachmentSource implements AttachmentSource {
 
   @override
   Future<void> dispose() async {
-    await _recorder.dispose();
+    await _audioRecorder?.dispose();
     for (final path in _ownedRecordings.toList(growable: false)) {
       final file = File(path);
       if (await file.exists()) await file.delete();

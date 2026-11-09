@@ -21,6 +21,7 @@ import '../../skills/skills_provider.dart';
 import '../boot_provider.dart';
 import '../chat_controller.dart';
 import '../inventory_provider.dart';
+import '../../connection/transport_notice.dart';
 
 /// Centraliza no botão de engrenagem os ajustes do cliente e recursos do gateway.
 Future<void> showSettingsSheet(
@@ -34,6 +35,7 @@ Future<void> showSettingsSheet(
     tag: 'cliente',
     child: Column(
       children: [
+        const ConnectionTransportNotice(),
         if (canEditConnections)
           _SettingsAction(
             icon: Icons.key_outlined,

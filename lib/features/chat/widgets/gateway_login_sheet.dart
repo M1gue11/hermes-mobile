@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/hermes_tokens.dart';
 import '../../../core/widgets/hermes_sheet.dart';
 import '../../../domain/repositories/gateway_repository.dart';
+import '../../connection/transport_notice.dart';
 
 Future<bool> showGatewayLoginSheet(
   BuildContext context, {
@@ -77,7 +78,9 @@ class _GatewayLoginFormState extends State<_GatewayLoginForm> {
         username: _username.text,
         password: _password.text,
       );
-      if (mounted) widget.onAuthenticated();
+      if (mounted) {
+        widget.onAuthenticated();
+      }
     } on GatewayOperationException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } catch (_) {
@@ -125,8 +128,10 @@ class _GatewayLoginFormState extends State<_GatewayLoginForm> {
             autocorrect: false,
             enableSuggestions: false,
             style: t.mono.copyWith(fontSize: 12, color: t.ink),
-            decoration: decoration('HTTPS ou HTTP em *.ts.net'),
+            decoration: decoration('URL HTTP ou HTTPS'),
+            onChanged: (_) => setState(() {}),
           ),
+          TransportWarning(url: _url.text),
           const SizedBox(height: 11),
           TextField(
             key: const ValueKey('dashboard-username'),

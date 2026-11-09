@@ -5,14 +5,11 @@ e evidências técnicas ficam em `docs/dashboard-api/` e no histórico Git.
 
 ## Prioridade atual
 
-1. Fechar A72: aplicar a persona configurada em toda a cópia de produto,
-   acessibilidade, estados vazios, mensagens, diálogos e notificações, sem
-   renomear ids, providers, modelos, sessões ou o produto Hermes.
-2. Fechar o próximo recorte de A65 somente quando o contrato autenticado do
-   Dashboard expuser corpo integral, edição protegida, exclusão confirmada,
-   ativação/desativação persistida e estado inequívoco.
-3. Rodar no aparelho os aceites de A75, A73 e A74 descritos em
-   [USER_TESTING.md](USER_TESTING.md).
+1. Validar em aparelho as implementações recentes: A104, seleção múltipla de
+   A78, A79 e A92; roteiros em [USER_TESTING.md](USER_TESTING.md).
+2. Medir o ciclo de vida real de B9 antes do refino no molde do Desktop.
+3. Preparar A105, com levantamento e desenho único da barra para aprovação:
+   voz com texto (A78), envio durante turno (A106) e indicador A98/B10.
 4. Retomar A42 quando houver arte ou direção visual aprovada para ícone e splash.
 
 ## Contratos de interface que permanecem ativos

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/config/hermes_connection.dart';
+import 'core/config/transport_security.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/design_scale.dart';
@@ -21,6 +22,7 @@ import 'data/platform/device_attachment_source.dart';
 import 'domain/repositories/hermes_repository.dart';
 import 'features/chat/launch_provider.dart';
 import 'features/connection/connection_screen.dart';
+import 'features/connection/transport_notice.dart';
 import 'features/notifications/push_controller.dart';
 import 'features/settings/settings_provider.dart';
 import 'push_background.dart';
@@ -131,6 +133,10 @@ class _HermesConnectionGateState extends State<HermesConnectionGate> {
       // é o oposto disso. Ver A7.
       retry: (contagem, erro) => null,
       overrides: [
+        apiUsesCleartextProvider.overrideWithValue(
+          usesCleartext(connection.baseUrl),
+        ),
+        transportDashboardStoreProvider.overrideWithValue(_dashboardStore),
         appSettingsInitialProvider.overrideWithValue(widget.initialSettings),
         hermesRepositoryProvider.overrideWithValue(_httpRepository(connection)),
         gatewayRepositoryProvider.overrideWithValue(_dashboardRepository),

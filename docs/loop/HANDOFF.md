@@ -6,6 +6,18 @@ afetado.
 
 ## Checkpoint
 
+- Loop de 2026-11-09 (sem push): A104 download e salvamento nativo de arquivos,
+  A78 seleção múltipla, A79 aviso de falha do Parar e A92 HTTP/HTTPS com avisos.
+  Nenhuma dependência ou método TUI novo. Aceites e limites em BACKLOG e
+  USER_TESTING. A104 recebeu revisão visual `ship`; screenshots de emulador em
+  `build/loop-review/`. A resolução de teste foi restaurada a 1344×2992,
+  densidade 480 e fonte 100%. O runtime pareado já anuncia **0.23.0**;
+  esse smoke só verificou leitura de status/histórico e recusas de download,
+  não uma auditoria de paridade de todos os contratos.
+  Validação final: **934 testes**, `flutter analyze` limpo, `git diff --check`
+  limpo e APK debug normal compilado/instalado. HTTP por IP confirmado no
+  Android contra servidor local via adb; revisão visual A104/A92 `ship`.
+
 - Loop de 2026-11-08 (commits locais em `dev`, sem push): A60 push com o app
   fechado (plugin `server/mobile-push` + UnifiedPush), A81, A84, A85, A86,
   A87, A88, A89, A91, A92 (parcial), A77, A78, B9, e regressões de A82/A83.
@@ -85,6 +97,15 @@ afetado.
   devem ser renomeadas com a persona.
 - Respeitar a política de Host e origem da instalação Dashboard configurada;
   não contornar validações para conectar.
+- A92: app aceita HTTP/HTTPS em qualquer host/IP, com aviso no formulário,
+  em Ajustes e no diagnóstico. O hostname não prova VPN. Certificados continuam
+  validados; HTTP e handshake WS não seguem redirects. A API aceita prefixo de
+  caminho; Dashboard continua exigindo somente origem, sem userinfo/query.
+- A104 usa cookie em header em `/api/files/download`, não abre URL autenticada
+  em outro app nem contorna as pastas permitidas do servidor. Bytes passam por
+  arquivo temporário privado e são exportados pelo seletor do sistema. Flutter
+  usa `code_cache` em Android recente: a validação nativa admite esse diretório
+  e `cache`, exclusivamente para subpastas `hermes-download-*`.
 - `/chat` é filha de `/`, a navegação usa `go`, e o roteador é criado uma vez em
   `HermesApp`.
 - Não alterar o runtime Hermes como parte de uma mudança do cliente móvel.

@@ -11,18 +11,19 @@ O plano de ataque de produto e interface está em
 
 ## Agora
 
-1. **A104** (baixar arquivos citados na conversa) é o próximo item.
-2. Em seguida, os itens com decisão tomada em 2026-11-08: B9 (refino dos
-   subagentes), A92 (qualquer URL com avisos), A98/B10 (contexto da conversa
+1. **A104**, **A92** e **A79** implementados; falta o aceite em aparelho.
+   **A78** já seleciona vários arquivos; voz com texto ainda espera A105.
+2. Próximos itens com decisão tomada em 2026-11-08: B9 (refino dos
+   subagentes), A98/B10 (contexto da conversa
    viva) e o pacote da barra de mensagem (A105 design, A78 anexos e voz,
-   A106 controles de envio, A79 erro do Parar), que começa pelo desenho de
+   A106 controles de envio), que começa pelo desenho de
    A105.
 3. Aceites em aparelho pendentes: A60, A77, A89 e A91, com roteiros em
    [USER_TESTING.md](USER_TESTING.md).
 
 ## Próximo
 
-- [ ] **A104 Baixar arquivos citados na conversa.** Pedido do usuário em
+- [~] **A104 Baixar arquivos citados na conversa.** Pedido do usuário em
   2026-11-08. Hoje um `MEDIA:` que não é imagem aparece só como "Arquivo no
   servidor" (`agent_media_figure.dart`), sem ação: `/api/media` serve apenas
   imagens. Permitir baixar ou abrir o arquivo no aparelho (salvar, compartilhar
@@ -32,6 +33,19 @@ O plano de ataque de produto e interface está em
   (`hermes_cli/web_routers/files.py`); conferir a política de pastas
   permitidas e a autenticação antes de usar. Arquivo baixado não pode ir para
   log nem cache compartilhado.
+
+  Implementado em 2026-11-09: ação **Baixar arquivo** no `MEDIA:` não-imagem,
+  bytes/total/progresso, cancelamento e motivo da recusa. `GET
+  /api/files/download` usa cookie em header, sem ticket ou token na URL,
+  sem redirect; o servidor mantém sua política de pastas e arquivos sensíveis.
+  Transferência em fluxo para temporário privado, removido ao concluir, falhar,
+  cancelar ou sair; seletor nativo de destino no Android e iOS, sem dependência
+  nova. Caminhos com espaços são preservados em diretivas isoladas na linha ou
+  entre aspas (a sintaxe antiga cortava no primeiro espaço). Android validado
+  com salvamento real de arquivo sintético; 320 dp/180%
+  inspecionado, revisão visual `ship`. Runtime pareado já anuncia **0.23.0**:
+  duas referências existentes foram recusadas, sem arquivo permitido para
+  confirmar sucesso remoto. Falta esse aceite e compilar/testar o iOS em Mac.
 
 ## Barra de mensagem
 
@@ -88,6 +102,13 @@ hoje em `chat_screen.dart` (`_Composer`, `_ComposerSurface`, `_ComposerSlot`,
   Testes: lote com um arquivo grande demais, lote que estoura a contagem,
   gravação iniciada com texto e o texto preservado depois dela.
 
+  Seleção múltipla implementada em 2026-11-09: `openFiles`, leitura sequencial
+  limitada pelo orçamento restante, recusas por nome e aproveitamento do resto
+  do lote. O seletor bloqueia novo toque enquanto está aberto. Testes cobrem
+  tamanho individual, contagem, total e arquivo que cresce durante a leitura.
+  Falta aceite do seletor no aparelho. O microfone com texto continua esperando
+  o desenho de A105; nenhuma disposição dos controles foi alterada.
+
 - [ ] **A106 Controles granulares de envio durante o turno.** Pedido do
   usuário em 2026-11-08: enfileirar mensagem, orientar o turno em andamento
   (steering) e afins. Absorve a parte de fila e steer que saiu de A79. Hoje,
@@ -117,13 +138,19 @@ hoje em `chat_screen.dart` (`_Composer`, `_ComposerSurface`, `_ComposerSlot`,
   instável, troca de conversa e retorno ao app não duplicam nem perdem
   mensagem. Gestos e lugar dos controles saem do desenho de A105.
 
-- [ ] **A79 Mostrar o erro do Parar.** Decidido pelo usuário em 2026-11-08:
+- [~] **A79 Mostrar o erro do Parar.** Decidido pelo usuário em 2026-11-08:
   por enquanto, só fazer a falha aparecer. Hoje `ChatController.stop()`
   transforma a falha do interrupt em erro da resposta
   (`_failCurrentAssistant`), e sai em silêncio quando não há `runId`. Passa a
   mostrar o motivo no aviso flutuante que o composer já usa
   (`_showComposerError`, um `SnackBar`), sem marcar a resposta como falha,
   porque o turno pode continuar rodando. Fila e steer passaram para A106.
+
+  Implementado em 2026-11-09: o controller devolve o motivo e o composer o
+  mostra no `SnackBar`; `/stop` usa a mesma causa. Nem falha de interrupt nem
+  ausência de identificação encerram o streaming ou marcam a resposta como
+  falha. Regressões de controller e widget confirmam aviso e continuidade.
+  Falta o aceite em aparelho.
 
 ## Segurança e distribuição
 
@@ -145,7 +172,7 @@ hoje em `chat_screen.dart` (`_Composer`, `_ComposerSurface`, `_ComposerSlot`,
   em 90 s, ou saindo da sessão, é recusa; só se fixa a chave depois do
   "confio" e da sessão de pé. Falta o aceite contra um SSH real
   ([USER_TESTING.md](USER_TESTING.md)).
-- [ ] **A92 Conectar a qualquer URL, com avisos de segurança.** Decidido pelo
+- [~] **A92 Conectar a qualquer URL, com avisos de segurança.** Decidido pelo
   usuário em 2026-11-08: tirar a trava. Hoje o API Server só aceita HTTPS e o
   HTTP/WS em claro só vale para o Dashboard em `*.ts.net`; passa a valer
   qualquer esquema `http`/`https` e qualquer host, IP incluído, nas duas
@@ -166,6 +193,16 @@ hoje em `chat_screen.dart` (`_Composer`, `_ComposerSurface`, `_ComposerSlot`,
   README e do HANDOFF, que hoje descrevem a exceção restrita. Testes:
   aceitar `http://` com IP e host público, aviso presente em cada caso,
   nenhum aviso para `https://`.
+
+  Implementado em 2026-11-09: HTTP/HTTPS em qualquer host ou IP nos dois
+  acessos, aviso ao digitar HTTP e selo persistente em Ajustes e Captura de
+  turno. Hosts fora de rede privada/tailnet recebem aviso reforçado; a
+  classificação é apenas textual e não promete VPN. Certificados continuam
+  validados pelo sistema; HTTP e handshake WebSocket recusam redirects.
+  Android libera cleartext na base; iOS usa `NSAllowsArbitraryLoads`.
+  Dashboard segue exigindo origem sem caminho/query/userinfo, e o API Server
+  conserva prefixo de caminho. A política Host do servidor continua valendo.
+  Falta aceite em aparelho e validação iOS em Mac.
 - [ ] **A93 Preparar distribuição Android release.** Definir application ID,
   assinatura release sob custódia apropriada e canal de distribuição; não
   publicar APK release assinado com chave debug. O CI atual só constrói debug.

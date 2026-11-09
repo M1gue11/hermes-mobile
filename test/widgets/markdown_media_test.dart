@@ -47,6 +47,23 @@ Future<void> _montar(
 }
 
 void main() {
+  testWidgets(
+    'MEDIA isolado conserva nome completo com espaços no bloco de download',
+    (tester) async {
+      await _montar(
+        tester,
+        'MEDIA:/srv/Projeto exemplo/Orçamento final.md',
+        gateway: FakeGatewayRepository(),
+      );
+      expect(find.text('Orçamento final.md'), findsOneWidget);
+      expect(
+        find.text('/srv/Projeto exemplo/Orçamento final.md'),
+        findsOneWidget,
+      );
+      expect(find.text('Baixar arquivo'), findsOneWidget);
+    },
+  );
+
   testWidgets('MEDIA: de imagem vira figura lida pelo Dashboard e amplia', (
     tester,
   ) async {

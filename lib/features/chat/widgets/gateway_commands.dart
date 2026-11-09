@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../connection/transport_notice.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -230,6 +231,7 @@ class _CommandCatalogState extends ConsumerState<_CommandCatalog> {
                           .authenticate,
                     );
                     if (!entered || !mounted) return;
+                    ref.invalidate(dashboardUsesCleartextProvider);
                   }
                   ref.invalidate(provider);
                 },

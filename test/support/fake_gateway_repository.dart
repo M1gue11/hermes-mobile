@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:io';
 
+import 'package:hermes_mobile/domain/models/agent_file.dart';
 import 'package:hermes_mobile/domain/models/approval_request.dart';
 import 'package:hermes_mobile/domain/models/gateway_command.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
@@ -134,6 +136,43 @@ class FakeGatewayRepository implements GatewayRepository {
 
   final Map<String, Uint8List> midias = {};
   final List<String> midiasLidas = [];
+
+  final List<String> arquivosBaixados = [];
+  Future<AgentFileInfo> Function({
+    required String path,
+    required String destination,
+    required void Function(int, int?) onProgress,
+    required Future<void> cancelled,
+  })?
+  downloadHandler;
+
+  @override
+  Future<AgentFileInfo> downloadAgentFile({
+    required String path,
+    required String destination,
+    required void Function(int, int?) onProgress,
+    required Future<void> cancelled,
+  }) async {
+    arquivosBaixados.add(path);
+    if (downloadHandler case final handler?) {
+      return handler(
+        path: path,
+        destination: destination,
+        onProgress: onProgress,
+        cancelled: cancelled,
+      );
+    }
+    final bytes = midias[path];
+    if (bytes == null) {
+      throw const GatewayOperationException(
+        'O arquivo não está disponível no servidor.',
+        httpStatus: 404,
+      );
+    }
+    await File(destination).writeAsBytes(bytes);
+    onProgress(bytes.length, bytes.length);
+    return (size: bytes.length, mimeType: 'application/pdf');
+  }
 
   @override
   Future<Uint8List> agentMedia(String path) async {
@@ -398,6 +437,7 @@ class FakeGatewayLiveTurn implements GatewayLiveTurn {
   Map<String, Object?>? serverAnswers;
   final Object? submitError;
   bool interrupted = false;
+  Object? interruptError;
   bool closed = false;
 
   @override
@@ -445,7 +485,10 @@ class FakeGatewayLiveTurn implements GatewayLiveTurn {
   Future<void> steer(String text) async => steered.add(text);
 
   @override
-  Future<void> interrupt() async => interrupted = true;
+  Future<void> interrupt() async {
+    if (interruptError case final error?) throw error;
+    interrupted = true;
+  }
 
   @override
   Future<void> respondToApproval(

@@ -1062,7 +1062,8 @@ class _AgentMediaSyntax extends md.InlineSyntax {
   @override
   bool onMatch(md.InlineParser parser, Match match) {
     parser.addNode(
-      md.Element.empty('agent-media')..attributes['path'] = match[1]!,
+      md.Element.empty('agent-media')
+        ..attributes['path'] = mediaPathFromMatch(match),
     );
     return true;
   }

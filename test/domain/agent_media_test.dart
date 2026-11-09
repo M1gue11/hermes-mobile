@@ -2,6 +2,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hermes_mobile/domain/models/agent_media.dart';
 
 void main() {
+  test('arquivo isolado na linha conserva pastas e nomes com espaços', () {
+    const path = '/srv/Projeto exemplo/2026-11-09 - Orçamento final.md';
+    expect(mediaPathsIn('Pronto:\n\nMEDIA:$path\n\nDepois.'), [path]);
+  });
+
+  test('arquivo inline entre aspas conserva espaços sem engolir a prosa', () {
+    expect(
+      mediaPathsIn(
+        'Veja MEDIA:"/srv/arquivo final.pdf" e depois '
+        "MEDIA:'/srv/outro arquivo.txt'.",
+      ),
+      ['/srv/arquivo final.pdf', '/srv/outro arquivo.txt'],
+    );
+  });
+
   test('reconhece caminhos absolutos POSIX, home e Windows', () {
     expect(
       mediaPathsIn(

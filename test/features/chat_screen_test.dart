@@ -5,6 +5,8 @@ import 'package:hermes_mobile/core/theme/app_theme.dart';
 import 'package:hermes_mobile/core/router/hermes_route_observer.dart';
 import 'package:hermes_mobile/core/widgets/unicode_spinner.dart';
 import 'package:hermes_mobile/data/hermes_repository_provider.dart';
+import 'package:hermes_mobile/data/gateway_repository_provider.dart';
+import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 import 'package:hermes_mobile/domain/models/chat_message.dart';
 import 'package:hermes_mobile/domain/models/conversation.dart';
 import 'package:hermes_mobile/domain/models/run.dart';
@@ -16,6 +18,7 @@ import 'package:hermes_mobile/features/chat/widgets/message_bubbles.dart';
 import 'package:hermes_mobile/main.dart';
 
 import '../support/fake_hermes_repository.dart';
+import '../support/fake_gateway_repository.dart';
 import '../support/memory_active_run_store.dart';
 import 'package:hermes_mobile/features/chat/launch_provider.dart';
 import '../support/stub_chat_launch.dart';
@@ -32,6 +35,44 @@ Future<void> pumpWidgetUntil(
 }
 
 void main() {
+  testWidgets('A79: falha do Parar aparece no aviso e não encerra a resposta', (
+    tester,
+  ) async {
+    final turn = FakeGatewayLiveTurn(
+      storedSessionId: 'session-2',
+      liveSessionId: 'live',
+    )..interruptError = const GatewayOperationException('Recusa de teste.');
+    final container = ProviderContainer(
+      overrides: [
+        hermesRepositoryProvider.overrideWithValue(
+          FakeHermesRepository(messages: {'session-2': []}),
+        ),
+        gatewayRepositoryProvider.overrideWithValue(
+          FakeGatewayRepository(turns: [turn]),
+        ),
+        activeRunStoreProvider.overrideWithValue(MemoryActiveRunStore()),
+      ],
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(chatControllerProvider.notifier);
+    await controller.openConversation(
+      const Conversation(id: 'session-2', title: 'Teste'),
+    );
+    await controller.send('Pergunta');
+    await tester.pumpWidget(_chatHarness(container));
+    for (var n = 0; n < 5; n++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(find.byTooltip('Parar a resposta'));
+    await tester.pump();
+    expect(find.textContaining('Não foi possível parar:'), findsOneWidget);
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(container.read(chatControllerProvider).streaming, isTrue);
+    expect(turn.closed, isFalse);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
   testWidgets('thread mantém um único spinner global após várias respostas', (
     tester,
   ) async {

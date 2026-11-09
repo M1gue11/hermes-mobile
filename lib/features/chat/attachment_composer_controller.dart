@@ -44,26 +44,64 @@ class AttachmentComposerController extends _$AttachmentComposerController {
     if (state.busy || state.recording) return;
     final full = composerBudgetProblem(state.attachments);
     if (full != null) return _setError(full);
+    state = (
+      attachments: state.attachments,
+      recording: false,
+      busy: true,
+      error: null,
+    );
     try {
       final source = ref.read(attachmentSourceProvider);
-      final picked = await source.pickFile();
-      if (picked == null) return;
-      final over = composerBudgetProblem(state.attachments, adding: picked);
-      if (over != null) {
-        unawaited(source.discard(picked));
-        return _setError(over);
+      final selection = await source.pickFiles(
+        availableSlots: maxComposerAttachments - state.attachments.length,
+        availableBytes:
+            maxComposerTotalBytes -
+            state.attachments.fold<int>(
+              0,
+              (sum, item) => sum + item.bytes.length,
+            ),
+      );
+      if (!ref.mounted) {
+        for (final picked in selection.attachments) {
+          unawaited(source.discard(picked));
+        }
+        return;
+      }
+      final accepted = [...state.attachments];
+      final errors = [...selection.errors];
+      for (final picked in selection.attachments) {
+        final over = composerBudgetProblem(accepted, adding: picked);
+        if (over != null || picked.bytes.length > maxComposerAttachmentBytes) {
+          unawaited(source.discard(picked));
+          errors.add(
+            '${picked.name}: ${over ?? 'excede o limite de 25 MB por arquivo.'}',
+          );
+        } else {
+          accepted.add(picked);
+        }
       }
       state = (
-        attachments: [...state.attachments, picked],
+        attachments: accepted,
         recording: false,
         busy: false,
-        error: null,
+        error: errors.isEmpty ? null : errors.join('\n'),
       );
     } on GatewayOperationException catch (error) {
-      _setError(error.message);
+      if (ref.mounted) _selectionFailed(error.message);
     } catch (_) {
-      _setError('Não foi possível abrir este arquivo.');
+      if (ref.mounted) {
+        _selectionFailed('Não foi possível abrir o seletor de arquivos.');
+      }
     }
+  }
+
+  void _selectionFailed(String error) {
+    state = (
+      attachments: state.attachments,
+      recording: false,
+      busy: false,
+      error: error,
+    );
   }
 
   Future<void> startRecording() async {

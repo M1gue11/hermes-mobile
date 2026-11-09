@@ -157,29 +157,48 @@ versionada; o Git registra as mudanças do repositório.
   `settleTurnTools` também fecha subagents abertos, então nenhuma chamada
   nova precisou ser espalhada. 894 testes.
 
-## Estado acionável
+## 2026-11-09 — downloads, seleção múltipla, Parar e transporte
 
-Atualizado em 2026-11-08 com as respostas do usuário; o detalhe de cada item
-está em `BACKLOG.md`.
+- A104: `downloadAgentFile` recebe bytes em fluxo por cookie no header de
+  `/api/files/download`; não há ticket/token na URL. O bloco não-imagem mostra
+  nome, bytes/total, progresso, Cancelar e motivo da recusa. Temporário privado
+  removido no finally; Android exporta por ACTION_CREATE_DOCUMENT e iOS por
+  UIDocumentPicker. Sem dependência nova. No emulador, o primeiro smoke revelou
+  que o Dart usa `code_cache`, não só `cache`; a validação nativa foi corrigida,
+  e o arquivo sintético foi salvo (49 bytes). A104: revisão independente `ship`,
+  sem correções materiais; brief em `.impeccable/surfaces/`.
+  Na conferência final, caminhos com espaços ainda eram cortados pela sintaxe
+  antiga; diretivas isoladas na linha e caminhos entre aspas agora preservam
+  o nome completo, com regressões de domínio e Markdown.
+- Runtime pareado observado em 0.23.0. Leitura de status e histórico funcionou;
+  as duas referências MEDIA encontradas foram recusadas para download. Sucesso
+  com arquivo remoto permitido e compilação iOS ficam no aceite manual.
+- A78: `openFiles` seleciona lotes, consulta tamanho antes de ler, limita também
+  durante a leitura e continua após recusas nomeadas. Contagem/total consideram
+  anexos anteriores. Fonte de arquivos não inicializa o gravador. Voz com texto
+  e reorganização da barra continuam esperando A105.
+- A79: falha do interrupt volta como causa ao SnackBar e ao `/stop`; o turno
+  não é encerrado nem marcado como falha. Testes cobrem aviso e continuidade.
+- A92: HTTP/HTTPS por host/IP, avisos de formulário e aviso persistente em
+  Ajustes/diagnóstico. Host público ou não verificado recebe reforço; nome
+  privado/tailnet não promete criptografia. Certificados continuam validados;
+  HTTP e WebSocket bloqueiam redirects, com testes de sockets reais.
+  HTTP por IP confirmado no Android contra servidor local via adb; o servidor
+  e o encaminhamento de teste foram encerrados. Revisão visual A92 `ship`, com
+  limitação de captura da fonte do aviso descrita no brief de superfície.
+- A inspeção de A104 incluiu 320 dp e texto 180%; depois do teste a resolução
+  original do emulador foi restaurada a 1344×2992, densidade 480, fonte 100%.
+- Validação final: `flutter analyze` e `git diff --check` limpos, **934 testes**
+  aprovados e APK debug normal compilado e reinstalado. Nenhum push ou mudança
+  no runtime remoto. Aceites físicos e iOS continuam pendentes.
 
-- Próximo item: A104 (baixar arquivos citados na conversa).
-- Pacote da barra de mensagem (pedido em 2026-11-08), a trabalhar junto e a
-  partir de um desenho aprovado: A105 (design, animações, alinhamento e
-  responsividade), A78, A106 (enfileirar, steer, parar e enviar), A79 e o
-  indicador de A98.
-- Decididos e prontos para implementar: B9 (refino no molde do Hermes
-  Desktop), A78 (seleção múltipla e voz com texto digitado), A92 (qualquer
-  URL com avisos de segurança), A98/B10 (`session.usage` e
-  `session.context_breakdown` autorizados; a allowlist era só do app) e A79
-  (mostrar o erro do Parar no aviso do composer).
-- A90 fechado: imagens remotas no Markdown continuam carregando sozinhas.
-- A78 (arquivo, voz e legenda no mesmo turno) aceito no aparelho; B9 testado
-  e devolvido para refino.
-- Aceites em aparelho pendentes: A60, A77, A89, A91.
-- A60: instalar `server/mobile-push` no servidor (decisão do usuário).
-- Esperam o usuário: A93 (application ID e assinatura release), A76
-  (mensagens reais com Markdown errado), B11/B14 (medir eventos disparando
-  turnos no servidor), subir o AGP para 9.1 (destrava
-  `flutter_local_notifications` 23 e `compileSdk` 37).
-- Os métodos diretos `session.undo` e `session.compress` seguem fora da
-  allowlist; desfazer e compactar usam os comandos confirmados de A80.
+## Estado acionável após 2026-11-09
+
+- Implementados aguardando aceite: A104, A79 e A92. A78 tem seleção múltipla
+  pronta; voz com texto continua no pacote A105. Os roteiros estão em
+  USER_TESTING; não se confundem com aceite no aparelho físico.
+- Próxima frente: medir o refino B9 no runtime agora publicado; A98/B10 têm
+  leitura autorizada, mas o indicador e o resto da barra dependem de A105.
+- A105 exige proposta de desenho e aprovação antes de reorganizar controles.
+- Permanecem as decisões externas já listadas: A76, A93, B11/B14, plugin A60
+  no servidor e atualização do AGP.

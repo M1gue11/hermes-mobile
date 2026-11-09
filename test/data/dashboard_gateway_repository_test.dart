@@ -817,26 +817,19 @@ void main() {
     expect(store.session?.baseUrl, 'http://hermes-gateway.example.ts.net:9119');
   });
 
-  test('login rejeita HTTP fora do Tailnet', () async {
+  test('A92: login aceita HTTP fora do Tailnet', () async {
+    final adapter = _DashboardAdapter();
     final repository = DashboardGatewayRepository(
       store: _MemoryDashboardSessionStore(),
-      dio: Dio()..httpClientAdapter = _DashboardAdapter(),
+      dio: Dio()..httpClientAdapter = adapter,
     );
-
-    await expectLater(
-      repository.authenticate(
-        baseUrl: 'http://dashboard.example:9119',
-        username: 'operator',
-        password: 'segredo-de-teste',
-      ),
-      throwsA(
-        isA<GatewayOperationException>().having(
-          (error) => error.message,
-          'message',
-          contains('MagicDNS do Tailnet'),
-        ),
-      ),
+    await repository.authenticate(
+      baseUrl: 'http://dashboard.example:9119',
+      username: 'operator',
+      password: 'segredo-de-teste',
     );
+    expect(adapter.requests.single.uri.host, 'dashboard.example');
+    expect(adapter.requests.single.followRedirects, isFalse);
   });
 
   test('validação de URL não aceita origem ambígua ou escopo amplo', () {
@@ -854,11 +847,11 @@ void main() {
     );
     expect(
       DashboardGatewayRepository.supportsBaseUrl('http://ts.net:9119'),
-      isFalse,
+      isTrue,
     );
     expect(
       DashboardGatewayRepository.supportsBaseUrl('http://100.64.0.1:9119'),
-      isFalse,
+      isTrue,
     );
     expect(
       DashboardGatewayRepository.supportsBaseUrl(

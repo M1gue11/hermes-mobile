@@ -564,21 +564,24 @@ class ChatController extends _$ChatController {
     }
   }
 
-  /// Pede cancelamento ao endpoint real da Runs API.
-  Future<bool> stop() async {
+  /// Pede interrupção sem encerrar o turno localmente. Só o servidor confirma
+  /// o fim; uma recusa volta como aviso ao composer.
+  Future<String?> stop() async {
     final id = state.runId;
-    if (id == null || !state.streaming) return false;
+    if (!state.streaming) return 'Não há um turno em andamento para parar.';
     try {
       final turn = _gatewayTurn;
       if (turn != null) {
         await turn.interrupt();
       } else {
+        if (id == null) {
+          return 'O turno ainda não tem identificação para parar. Tente de novo em instantes.';
+        }
         await _repo.stopRun(id);
       }
-      return true;
+      return null;
     } catch (error) {
-      _failCurrentAssistant(_legivel(error));
-      return false;
+      return 'Não foi possível parar: ${_legivel(error)}';
     }
   }
 
@@ -2111,11 +2114,6 @@ class ChatController extends _$ChatController {
     );
     if (clearActiveRun) _clearActiveRun();
     _finish(epoch);
-  }
-
-  void _failCurrentAssistant(String error) {
-    final message = _lastAssistant();
-    if (message != null) _fail(message.id, error);
   }
 
   void _finish([int? epoch]) {

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hermes_mobile/domain/models/agent_file.dart';
 import 'package:hermes_mobile/data/gateway_repository_provider.dart';
 import 'package:hermes_mobile/domain/models/composer_attachment.dart';
 import 'package:hermes_mobile/domain/models/session_message.dart';
@@ -17,6 +18,39 @@ import 'package:hermes_mobile/domain/repositories/gateway_repository.dart';
 import 'package:hermes_mobile/features/chat/attachment_composer_controller.dart';
 
 void main() {
+  test(
+    'A78: lote mantém o que cabe e identifica cada recusa sem perder anexos anteriores',
+    () async {
+      final source = _FakeAttachmentSource(picked: _file());
+      final container = _container(
+        source: source,
+        gateway: _FakeGatewayRepository(),
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(
+        attachmentComposerControllerProvider.notifier,
+      );
+      for (var n = 0; n < 9; n++) {
+        await controller.pickFile();
+      }
+      source.batch = (
+        attachments: [
+          _file().copyWith(id: 'a', name: 'a.pdf'),
+          _file().copyWith(id: 'b', name: 'b.pdf'),
+        ],
+        errors: ['grande.zip: excede o limite de 25 MB por arquivo.'],
+      );
+      await controller.pickFile();
+      final state = container.read(attachmentComposerControllerProvider);
+      expect(state.attachments, hasLength(10));
+      expect(state.attachments.last.name, 'a.pdf');
+      expect(state.error, contains('b.pdf'));
+      expect(state.error, contains('grande.zip'));
+      expect(state.busy, isFalse);
+      expect(source.discardedIds, ['b']);
+    },
+  );
+
   test('limpar composer vazio não inicializa serviços de plataforma', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
@@ -324,6 +358,7 @@ final class _FakeAttachmentSource implements AttachmentSource {
 
   final ComposerAttachment? picked;
   final ComposerAttachment? recorded;
+  AttachmentSelection? batch;
   bool recording = false;
   int cancellations = 0;
   final List<String> discardedIds = [];
@@ -351,9 +386,17 @@ final class _FakeAttachmentSource implements AttachmentSource {
   final List<ComposerAttachment> queue = [];
 
   @override
-  Future<ComposerAttachment?> pickFile() async {
+  Future<AttachmentSelection> pickFiles({
+    required int availableSlots,
+    required int availableBytes,
+  }) async {
     picks++;
-    return queue.isEmpty ? picked : queue.removeAt(0);
+    if (batch case final selection?) return selection;
+    final item = queue.isEmpty ? picked : queue.removeAt(0);
+    return (
+      attachments: <ComposerAttachment>[?item],
+      errors: <String>[],
+    );
   }
 
   @override
@@ -367,6 +410,13 @@ final class _FakeAttachmentSource implements AttachmentSource {
 }
 
 final class _FakeGatewayRepository implements GatewayRepository {
+  @override
+  Future<AgentFileInfo> downloadAgentFile({
+    required String path,
+    required String destination,
+    required void Function(int, int?) onProgress,
+    required Future<void> cancelled,
+  }) => throw UnimplementedError();
   _FakeGatewayRepository({
     this.transcript = 'Transcrição.',
     this.requireAuthentication = false,

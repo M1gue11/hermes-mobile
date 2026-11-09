@@ -8,6 +8,7 @@ import 'package:hermes_mobile/data/hermes_repository_provider.dart';
 import 'package:hermes_mobile/features/chat/widgets/sheets.dart';
 import 'package:hermes_mobile/features/settings/agent_persona.dart';
 import 'package:hermes_mobile/features/settings/settings_provider.dart';
+import 'package:hermes_mobile/features/connection/transport_notice.dart';
 
 import '../support/fake_hermes_repository.dart';
 
@@ -21,8 +22,14 @@ class _MemorySettingsStore implements AppSettingsStore {
   Future<void> save(StoredAppSettings settings) async => value = settings;
 }
 
-Widget _app(_MemorySettingsStore store) => ProviderScope(
+Widget _app(
+  _MemorySettingsStore store, {
+  bool clearApi = false,
+  bool clearDashboard = false,
+}) => ProviderScope(
   overrides: [
+    apiUsesCleartextProvider.overrideWithValue(clearApi),
+    dashboardUsesCleartextProvider.overrideWith((ref) async => clearDashboard),
     appSettingsStoreProvider.overrideWithValue(store),
     hermesRepositoryProvider.overrideWithValue(FakeHermesRepository()),
   ],
@@ -49,6 +56,21 @@ Future<void> _open(WidgetTester tester, _MemorySettingsStore store) async {
 }
 
 void main() {
+  testWidgets('A92: Ajustes mantém o aviso das duas conexões sem TLS', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(_MemorySettingsStore(), clearApi: true, clearDashboard: true),
+    );
+    await tester.tap(find.text('Abrir ajustes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Conexão sem TLS'), findsOneWidget);
+    expect(
+      find.textContaining('API Server e Dashboard em HTTP.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('Ajustes expõe conexões, agente e conversa sem ação destrutiva', (
     tester,
   ) async {

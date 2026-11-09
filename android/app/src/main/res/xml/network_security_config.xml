@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <base-config cleartextTrafficPermitted="false" />
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">ts.net</domain>
-    </domain-config>
+    <!-- A92: HTTP autorizado pelo usuário, com aviso persistente no app.
+         A validação de certificados HTTPS continua sendo a do sistema. -->
+    <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
