@@ -1,5 +1,24 @@
 # Validações pendentes em aparelho
 
+## Tinta durante streaming de Markdown
+
+- Conferir em aparelho que somente o parágrafo simples que está sendo escrito
+  assenta a tinta em aproximadamente 200 ms, sem atrasar a leitura; o prefixo
+  já visível permanece estável e o spinner continua nítido. Movimento reduzido,
+  navegação acessível ou `TickerMode` desligado devem mostrar a tinta de imediato.
+- Fallback conservador: listas, tabelas, blocos de código, callouts e demais
+  caudas estruturais continuam instantâneos; este comportamento só cobre o
+  caminho `_TailParagraph` de prosa simples. Parágrafos com itálico ou tracking
+  negativo também ficam instantâneos, para não mascarar tinta que ultrapassa
+  a caixa de seleção do glifo. Histórico e primeiro conteúdo já presente não
+  repetem a animação.
+- Enviar prosa longa com acentos/emoji, negrito e links; observar rajadas,
+  quebra de linha e término/cancelamento. O texto completo deve chegar sem
+  fila artificial, e o prefixo já lido não deve piscar. Selecionar/copiar texto
+  e rolar para cima durante a resposta: a posição de leitura deve ser preservada.
+- Validar a fluidez e consumo no S23 com a APK desta branch; os rasters e testes
+  de widget não medem o desempenho da GPU real do aparelho.
+
 Este arquivo contém **somente** roteiros ainda pendentes de aceite em aparelho.
 Após validação, registrar o resultado na mudança correspondente, atualizar
 [BACKLOG.md](BACKLOG.md) e remover o roteiro daqui. O Git preserva o histórico,

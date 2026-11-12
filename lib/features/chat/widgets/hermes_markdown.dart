@@ -1,6 +1,15 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/rendering.dart'
-    show OverflowBoxFit, RenderBox, RenderTable;
+    show
+        OverflowBoxFit,
+        PipelineOwner,
+        RenderBox,
+        RenderParagraph,
+        RenderProxyBox,
+        RenderTable;
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
@@ -670,7 +679,7 @@ class _TailParagraph extends StatelessWidget {
       ),
     );
 
-    return RichText(
+    final richText = RichText(
       // `RichText` cru não lê o escalonador do [MediaQuery] sozinho, ao
       // contrário do `Text`. Sem isto a cauda sairia menor que o markdown já
       // decidido logo acima dela.
@@ -678,7 +687,313 @@ class _TailParagraph extends StatelessWidget {
       textAlign: TextAlign.start,
       text: TextSpan(style: base, children: spans),
     );
+    final plainText = (richText.text as TextSpan).toPlainText(
+      includePlaceholders: false,
+    );
+    return StreamingInk(
+      text: plainText,
+      layoutSignature: Object.hash(
+        base,
+        MediaQuery.textScalerOf(context),
+        Directionality.of(context),
+      ),
+      child: richText,
+    );
   }
+}
+
+/// Dá tempo à tinta do parágrafo simples para assentar. Os demais finais
+/// estruturais (listas, tabelas, código e callouts) continuam instantâneos:
+/// esta solução conservadora só conhece o RenderParagraph da cauda manual.
+@visibleForTesting
+class StreamingInk extends StatefulWidget {
+  const StreamingInk({
+    super.key,
+    required this.text,
+    required this.layoutSignature,
+    required this.child,
+  });
+  final String text;
+  final Object layoutSignature;
+  final Widget child;
+
+  @override
+  State<StreamingInk> createState() => _StreamingInkState();
+}
+
+class _StreamingInkState extends State<StreamingInk>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker = createTicker((elapsed) {
+    _render?.tick(elapsed);
+  });
+  _RenderStreamingInk? _render;
+
+  @override
+  Widget build(BuildContext context) {
+    return _StreamingInkRender(
+      text: widget.text,
+      layoutSignature: widget.layoutSignature,
+      enabled: !reduceMotionOf(context) && TickerMode.valuesOf(context).enabled,
+      ticker: _ticker,
+      onRender: (render) => _render = render,
+      child: widget.child,
+    );
+  }
+
+  @override
+  void dispose() {
+    _ticker.stop();
+    _render = null;
+    _ticker.dispose();
+    super.dispose();
+  }
+}
+
+class _StreamingInkRender extends SingleChildRenderObjectWidget {
+  const _StreamingInkRender({
+    required this.text,
+    required this.layoutSignature,
+    required this.enabled,
+    required this.ticker,
+    required this.onRender,
+    required super.child,
+  });
+  final String text;
+  final Object layoutSignature;
+  final bool enabled;
+  final Ticker ticker;
+  final ValueChanged<_RenderStreamingInk> onRender;
+
+  @override
+  _RenderStreamingInk createRenderObject(BuildContext context) {
+    final render = _RenderStreamingInk(text, layoutSignature, enabled, ticker);
+    onRender(render);
+    return render;
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderStreamingInk render) {
+    render
+      ..text = text
+      ..layoutSignature = layoutSignature
+      ..enabled = enabled
+      ..ticker = ticker;
+    onRender(render);
+  }
+}
+
+class _InkBatch {
+  _InkBatch(this.start, this.end);
+  final int start;
+  final int end;
+  List<ui.TextBox> boxes = const [];
+  Duration born = Duration.zero;
+}
+
+class _RenderStreamingInk extends RenderProxyBox {
+  _RenderStreamingInk(
+    this._text,
+    this._layoutSignature,
+    this._enabled,
+    this._ticker,
+  );
+  String _text;
+  Object _layoutSignature;
+  bool _enabled;
+  Ticker _ticker;
+  bool _resetPending = false;
+  String _laidOutText = '';
+  final List<_InkBatch> _batches = [];
+  Duration _elapsed = Duration.zero;
+  BoxConstraints? _lastConstraints;
+
+  set layoutSignature(Object value) {
+    if (_layoutSignature == value) return;
+    _layoutSignature = value;
+    _resetPending = true;
+    _flush();
+    markNeedsLayout();
+  }
+
+  set ticker(Ticker value) {
+    if (identical(value, _ticker)) return;
+    _ticker.stop();
+    _ticker = value;
+    _syncTicker();
+  }
+
+  set enabled(bool value) {
+    if (_enabled == value) return;
+    _enabled = value;
+    if (!value) _flush();
+    _syncTicker();
+  }
+
+  set text(String value) {
+    if (_text == value) return;
+    _text = value;
+    markNeedsLayout();
+  }
+
+  void tick(Duration elapsed) {
+    _elapsed = SchedulerBinding.instance.currentSystemFrameTimeStamp;
+    _batches.removeWhere(
+      (batch) =>
+          _elapsed - batch.born >= HermesMotion.estado || _batches.length > 24,
+    );
+    if (_batches.isEmpty) {
+      _ticker.stop();
+    }
+    markNeedsPaint();
+  }
+
+  void _flush() {
+    _batches.clear();
+    _ticker.stop();
+    markNeedsPaint();
+  }
+
+  void _syncTicker() {
+    if (_enabled && _batches.isNotEmpty && !_ticker.isActive) {
+      _ticker.start();
+    } else if ((!_enabled || _batches.isEmpty) && _ticker.isActive) {
+      _ticker.stop();
+    }
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _syncTicker();
+  }
+
+  @override
+  void detach() {
+    _ticker.stop();
+    super.detach();
+  }
+
+  @override
+  void performLayout() {
+    if (_lastConstraints != null && _lastConstraints != constraints) {
+      _resetPending = true;
+      _flush();
+    }
+    _lastConstraints = constraints;
+    super.performLayout();
+    final paragraph = child;
+    if (paragraph is! RenderParagraph) {
+      _flush();
+      _laidOutText = _text;
+      return;
+    }
+    final actual = paragraph.text.toPlainText(includePlaceholders: false);
+    final previous = _laidOutText;
+    final reset = _resetPending;
+    _resetPending = false;
+    if (reset ||
+        !_enabled ||
+        _hasOverhangingInk(paragraph.text) ||
+        previous.isEmpty ||
+        !actual.startsWith(previous) ||
+        !_text.startsWith(previous) ||
+        !_graphemeBoundary(actual, previous.length)) {
+      _flush();
+    } else if (actual.length > previous.length) {
+      _elapsed = SchedulerBinding.instance.currentSystemFrameTimeStamp;
+      final batch = _InkBatch(previous.length, actual.length)..born = _elapsed;
+      _batches.add(batch);
+      if (_batches.length > 24) _batches.removeAt(0);
+      _syncTicker();
+    }
+    _laidOutText = actual;
+    for (final batch in _batches) {
+      if (batch.end > actual.length) {
+        batch.boxes = const [];
+      } else {
+        batch.boxes = paragraph.getBoxesForSelection(
+          TextSelection(baseOffset: batch.start, extentOffset: batch.end),
+        );
+        if (batch.start > 0) {
+          final prefixBoxes = paragraph.getBoxesForSelection(
+            TextSelection(baseOffset: 0, extentOffset: batch.start),
+          );
+          final overlapsPrefix = batch.boxes.any((newBox) {
+            final newRect = newBox.toRect();
+            return prefixBoxes.any((prefixBox) {
+              final overlap = newRect.intersect(prefixBox.toRect());
+              return !overlap.isEmpty;
+            });
+          });
+          if (overlapsPrefix) {
+            _flush();
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Selection boxes describe advance cells, not glyph outlines: tightly
+  // tracked or italic ink can extend into an adjacent cell even when the
+  // selection rectangles do not overlap. Keep that paragraph instantaneous
+  // rather than erasing a piece of already-visible ink with the suffix mask.
+  bool _hasOverhangingInk(InlineSpan span, [TextStyle? inherited]) {
+    final style = inherited?.merge(span.style) ?? span.style;
+    if ((style?.letterSpacing ?? 0) < 0 ||
+        style?.fontStyle == FontStyle.italic) {
+      return true;
+    }
+    return span is TextSpan &&
+        (span.children ?? const <InlineSpan>[]).any(
+          (child) => _hasOverhangingInk(child, style),
+        );
+  }
+
+  bool _graphemeBoundary(String value, int offset) {
+    if (offset <= 0 || offset >= value.length) return true;
+    // A combining or joined sequence is not a boundary when its grapheme
+    // crosses this UTF-16 offset.
+    var cursor = 0;
+    for (final cluster in value.characters) {
+      cursor += cluster.length;
+      if (cursor == offset) return true;
+      if (cursor > offset) return false;
+    }
+    return true;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (_batches.isEmpty || child == null) {
+      super.paint(context, offset);
+      return;
+    }
+    final canvas = context.canvas;
+    final bounds = paintBounds.shift(offset);
+    canvas.saveLayer(bounds, Paint());
+    super.paint(context, offset);
+    final elapsed = _elapsed;
+    final mask = Paint()
+      ..blendMode = ui.BlendMode.dstOut
+      ..color = const Color(0xff000000);
+    for (final batch in _batches) {
+      final progress =
+          ((elapsed - batch.born).inMicroseconds /
+                  HermesMotion.estado.inMicroseconds)
+              .clamp(0.0, 1.0);
+      final eased = HermesMotion.curvaTinta.transform(progress);
+      final opacity = (0.4 * (1 - eased)).clamp(0.0, 0.4);
+      mask.color = Color.fromARGB((opacity * 255).round(), 0, 0, 0);
+      for (final box in batch.boxes) {
+        canvas.drawRect(box.toRect().shift(offset), mask);
+      }
+    }
+    canvas.restore();
+  }
+
+  @override
+  Rect get paintBounds => child?.paintBounds ?? super.paintBounds;
 }
 
 /// Converte os nós inline do parser em spans, com os mesmos estilos que a folha
