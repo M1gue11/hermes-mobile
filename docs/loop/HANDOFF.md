@@ -47,9 +47,16 @@ afetado.
   A92 libera qualquer URL com avisos de segurança; A98/B10 autorizados (a
   allowlist era só do app); A79 se reduz a mostrar o erro do Parar; A90
   fechado mantendo imagens remotas carregando sozinhas.
-- A60 foi decidido e implementado em 2026-11-08 (UnifiedPush + ntfy
-  self-hosted + plugin `server/mobile-push`); falta instalar o plugin no
-  servidor e o aceite no aparelho.
+- A60 foi implementado em 2026-11-08 e o plugin instalado em 2026-11-09.
+  Miguel confirmou no Android os avisos de conclusão e pergunta `clarify` com
+  app fora de foreground/fechado. Os demais cenários continuam em
+  [USER_TESTING.md](USER_TESTING.md); não marcar A60 inteiro como aceito.
+- Ampliação de notificações apenas especificada em
+  [NOTIFICATION_EVENTS_AND_LIVE_RUN.md](NOTIFICATION_EVENTS_AND_LIVE_RUN.md):
+  A107–A110 no backlog, sem código/serviço novo. Inclui lifecycle por componente,
+  receipts de update e cartão de acompanhamento em background. O levantamento
+  HTTP atual viu Hermes `0.23.0`; o runtime alvo do checkpoint antigo abaixo
+  não deve ser confundido com esta observação.
 
 ## Fatos que evitam regressões
 

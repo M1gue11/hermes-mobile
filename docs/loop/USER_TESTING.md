@@ -48,27 +48,43 @@ loop" do projeto Hermes Mobile.
   chave/senha. HTTPS com certificado inválido continua recusado.
 - iOS: compilar em Mac e verificar HTTP por IP e HTTPS com certificado válido.
 
-## [ ] A60: notificações com o app fechado
+## [ ] A60: aceites restantes de notificações
 
-Pré-requisitos no servidor (decisão do usuário, não automática): copiar
-`server/mobile-push` para `~/.hermes/plugins/mobile-push`, rodar
-`hermes plugins enable mobile-push` e reiniciar gateway e dashboard. No ntfy
-self-hosted com `deny-all`, liberar `ntfy access everyone 'up*' write-only`.
+Plugin instalado em 2026-11-09. Já confirmados por Miguel no Android:
+recebimento do teste; conclusão de turno e pergunta `clarify` também com o app
+fora de foreground/fechado. Não repetir esses passos como se faltasse instalação;
+revalidá-los somente se houver mudança relevante. Falha, limpeza por resolução,
+deep link, tela bloqueada e revogação não são automaticamente aprovados por isso.
 
-- No celular, instale o app ntfy e aponte o servidor padrão dele para a sua
-  instância. Em Ajustes › Notificações, ligue: permitir a notificação, ver
-  Distribuidor `ntfy`, o host do seu ntfy, "mobile-push, aparelho registrado" e
-  "cifrado até o aparelho".
-- "Enviar aviso de teste": o aviso "Notificações ativas" chega em segundos.
-- Mande um prompt longo, saia do app e **feche-o** pelos recentes. Ao terminar,
-  chega "<persona> respondeu" com o título da conversa; tocar abre a conversa.
-- Peça um comando que exija aprovação e feche o app: chega o aviso urgente
-  "precisa da sua aprovação". Aprovar pelo desktop ou pelo app apaga o aviso.
+Pré-requisitos para reproduzir em outra instalação: instalar e habilitar
+`server/mobile-push`, verificar ativação tanto no gateway quanto no Dashboard e
+configurar o distribuidor. No ntfy `deny-all`, publicação e assinatura são
+permissões diferentes: escrita anônima limitada a `up*` só com autorização do
+operador, leitura autenticada por conta dedicada. Não liberar leitura anônima
+nem copiar senha para logs/documentação.
+
+- Confirme o app ntfy apontando para a instância configurada, o aparelho
+  registrado e a indicação de criptografia no Hermes Mobile.
+- Gere uma falha terminal controlada em ambiente de teste: o aviso corresponde
+  à falha remota, não à desconexão do observador nem a falha do botão Parar.
+- Abra pelo toque uma notificação de conversa já recebida: a conversa correta
+  abre sem enviar prompt nem executar ação.
+- Peça operação de teste que exija aprovação, sem provocar mudança perigosa, e
+  feche o app: chega aviso urgente. Resolver por outro cliente apaga **aquele**
+  aviso. Teste também a limpeza do aviso de `clarify`; não pedir/registrar senha
+  de sudo apenas para produzir uma notificação.
 - Com a conversa aberta na tela, um turno dela não gera aviso; um turno de
   outra conversa gera.
-- Na tela bloqueada, o aviso mostra só o título e o tipo (visibilidade privada).
+- Na tela bloqueada, confira apresentação privada sem conteúdo sensível e
+  registre versão Android/One UI. Esse teste ainda não foi confirmado.
 - Desligue a chave: o aparelho some de `GET /api/plugins/mobile-push/devices`
-  e nenhum aviso chega mais.
+  e nenhum aviso chega mais; reativar deve reinscrever sem duplicação.
+- Registre swipe nos recentes separadamente de **Force stop**, e perda de
+  rede/Tailscale/retomada separadamente da entrega online já observada.
+
+Lifecycle dos serviços e cartão de acompanhamento ainda **não estão na APK**;
+matriz para implementação futura em
+[NOTIFICATION_EVENTS_AND_LIVE_RUN.md](NOTIFICATION_EVENTS_AND_LIVE_RUN.md).
 
 ## [ ] A77: conversa atualizada ao voltar
 

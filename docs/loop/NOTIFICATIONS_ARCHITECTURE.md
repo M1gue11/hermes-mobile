@@ -93,6 +93,21 @@ ntfy self-hosted ──► app ntfy (distribuidor) ──► Hermes Mobile
   quedas curtas do aparelho. Inbox e regras propostas pelo agente continuam
   como fase posterior.
 
+## Validação e ampliação planejada em 2026-11-09
+
+- Plugin instalado no servidor; Miguel confirmou no telefone avisos de conclusão
+  e de pergunta `clarify` com o app fora de foreground/fechado. Outros aceites
+  permanecem em [USER_TESTING.md](USER_TESTING.md); esse resultado não comprova
+  force-stop, tela bloqueada, durabilidade nem todos os tipos do plugin.
+- [Catálogo de eventos e live run](NOTIFICATION_EVENTS_AND_LIVE_RUN.md):
+  lifecycle separado por componente, fontes realmente disponíveis, update
+  receipts, acompanhamento só em background, contrato proposto e matriz futura.
+- A107–A110 no [backlog](BACKLOG.md) são trabalho futuro, não funcionalidades
+  já instaladas. A topologia atual não entrega um alerta durante queda total do
+  host que também hospeda o ntfy.
+- No runtime atual `gateway_updated_at` é reestampado durante operação;
+  `gateway.ready` marca conexão WS. Nenhum deles sozinho identifica restart.
+
 ## Escopo do repositório
 
 A primeira fase do cliente deve traduzir sinais live permitidos em modelos de

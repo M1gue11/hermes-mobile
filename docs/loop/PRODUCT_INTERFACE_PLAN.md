@@ -27,9 +27,11 @@ e evidências técnicas ficam em `docs/dashboard-api/` e no histórico Git.
 
 ## Próximas decisões de produto
 
-- A60 foi decidido em 2026-11-08 (UnifiedPush + ntfy self-hosted + plugin
-  `server/mobile-push`, payload mínimo) e implementado; falta instalar o plugin
-  no servidor e o aceite no aparelho. Arquitetura e limites em
+- A60: plugin instalado em 2026-11-09; Miguel confirmou conclusão e pergunta
+  `clarify` no Android com o app fora de foreground/fechado. Restantes aceites
+  em [USER_TESTING.md](USER_TESTING.md). Ampliação futura de lifecycle e cartão
+  live em [NOTIFICATION_EVENTS_AND_LIVE_RUN.md](NOTIFICATION_EVENTS_AND_LIVE_RUN.md)
+  e A107–A110; não implementada. Arquitetura e limites em
   [NOTIFICATIONS_ARCHITECTURE.md](NOTIFICATIONS_ARCHITECTURE.md).
 - A42 precisa de direção visual aprovada; não gerar identidade por conta própria.
 

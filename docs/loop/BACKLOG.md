@@ -261,16 +261,47 @@ operações destrutivas pedem confirmação explícita na interface.
 
 ## Notificações
 
-- [~] **A60 Notificações do Hermes e canal arbitrário do agente.** Push com o
-  app fechado por UnifiedPush (app ntfy como distribuidor, ntfy self-hosted
-  como relay), payload mínimo (tipo e título da conversa) e o plugin próprio
-  `server/mobile-push`. Arquitetura em
-  [NOTIFICATIONS_ARCHITECTURE.md](NOTIFICATIONS_ARCHITECTURE.md); o plugin
-  tem README e testes próprios. Uma notificação pode abrir a conversa, mas
-  nunca executar ação do agente. **Falta** instalar o plugin no servidor
-  (decisão do usuário) e o roteiro de aparelho em
-  [USER_TESTING.md](USER_TESTING.md). iOS fica sem push (UnifiedPush não
-  existe lá). Subir o AGP para 9.1 destrava `flutter_local_notifications` 23.
+- [~] **A60 Notificações do Hermes e canal arbitrário do agente.** Push por
+  UnifiedPush + ntfy self-hosted + plugin `server/mobile-push`. Plugin instalado
+  e habilitado em 2026-11-09; Miguel confirmou avisos Android de conclusão e
+  pergunta `clarify` com o app fora de foreground/fechado. Isso não aprova
+  todos os cenários: seguem em [USER_TESTING.md](USER_TESTING.md) os testes de
+  falha, aprovação/sudo e limpeza, deep link, tela bloqueada e revogação.
+  Arquitetura e limites em
+  [NOTIFICATIONS_ARCHITECTURE.md](NOTIFICATIONS_ARCHITECTURE.md). iOS fica
+  sem push pelo transporte atual. Canal arbitrário do agente continua futuro,
+  com regra explícita e confirmada; não é capacidade já entregue.
+
+O [catálogo de eventos e live run](NOTIFICATION_EVENTS_AND_LIVE_RUN.md)
+registra o levantamento de 2026-11-09, fontes, limitações e critérios de aceite.
+Os itens abaixo estão **planejados, não implementados**, sem alterar a ordem
+atual de trabalho nem autorizar mudanças de infraestrutura:
+
+- [ ] **A107 Base durável e contrato de notificações.** Evoluir o envelope com
+  identidade de execução/instância, sequência/TTL e recursos sem sessão;
+  preservar v1 e implementar outbox/inbox autenticadas, dedupe/retry persistentes,
+  preferências e criptografia obrigatória para eventos novos. Provar a identidade
+  TUI antes de tratar sessão/turno como `run_id`. Escopo e aceite na seção 8 do
+  catálogo; base compartilhada de A108/A109.
+- [ ] **A108 Avisos do ciclo de vida dos serviços.** Observador fora dos processos
+  alvos para Messaging Gateway, Dashboard/TUI e relay; ready, stop/failure,
+  recuperação, restart correlacionado e update success/partial/failure via
+  receipts. Saúde antes de anunciar pronto; `gateway.ready` e
+  `gateway_updated_at` não identificam boot. Queda do Pi inteiro exige caminho
+  independente para aviso durante a queda; topologia atual só permite tentativa
+  prévia e recuperação. Sem patch no Core nem instalação neste levantamento.
+- [ ] **A109 Acompanhar execução ao minimizar.** Um cartão ongoing silencioso,
+  atualizado no mesmo slot só em background, com estado real, cronômetro e
+  abertura da conversa. Provar produtor de snapshots, watch lease por aparelho,
+  correlação TUI e compatibilidade headless; retirar ao voltar/concluir, respeitar
+  dispensa e impedir regressão por push atrasado. Sem percentual inventado nem
+  WS Flutter permanente. Android Live Updates promovidas são melhoria opcional,
+  não garantia de chip/Now Bar. Depende da base A107 e das medições do catálogo.
+- [ ] **A110 Categorias adicionais opt-in.** Depois da base, integrar filhos e
+  tarefas (B9/B11/B14), jobs do scheduler real, Kanban, pressão de recursos e
+  regras confirmadas do agente. Evitar aviso por ferramenta/token, preservar
+  quiet hours e distinguir erro temporário de falha terminal. Nenhuma categoria
+  nova é habilitada automaticamente.
 
 ## Gateway TUI e runtime
 

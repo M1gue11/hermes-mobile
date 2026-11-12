@@ -12,6 +12,9 @@ indicada: confirme a versão alvo antes de assumir compatibilidade.
 3. [USER_TESTING.md](USER_TESTING.md): validações ainda pendentes em aparelho.
 4. [SMOKE.md](SMOKE.md): roteiro reutilizável de emulador/aparelho.
 5. [PRODUCT_INTERFACE_PLAN.md](PRODUCT_INTERFACE_PLAN.md): prioridades de produto.
+6. [NOTIFICATION_EVENTS_AND_LIVE_RUN.md](NOTIFICATION_EVENTS_AND_LIVE_RUN.md):
+   catálogo de avisos operacionais, limites de entrega e proposta de
+   acompanhamento de execução em segundo plano (a implementar).
 
 ## Gate de uma mudança
 

@@ -1,5 +1,15 @@
 # Ciclo de vida do gateway, medido em `0.20.0`
 
+> [!warning]
+> **Documento histórico; algoritmo de restart superado no runtime atual.**
+> Em 2026-11-09, Hermes HTTP `0.23.0` reestampou `gateway_updated_at` com o
+> gateway continuamente `running`; a fonte atual também documenta o heartbeat.
+> Não interpretar mudança desse campo como restart nem `gateway.ready` como
+> boot do serviço. Ver o
+> [levantamento atual e a correção de contrato](../loop/NOTIFICATION_EVENTS_AND_LIVE_RUN.md).
+> O texto abaixo preserva a medição e a interpretação feitas no `0.20.0`, não
+> uma garantia para versões posteriores.
+
 Medição do comportamento observado no Gateway Hermes `0.20.0`, para responder:
 **é possível detectar reinício ou inicialização do gateway?**
 
